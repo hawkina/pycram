@@ -9,10 +9,12 @@ from pycram.process_module import simulated_robot, with_simulated_robot
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
 import neem_interface_python
 from neem_interface_python.neem_interface import Episode
+from pycram.ros.tf_broadcaster import TFBroadcaster
 
 # enable RviZ visualisation instead of BulletWorld
 world = BulletWorld("DIRECT")
 v = VizMarkerPublisher()
+tf_broadcaster = TFBroadcaster()
 
 robot = Object("pr2", ObjectType.ROBOT, "pr2.urdf", pose=Pose([1, 2, 0]))
 apartment = Object("apartment", ObjectType.ENVIRONMENT, "apartment.urdf")
@@ -35,10 +37,11 @@ task_type = "BreakfastDemo"
 env_owl = "package://iai_apartment/owl/iai-apartment.owl"
 env_owl_ind_name = "http://knowrob.org/kb/iai-apartment.owl#apartment_root" # ind = individual
 env_urdf = "package://iai_apartment/urdf/apartment.urdf"
+env_urdf_prefix = "iai_apartment/"
 agent_owl = "package://knowrob/owl/robots/PR2.owl"
 agent_owl_ind_name = "http://knowrob.org/kb/PR2.owl#PR2_0"
 agent_urdf = "package://knowrob/urdf/pr2.urdf"
-neem_output_path = "~/ros_ws/neems_library/BreakfastDemo"
+neem_output_path = "/home/ahawkin/ros_ws/neems_library/BreakfastDemo"
 start_time = None
 
 
@@ -54,7 +57,9 @@ def move_and_detect(obj_type):
 
 
 with simulated_robot:
-    with Episode(neem_interface, task_type, env_owl, env_owl_ind_name, env_urdf, agent_owl, agent_owl_ind_name, agent_urdf, neem_output_path) as episode:
+    with Episode(neem_interface, task_type, env_owl, env_owl_ind_name, env_urdf, env_urdf_prefix, agent_owl,
+                 agent_owl_ind_name, agent_urdf, neem_output_path) as episode:
+
         ParkArmsAction([Arms.BOTH]).resolve().perform()
 
         MoveTorsoAction([0.25]).resolve().perform()
@@ -102,11 +107,12 @@ with simulated_robot:
         MoveTorsoAction([0.15]).resolve().perform()
 
         # Find a pose to place the spoon, move and then place it
-        spoon_target_pose = Pose([4.85, 3.3, 0.8], [0, 0, 1, 1])
-        placing_loc = CostmapLocation(target=spoon_target_pose, reachable_for=robot_desig.resolve()).resolve()
+# BUG commented out due to not working
+#        spoon_target_pose = Pose([4.85, 3.3, 0.8], [0, 0, 1, 1])
+#        placing_loc = CostmapLocation(target=spoon_target_pose, reachable_for=robot_desig.resolve()).resolve()
 
-        NavigateAction([placing_loc.pose]).resolve().perform()
+#        NavigateAction([placing_loc.pose]).resolve().perform()
 
-        PlaceAction(spoon_desig, [spoon_target_pose], [pickup_arm]).resolve().perform()
+#        PlaceAction(spoon_desig, [spoon_target_pose], [pickup_arm]).resolve().perform()
 
         ParkArmsAction([Arms.BOTH]).resolve().perform()
