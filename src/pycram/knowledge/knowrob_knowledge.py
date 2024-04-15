@@ -1,5 +1,6 @@
 import rospy
 
+<<<<<<< HEAD
 from ..datastructures.knowledge_source import KnowledgeSource, QueryKnowledge, UpdateKnowledge
 from ..datastructures.enums import ObjectType
 from ..datastructures.pose import Pose
@@ -19,6 +20,18 @@ except ModuleNotFoundError as e:
 
 
 class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
+=======
+from ..datastructures.knowledge_source import KnowledgeSource
+import rosservice
+from ..designator import DesignatorDescription
+try:
+    from rosprolog_client import Prolog
+except ModuleNotFoundError as e:
+    rospy.logwarn(f"Could not import Prolog client from package rosprolog_client")
+
+
+class KnowrobKnowledge(KnowledgeSource):
+>>>>>>> 8643733... [knowledge] First draft of knowledge source
 
     def __init__(self):
         super().__init__("Knowrob", 0)
@@ -35,13 +48,18 @@ class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
     def connect(self):
         if self.is_available:
             self.prolog_client = Prolog()
+<<<<<<< HEAD
             # TODO this line errors because tripledb_load is not found
             # self.prolog_client.once(f"tripledb_load('package://iai_apartment/owl/iai-apartment.owl').")
+=======
+            self.prolog_client.once(f"tripledb_load('package://iai_apartment/owl/iai-apartment.owl').")
+>>>>>>> 8643733... [knowledge] First draft of knowledge source
 
     def query(self, designator: DesignatorDescription) -> DesignatorDescription:
         pass
 
     def query_pose_for_object(self, designator: DesignatorDescription) -> DesignatorDescription:
+<<<<<<< HEAD
         if isinstance(designator, PickUpAction):
             object_description = designator.object_designator_description
             if isinstance(object_description, ObjectDesignatorDescription.Object):
@@ -85,3 +103,6 @@ class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
             world_object = None,
             _pose = lambda: pose
         )
+=======
+        result = self.prolog_client.once(f"")
+>>>>>>> 8643733... [knowledge] First draft of knowledge source
