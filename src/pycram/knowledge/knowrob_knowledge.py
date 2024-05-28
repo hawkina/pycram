@@ -1,6 +1,7 @@
 import rospy
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 from ..datastructures.knowledge_source import KnowledgeSource, QueryKnowledge, UpdateKnowledge
 from ..datastructures.enums import ObjectType
 from ..datastructures.pose import Pose
@@ -22,16 +23,23 @@ except ModuleNotFoundError as e:
 class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
 =======
 from ..datastructures.knowledge_source import KnowledgeSource
+=======
+from ..datastructures.knowledge_source import KnowledgeSource, QueryKnowledge, UpdateKnowledge
+>>>>>>> db8874e... [knowledge] Update architecture for knowledge engine
 import rosservice
 from ..designator import DesignatorDescription
 try:
     from rosprolog_client import Prolog
 except ModuleNotFoundError as e:
-    rospy.logwarn(f"Could not import Prolog client from package rosprolog_client")
+    rospy.logwarn(f"Could not import Prolog client from package rosprolog_client, Knowrob related features are not available.")
 
 
+<<<<<<< HEAD
 class KnowrobKnowledge(KnowledgeSource):
 >>>>>>> 8643733... [knowledge] First draft of knowledge source
+=======
+class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
+>>>>>>> db8874e... [knowledge] Update architecture for knowledge engine
 
     def __init__(self):
         super().__init__("Knowrob", 0)
