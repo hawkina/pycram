@@ -2,6 +2,7 @@ import rospy
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 from ..datastructures.knowledge_source import KnowledgeSource, QueryKnowledge, UpdateKnowledge
 from ..datastructures.enums import ObjectType
 from ..datastructures.pose import Pose
@@ -26,6 +27,9 @@ from ..datastructures.knowledge_source import KnowledgeSource
 =======
 from ..datastructures.knowledge_source import KnowledgeSource, QueryKnowledge, UpdateKnowledge
 >>>>>>> db8874e... [knowledge] Update architecture for knowledge engine
+=======
+from ..datastructures.knowledge_source import KnowledgeSource, QueryKnowledge, UpdateKnowledge
+>>>>>>> db8874e... [knowledge] Update architecture for knowledge engine
 import rosservice
 from ..designator import DesignatorDescription
 try:
@@ -35,8 +39,12 @@ except ModuleNotFoundError as e:
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 class KnowrobKnowledge(KnowledgeSource):
 >>>>>>> 8643733... [knowledge] First draft of knowledge source
+=======
+class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
+>>>>>>> db8874e... [knowledge] Update architecture for knowledge engine
 =======
 class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
 >>>>>>> db8874e... [knowledge] Update architecture for knowledge engine
