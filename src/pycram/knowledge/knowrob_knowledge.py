@@ -118,7 +118,7 @@ class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
             pass
         if object_description.names is not None:
             # TODO check if pycram object names are the same as knowrob ones
-            query = f"member(Object, {object_description.names})" + query
+            query = f"member(Object, {object_description.names})," + query
         result = self.prolog_client.once(query)
         if not result:
             return None
@@ -127,17 +127,21 @@ class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
             orientation = result["Rotation"],
             frame = result["Frame"]
         )
-        return ObjectDesignatorDescription.Object(
+        obj = ObjectDesignatorDescription.Object(
             name = result["Object"],
             # TODO map the knowrob type to the pycram type
             obj_type = ObjectType.GENERIC_OBJECT,
             # TODO search for the world object, if available
-            world_object = None,
-            _pose = lambda: pose
+            world_object = None
         )
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
         result = self.prolog_client.once(f"")
 >>>>>>> 8643733... [knowledge] First draft of knowledge source
 =======
 >>>>>>> df3d73e... [knowledge] add first protype of knowrob2 knowledge enginge implementation
+=======
+        obj.pose = lambda: pose
+        return obj
+>>>>>>> 4b6aaa4... [knowledge] Fix knowrob2 object querying with names and fix pos attribute
