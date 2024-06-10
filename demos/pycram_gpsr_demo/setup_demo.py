@@ -1,11 +1,19 @@
 #setup the environment
 from pycram.designators.action_designator import *
+from pycram.external_interfaces.navigate import PoseNavigator
 from pycram.pose import Pose
 from pycram.process_module import simulated_robot
 from pycram.robot_descriptions import robot_description
 from pycram.enums import ObjectType
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
+from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, SoundRequestPublisher
 from . import utils, high_level_plans
+
+move = PoseNavigator()
+instruction_point = Pose([1.45, 4.5, 0], [0, 0, 1, 0])
+tts = TextToSpeechPublisher()
+image_switch = ImageSwitchPublisher()
+sound_pub = SoundRequestPublisher()
 
 plan_list = {}
 
@@ -20,7 +28,7 @@ def setup():
     robot_desig = ObjectDesignatorDescription(names=["hsrb"]).resolve()
     robot.set_color([0.5, 0.0, 0.2, 1])
 
-    environment = Object("environment", ObjectType.ENVIRONMENT, "suturo_lab_version_small.urdf")
+    environment = Object("environment", ObjectType.ENVIRONMENT, "suturo_lab_version_15.urdf")
     environment_desig = ObjectDesignatorDescription(names=["environment"])
     print("done with setup")
 
@@ -44,3 +52,7 @@ def test():
     print("attempt to call cleaning with param test")
     utils.call_plan_by_name(plan_list, "cleaning", "test")
 
+
+
+
+# setup() only if launching via pycharm

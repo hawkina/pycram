@@ -2,6 +2,7 @@ import inspect
 from . import high_level_plans
 
 
+
 # generate a list of all plans instead of having to hardcode them
 # this is required for the mapping between NLP and PyCRAM
 def get_plans(module):
@@ -17,3 +18,4 @@ def call_plan_by_name(plan_list, name, *args, **kwargs):
         print("plan found and executed")
     else:
         print(f"Plan {name} not found.")
+

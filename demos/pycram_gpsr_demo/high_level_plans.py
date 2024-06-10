@@ -1,13 +1,18 @@
+from demos.pycram_gpsr_demo import nlp_listening
 from pycram.designators.action_designator import *
 from pycram.pose import Pose
+from pycram.utilities.robocup_utils import StartSignalWaiter, TextToSpeechPublisher, ImageSwitchPublisher, SoundRequestPublisher
+from pycram.external_interfaces.navigate import PoseNavigator
+from std_msgs.msg import String
 
 # these are all the high level plans, to which we map the NLP output.
 # they should either connect to low level plans or be filled with data from knowledge
 
 
+
 # navigate the robot to LOCATION
 def moving_to(loc):
-    #NavigateAction([pose1]).resolve().perform()
+    # NavigateAction([pose1]).resolve().perform()
     print("Moving To:  " + str(loc))
 
 
@@ -45,7 +50,16 @@ def counting(obj_or_pers):
     print("count: " + str(obj_or_pers))
 
 
-def guide(person, from_loc, to_loc):
+def guiding(person, from_loc, to_loc):
     print("guide: " + str(person) + " from " + str(from_loc) + " to " + str(to_loc))
+
+
+# --- utils plans ---
+def track_human():
+    # look for a human
+    DetectAction(technique='human').resolve().perform()
+    # look at guest and introduce
+    HeadFollowAction('start').resolve().perform()
+
 
 
