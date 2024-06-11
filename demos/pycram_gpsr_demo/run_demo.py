@@ -12,7 +12,7 @@ def gpsr():
     response = ""
     callback = False
 
-    print("Main GPSR High-Level-Plan started")
+    rospy.loginfo("Main GPSR High-Level-Plan started")
     # wait for start signal
     # Create an instance of the StartSignalWaiter
     start_signal_waiter = StartSignalWaiter()
@@ -41,7 +41,7 @@ def gpsr():
     plan_list = utils.get_plans(high_level_plans)
     # TODO iterate over list of instructions and do stuff
     for instruction in instruction_list:
-        print("in instruction loop")
+        rospy.loginfo("in instruction loop")
         # do stuff
         # match instruction to plan
         utils.call_plan_by_name(plan_list, "cleaning", "test")

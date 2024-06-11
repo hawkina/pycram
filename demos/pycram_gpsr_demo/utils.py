@@ -1,4 +1,7 @@
 import inspect
+
+import rospy
+
 from . import high_level_plans
 
 
@@ -15,7 +18,7 @@ def call_plan_by_name(plan_list, name, *args, **kwargs):
     func = plan_list.get(name)
     if func:
         func(*args, **kwargs)
-        print("plan found and executed")
+        rospy.loginfo("plan found and executed")
     else:
-        print(f"Plan {name} not found.")
+        rospy.loginfo(f"Plan {name} not found.")
 
