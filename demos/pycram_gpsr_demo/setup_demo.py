@@ -7,7 +7,7 @@ from pycram.robot_descriptions import robot_description
 from pycram.enums import ObjectType
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
 from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, SoundRequestPublisher
-from . import utils, high_level_plans
+from . import utils, high_level_plans, nlp_processing
 
 move = PoseNavigator()
 instruction_point = Pose([1.45, 4.5, 0], [0, 0, 1, 0])
@@ -22,8 +22,9 @@ robot = 0
 environment = 0
 rviz = 0
 
+
 def setup():
-    global world, robot, environment, rviz
+    global world, robot, environment, rviz, plan_list
     # world = BulletWorld("DIRECT") #rviz only, without any parameters, spawns bullet
     rospy.loginfo("init setup")
     world = BulletWorld("DIRECT")
@@ -35,6 +36,8 @@ def setup():
 
     environment = Object("environment", ObjectType.ENVIRONMENT, "suturo_lab_version_15.urdf")
     environment_desig = ObjectDesignatorDescription(names=["environment"])
+    nlp_processing.nlp_subscribe()  # init subscriber
+    plan_list = utils.get_plans(high_level_plans)
     rospy.loginfo("done with setup")
 
 

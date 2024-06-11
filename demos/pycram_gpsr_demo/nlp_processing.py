@@ -1,5 +1,4 @@
 import json
-
 import rospy
 from std_msgs.msg import String
 
@@ -55,7 +54,7 @@ def nlp_unsubscribe():
 def test_nlp():
     global response, todo_plans
     rospy.loginfo("test nlp")
-    test_string = "Bring me the red apple from the kitchen table."
+    test_string = "Bring me the apple from the kitchen table."  # and then look for all red cups in the kitchen.
     rospy.loginfo(test_string)
     nlp_pub_test.publish(test_string)
     rospy.loginfo("ToDo plans: " + str(todo_plans))
@@ -69,10 +68,6 @@ def nlp_listening():
     # start actually listening
     nlp_pub.publish("start listening")
 
-    #ToDo: check if this is actually needed?
-    #wait for response
-    #while todo_plans == {}:
-    #    rospy.loginfo("waiting for a message...")
     rospy.loginfo("waiting for a message...")
     rospy.wait_for_message('nlp_out', String)
 

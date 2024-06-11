@@ -10,47 +10,47 @@ from std_msgs.msg import String
 
 
 # navigate the robot to LOCATION
-def moving_to(loc):
+def moving_to(param_json):
     # NavigateAction([pose1]).resolve().perform()
-    rospy.loginfo("Moving To:  " + str(loc))
+    rospy.loginfo("Moving To." + str(param_json))
 
 
 # also finding + searching
-def looking_for(obj, loc):
-    rospy.loginfo("Looking For: " + str(obj) + " at " + str(loc))
+def looking_for(param_json):
+    rospy.loginfo("Looking For: " + str(param_json))
 
 
-def picking(obj, from_location):
-    rospy.loginfo("Picking: " + str(obj) + " from " + str(from_location))
+def picking(param_json):
+    rospy.loginfo("Picking: " + str(param_json))
 
 
-def placing(obj, to_location):
-    rospy.loginfo("Place: " + str(obj) + "at" + str(to_location))
+def placing(param_json):
+    rospy.loginfo("Place: " + str(param_json))
 
 
-def fetching(obj):
-    rospy.loginfo("fetching: " + str(obj))
+def fetching(param_json):
+    rospy.loginfo("fetching: " + str(param_json))
 
 
-def cleaning(obj):
-    rospy.loginfo("cleaning: " + str(obj))
+def cleaning(param_json):
+    rospy.loginfo("cleaning: " + str(param_json))
 
 
-def transporting(obj, from_loc, to_loc, from_person, to_person):
-    rospy.loginfo("transporting: " + str(obj) + " from " + str(from_loc) + " to " + str(to_loc) + " from " + str(from_person) + " to " + str(to_person))
+def transporting(param_json):
+    rospy.loginfo("transporting: " + str(param_json))
 
 
-def arranging(obj, from_loc, to_loc):
-    rospy.loginfo("arranging: " + str(obj) + " from " + str(from_loc) + " to " + str(to_loc))
+def arranging(param_json):
+    rospy.loginfo("arranging: " + str(param_json))
 
 
 # count obj or person
-def counting(obj_or_pers):
-    rospy.loginfo("count: " + str(obj_or_pers))
+def counting(param_json):
+    rospy.loginfo("count: " + str(param_json))
 
 
-def guiding(person, from_loc, to_loc):
-    rospy.loginfo("guide: " + str(person) + " from " + str(from_loc) + " to " + str(to_loc))
+def guiding(param_json):
+    rospy.loginfo("guide: " + str(param_json))
 
 
 # --- utils plans ---

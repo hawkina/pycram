@@ -9,8 +9,6 @@ from demos.pycram_gpsr_demo.setup_demo import *
 # TODO: test on real robot
 def gpsr():
     # init params
-    response = ""
-    callback = False
 
     rospy.loginfo("Main GPSR High-Level-Plan started")
     # wait for start signal
@@ -38,7 +36,6 @@ def gpsr():
     # listen to instructions
     instruction_list = nlp_listening()
 
-    plan_list = utils.get_plans(high_level_plans)
     # TODO iterate over list of instructions and do stuff
     for instruction in instruction_list:
         rospy.loginfo("in instruction loop")
