@@ -1,14 +1,21 @@
+import json
+
 import rospy
 from std_msgs.msg import String
 
 from pycram.utilities.robocup_utils import TextToSpeechPublisher, SoundRequestPublisher
 
 nlp_pub = rospy.Publisher('/startListener', String, queue_size=10)
+nlp_pub_test = rospy.Publisher('/nlp_test', String, queue_size=10)
+nlp_sub = rospy.Subscriber('nlp_out', String)
 response = ""
 callback = False
 doorbell = False
 tts = TextToSpeechPublisher()
 sound_pub = SoundRequestPublisher()
+todo_plans = {}
+
+
 
 def data_cb(data):
     global response
@@ -20,29 +27,55 @@ def data_cb(data):
     callback = True
 
 
+def intent_processing(msg):
+    # convert result into json array for easier access. e.g. response["person-name"] would return 'me'
+    global response, todo_plans
+    response = msg.data.replace(": ", ":").replace("'", "\"")  # formatting for making json
+    response = json.loads(response)
+    todo_plans = response
+    print("Got Data from NLP: " + str(todo_plans))
+    response = "None"
+
+
+
+
+
+def nlp_subscribe():
+    global nlp_sub
+    nlp_sub = rospy.Subscriber('nlp_out', String, intent_processing)
+    print("subscriber initialized: " + str(nlp_sub))
+
+
+def nlp_unsubscribe():
+    global nlp_sub
+    nlp_sub.unregister()
+    print("nlp unsubscribed: " + str(nlp_sub))
+
+
+def test_nlp():
+    global response, todo_plans
+    print("test nlp")
+    test_string = "Bring me the red apple from the kitchen table."
+    print(test_string)
+    nlp_pub_test.publish(test_string)
+    print("ToDo plans: " + str(todo_plans))
+    return todo_plans
+
+
 def nlp_listening():
     # connect to global vars
-    global callback
-    global response
-    nlp_sub = rospy.Subscriber("nlp_out", String, data_cb)
+    global callback, response, nlp_sub, todo_plans
+    nlp_subscribe()
     # start actually listening
     nlp_pub.publish("start listening")
 
+    #ToDo: check if this is actually needed?
     #wait for response
-    while not callback:
-        rospy.sleep(1)
-    callback = False
+    #while todo_plans == {}:
+    #    print("waiting for a message...")
+    print("waiting for a message...")
+    rospy.wait_for_message('nlp_out', String)
 
     # process output from NLP
-    # TODO adapt to GPSR
-    if response[0] == "<GUEST>":
-        # success a name and intent was understood
-        if response[1] != "<None>":
-            tts.publish_text("I am sorry, I didn't quite get that. Could you please repeat your command?")
-            # guest1.set_drink(response[2])
-            # rospy.sleep(1)
-            # guest1.set_name(name_confirm(response[1]))
-
-    list_of_intents = response
-
-    return list_of_intents
+    print("message received. todo_plans: " + str(todo_plans))
+    return todo_plans

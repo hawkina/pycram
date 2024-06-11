@@ -1,4 +1,3 @@
-from demos.pycram_gpsr_demo import nlp_listening
 from pycram.designators.action_designator import *
 from pycram.pose import Pose
 from pycram.utilities.robocup_utils import StartSignalWaiter, TextToSpeechPublisher, ImageSwitchPublisher, SoundRequestPublisher

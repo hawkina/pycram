@@ -16,6 +16,11 @@ image_switch = ImageSwitchPublisher()
 sound_pub = SoundRequestPublisher()
 
 plan_list = {}
+# TODO: double check if these are needed on a global level
+world = 0
+robot = 0
+environment = 0
+rviz = 0
 
 def setup():
     global world, robot, environment, rviz
@@ -46,6 +51,7 @@ def do_stuff():
 
 
 def test():
+    global plan_list
     plan_list = utils.get_plans(high_level_plans)
     print("imported all plans: ")
     print(plan_list)
