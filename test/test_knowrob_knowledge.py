@@ -10,16 +10,20 @@ from pycram.designator import DesignatorDescription, ObjectDesignatorDescription
 from pycram.datastructures.pose import Pose
 
 from rosservice import ROSServiceIOException
+import rosservice
 
+def knowrob_available():
+    kb = KnowrobKnowledge()
+    try:
+        return '/rosprolog/query' in rosservice.get_service_list()
+    except ROSServiceIOException:
+        return False
+
+@unittest.skipIf(not knowrob_available(), "knowrob2 is not available.")
 class TestKnowrobKnowledge(unittest.TestCase):
     def test_ask_for_object(self):
         # init connection
         kb = KnowrobKnowledge()
-        try:
-            if not kb.is_available:
-                self.skipTest('Knowrob2 is not available, skipping test')
-        except ROSServiceIOException:
-            self.skipTest('No ros master available, skipping test')
         kb.connect()
 
         # init test pose
