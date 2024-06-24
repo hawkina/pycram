@@ -73,3 +73,5 @@ resources/cached/
 examples/.ipynb_checkpoints/
 
 doc/*
+**/*.ipynb
+**/*.ipynb_checkpoints/
