@@ -1,8 +1,7 @@
 import json
 import rospy
 from std_msgs.msg import String
-
-from pycram.utilities.robocup_utils import TextToSpeechPublisher, SoundRequestPublisher
+import setup_demo
 
 nlp_pub = rospy.Publisher('/startListener', String, queue_size=10)
 nlp_pub_test = rospy.Publisher('/nlp_test', String, queue_size=10)
@@ -10,10 +9,6 @@ nlp_sub = rospy.Subscriber('nlp_out', String)
 response = ""
 callback = False
 doorbell = False
-tts = TextToSpeechPublisher()
-sound_pub = SoundRequestPublisher()
-todo_plans = {}
-
 
 
 def data_cb(data):
@@ -36,15 +31,14 @@ def intent_processing(msg):
     response = "None"
 
 
-
-
-
+# create a subscriber to the /nlp_out topic on which the result from NLP is published
 def nlp_subscribe():
     global nlp_sub
     nlp_sub = rospy.Subscriber('nlp_out', String, intent_processing)
     rospy.loginfo("subscriber initialized: " + str(nlp_sub))
 
 
+# delete the subscriber
 def nlp_unsubscribe():
     global nlp_sub
     nlp_sub.unregister()
@@ -66,10 +60,11 @@ def nlp_listening():
     global callback, response, nlp_sub, todo_plans
     nlp_subscribe()
     # start actually listening
-    nlp_pub.publish("start listening")
+    nlp_pub.publish("start listening")  # initialize listening
 
+    setup_demo.sound_pub.publish_sound_request()  # beep
     rospy.loginfo("waiting for a message...")
-    rospy.wait_for_message('nlp_out', String)
+    rospy.wait_for_message('nlp_out', String, timeout=10)
 
     # process output from NLP
     rospy.loginfo("message received. todo_plans: " + str(todo_plans))

@@ -3,6 +3,7 @@ import rospy
 from demos.pycram_gpsr_demo import track_human, nlp_listening
 from pycram.utilities.robocup_utils import StartSignalWaiter
 from demos.pycram_gpsr_demo.setup_demo import *
+import utils
 
 
 # --- main control ---
@@ -24,13 +25,13 @@ def gpsr():
     move.query_pose_nav(instruction_point)
 
     # listen to instructions
-    tts.publish_text("Hello, I am Toya. Please step in front of me.")
-    image_switch.publish_image_switch(0)
+    tts.pub_now("Hello, I am Toya. Please step in front of me.")
+    image_switch.pub_now(0)
 
     track_human() # look for a human and track them
 
-    tts.publish_text("Please talk to me after the beep.")
-    image_switch.publish_image_switch(1)
+    tts.pub_now("Please talk to me after the beep.")
+    image_switch.pub_now(1)
     sound_pub.publish_sound_request() # this is the beep
 
     # listen to instructions
@@ -44,3 +45,15 @@ def gpsr():
         utils.call_plan_by_name(plan_list, "cleaning", "test")
 
     # execute instructions
+
+
+def test_nlp_repl():
+    image_switch.pub_now(0)
+    tts.pub_now("testing.")
+    image_switch.pub_now(1)
+    temp = nlp_listening()
+    if len(temp) == 0:
+        tts.pub_now("I am sorry, I didn't quite get that")
+    else:
+        tts.pub_now("I have heared: " + temp['sentence'])
+

@@ -5,7 +5,6 @@ import rospy
 from . import high_level_plans
 
 
-
 # generate a list of all plans instead of having to hardcode them
 # this is required for the mapping between NLP and PyCRAM
 def get_plans(module):

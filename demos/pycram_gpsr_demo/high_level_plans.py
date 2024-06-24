@@ -8,7 +8,6 @@ from std_msgs.msg import String
 # they should either connect to low level plans or be filled with data from knowledge
 
 
-
 # navigate the robot to LOCATION
 def moving_to(param_json):
     # NavigateAction([pose1]).resolve().perform()

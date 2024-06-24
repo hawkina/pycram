@@ -1,4 +1,4 @@
-#setup the environment
+# setup the environment
 from pycram.designators.action_designator import *
 from pycram.external_interfaces.navigate import PoseNavigator
 from pycram.pose import Pose
@@ -9,18 +9,21 @@ from pycram.ros.viz_marker_publisher import VizMarkerPublisher
 from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, SoundRequestPublisher
 from . import utils, high_level_plans, nlp_processing
 
+
+# initialize interfaces
+plan_list = {}
+world = 0
+robot = 0
+environment = 0
+rviz = 0
+todo_plans = {}
+
+# maybe move this into the setup function so that it doesn't get auto-executed?
 move = PoseNavigator()
 instruction_point = Pose([1.45, 4.5, 0], [0, 0, 1, 0])
 tts = TextToSpeechPublisher()
 image_switch = ImageSwitchPublisher()
 sound_pub = SoundRequestPublisher()
-
-plan_list = {}
-# TODO: double check if these are needed on a global level
-world = 0
-robot = 0
-environment = 0
-rviz = 0
 
 
 def setup():
