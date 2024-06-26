@@ -10,13 +10,15 @@ import rosservice
 from ..designator import DesignatorDescription, ObjectDesignatorDescription
 from ..designators.action_designator import PickUpAction
 
-from typing import Optional
+from typing import Optional, Iterator, Tuple
 
 try:
-    from rosprolog_client import Prolog
+    from rosprolog_client import Prolog, PrologQuery
 except ModuleNotFoundError as e:
     rospy.logwarn(f"Could not import Prolog client from package rosprolog_client, Knowrob related features are not available.")
 
+# for automtically closing queries on exit of pycram
+import atexit
 
 class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
 
@@ -37,6 +39,20 @@ class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
             self.prolog_client = Prolog()
             # TODO this line errors because tripledb_load is not found
             # self.prolog_client.once(f"tripledb_load('package://iai_apartment/owl/iai-apartment.owl').")
+
+
+    def _query_prolog(self, query: str) -> PrologQuery:
+        """
+        Start a query to knowrob. This method alse does additional work.
+        Currently this additional work is registering an atexit function,
+        that finishes the query to free up resources in knowrob when pycram exists.
+
+        :param query: the knowrob query string
+        :return: the rosprolog_client PrologQuery object the current client returned
+        """
+        query = self.prolog_client.query(query)
+        atexit.register(query.finish)
+        return query
 
     def query(self, designator: DesignatorDescription) -> DesignatorDescription:
         pass
@@ -86,3 +102,36 @@ class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
         )
         obj.pose = lambda: pose
         return obj
+
+    def get_object_pose(object_name: str) -> Optional[Pose]:
+        """
+        Query the pose for an object from the knowledge source
+
+        :param object_name: IRI of the object
+        :return: Pose with the pose of the object, or None if the object is not known
+        """
+        result = self.prolog_client.once(f"kb_call(is_at('{object_name}',[Frame,Position,Rotation]))")
+        if not result:
+            return None
+        return Pose(
+            position = result["Position"],
+            orientation = result["Rotation"],
+            frame = result["Frame"]
+        )
+
+    def get_object_pose_of_type(self, type_name: str) -> Iterator[Tuple[str,Pose]]:
+        """
+        Query poses and objects of a certain type from Knowrob.
+        This might return multiple results, which are provided lazily.
+
+        :param type_name: IRI of the type
+        :return: Iterator of object IRI, object pose pairs
+        """
+        # with block for automatic finishing of the query once the generator is exhausted
+        with self._query_prolog(f"kb_call(has_type(OBJECT,'{type_name}')),kb_call(is_at(OBJECT,[FRAME,POSITION,ROTATION]))") as query:
+            # query.solutions() returns a generator, so this is lazy
+            for result in query.solutions():
+                yield (result["OBJECT"],Pose(
+                    position = result["POSITION"],
+                    orientation = result["ROTATION"],
+                    frame = result["FRAME"]))
