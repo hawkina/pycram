@@ -103,7 +103,7 @@ class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
         obj.pose = lambda: pose
         return obj
 
-    def get_object_pose(object_name: str) -> Optional[Pose]:
+    def get_object_pose(self, object_name: str) -> Optional[Pose]:
         """
         Query the pose for an object from the knowledge source
 

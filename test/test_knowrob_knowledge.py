@@ -58,6 +58,44 @@ class TestKnowrobKnowledge(unittest.TestCase):
             # remove the object from knowrob
             kb.prolog_client.once(f"kb_unproject(triple(_,_,'{obj_name}'))")
 
+    def test_get_object_pose(self):
+        # init connection
+        kb = KnowrobKnowledge()
+        kb.connect()
+
+        # init test pose
+        # make sure this matches the pose in the query below
+        pose = Pose(
+            position = [0,1,2],
+            orientation = [0,0,0.70711,0.70711],
+            frame = 'map'
+        )
+        obj_type="http://www.ease-crc.org/ont/SOMA.owl#CerealBox"
+        # create test object
+        result_of_create = kb.prolog_client.once(f"create_object(Object, '{obj_type}', ['map', [0,1,2], [0,0,0.70711,0.70711]], [shape(box(0.1,0.2,0.3))])")
+        obj_name = result_of_create["Object"]
+
+        # ask for it back
+        result = kb.get_object_pose(obj_name)
+        if not result:
+            self.fail('No result with the same object name found. This should not happen, unless knworob restarted or the object got deleted there.')
+
+        # this always fails because it also compares the timestamps
+        # self.assertEqual(result.object_designator_description.pose, pose)
+
+        # copy over the variable header information
+        pose.header.seq = result.header.seq
+        pose.header.stamp = result.header.stamp
+
+        try:
+            # now it should work
+            self.assertEqual(result, pose)
+
+        finally:
+            # remove the object from knowrob
+            kb.prolog_client.once(f"kb_unproject(triple(_,_,'{obj_name}'))")
+
+
     def test_get_object_pose_of_type(self):
         # init connection
         kb = KnowrobKnowledge()
