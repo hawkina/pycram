@@ -7,7 +7,7 @@ from pycram.robot_descriptions import robot_description
 from pycram.enums import ObjectType
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
 from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, SoundRequestPublisher
-from . import utils, high_level_plans, nlp_processing
+from . import utils, high_level_plans
 
 
 # initialize interfaces
@@ -16,7 +16,7 @@ world = 0
 robot = 0
 environment = 0
 rviz = 0
-todo_plans = {}
+#todo_plans = []
 
 # maybe move this into the setup function so that it doesn't get auto-executed?
 move = PoseNavigator()
@@ -39,7 +39,6 @@ def setup():
 
     environment = Object("environment", ObjectType.ENVIRONMENT, "suturo_lab_version_15.urdf")
     environment_desig = ObjectDesignatorDescription(names=["environment"])
-    nlp_processing.nlp_subscribe()  # init subscriber
     plan_list = utils.get_plans(high_level_plans)
     rospy.loginfo("done with setup")
 
