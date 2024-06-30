@@ -1,6 +1,7 @@
 import inspect
 
 import rospy
+from pycram.pose import Pose
 
 from . import high_level_plans
 
@@ -17,7 +18,20 @@ def call_plan_by_name(plan_list, name, *args, **kwargs):
     func = plan_list.get(name)
     if func:
         func(*args, **kwargs)
-        rospy.loginfo("plan found and executed")
+        rospy.loginfo(f"[CRAM] plan {name} found and executed.")
     else:
-        rospy.loginfo(f"Plan {name} not found.")
+        rospy.logerr(f"[CRAM] Plan {name} not found.")
 
+
+def kpose_to_pose_stamped(k_pose):
+    # find a better way? maybe via knowrob?
+    pose = Pose(frame=k_pose.get('Frame'), position=k_pose.get('Pose'), orientation=k_pose.get('Quaternion'))
+    return pose
+
+
+# --- repl specific ---
+def reset():
+    #global todo_list, plans_list
+    todo_list = []
+    plans_list = get_plans(high_level_plans)
+    rospy.loginfo("[CRAM] reset done.")

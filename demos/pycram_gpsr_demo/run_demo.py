@@ -2,16 +2,18 @@ import rospy
 
 from demos.pycram_gpsr_demo import track_human, nlp_listening
 from demos.pycram_gpsr_demo.setup_demo import *
-import demos.pycram_gpsr_demo.utils as utils
+from . import utils
 import demos.pycram_gpsr_demo.nlp_processing as nlp
+import demos.pycram_gpsr_demo.high_level_plans
 from stringcase import snakecase
 
 
 # --- main control ---
 # TODO: test on real robot
 def gpsr():
-    global todo_plans
+    #lobal todo_plans
     todo_plans = []
+    plan_list = utils.get_plans(high_level_plans)
     # plan_list = utils.get_plans(high_level_plans) # get list of all available plans
     # init params
     # go to instruction point, look at human, etc.
@@ -21,6 +23,7 @@ def gpsr():
     instruction_list = nlp.listen_to_commands()
     rospy.logwarn("[CRAM] instruction list: " + str(instruction_list))
 
+    # execute instructions
     # TODO iterate over list of instructions and do stuff
     for instruction in instruction_list:
         rospy.logwarn("[CRAM] in instruction loop")
@@ -28,7 +31,8 @@ def gpsr():
         # do stuff
         # match instruction to plan
         utils.call_plan_by_name(plan_list, snakecase(instruction['intent']), instruction)
-
-    # execute instructions
+        # if plan was successfull, remove it from the list
+    # clear todo_plans
+    todo_plans = []
 
 

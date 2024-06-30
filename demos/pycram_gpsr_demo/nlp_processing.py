@@ -91,7 +91,7 @@ def nlp_listening():
 
 # todo: are there special functions for confirmation?
 def confirm_nlp_output(received_output):
-    global confirm
+    global confirm, todo_plans
     # concatenate output into a whole sentence again
     whole_sentence = ''
     for sentence in received_output:
@@ -111,6 +111,7 @@ def confirm_nlp_output(received_output):
     else:
         setup_demo.tts.pub_now("I am sorry I didn't hear you correctly. Let's try again.")
         confirm = 0
+        todo_plans = []
         return False
 
 

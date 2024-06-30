@@ -11,12 +11,11 @@ from . import utils, high_level_plans
 
 
 # initialize interfaces
-plan_list = {}
 world = 0
 robot = 0
 environment = 0
 rviz = 0
-#todo_plans = []
+
 
 # maybe move this into the setup function so that it doesn't get auto-executed?
 move = PoseNavigator()
@@ -24,6 +23,8 @@ instruction_point = Pose([1.45, 4.5, 0], [0, 0, 1, 0])
 tts = TextToSpeechPublisher()
 image_switch = ImageSwitchPublisher()
 sound_pub = SoundRequestPublisher()
+
+# init demo in repl:  import demos.pycram_gpsr_demo as gpsr
 
 
 def setup():
@@ -39,7 +40,7 @@ def setup():
 
     environment = Object("environment", ObjectType.ENVIRONMENT, "suturo_lab_version_15.urdf")
     environment_desig = ObjectDesignatorDescription(names=["environment"])
-    plan_list = utils.get_plans(high_level_plans)
+    #plan_list = utils.get_plans(high_level_plans)
     rospy.loginfo("done with setup")
 
 
