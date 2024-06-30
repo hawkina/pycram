@@ -12,9 +12,8 @@ from pycram.designators.object_designator import *
 from pycram.bullet_world import BulletWorld, Object
 from demos.pycram_receptionist_demo.utils.new_misc import *
 from pycram.helper import axis_angle_to_quaternion
-move = PoseNavigator()
 
-host = HumanDescription("James", fav_drink="water")
+
 
 world = BulletWorld("DIRECT")
 # /pycram/viz_marker topic bei Marker Array
@@ -25,12 +24,13 @@ robot_desig = ObjectDesignatorDescription(names=["hsrb"]).resolve()
 robot.set_color([0.5, 0.5, 0.9, 1])
 
 # careful that u spawn the correct kitchen
-kitchen = Object("kitchen", "environment", "suturo_lab_version_15.urdf")
+kitchen = Object("kitchen", ObjectType.ENVIRONMENT, "suturo_lab_version_15.urdf")
 giskardpy.init_giskard_interface()
-guest1 = HumanDescription("guest1")
+host = HumanDescription("Lukas", fav_drink="water")
+guest1 = HumanDescription("Jule", fav_drink="tea")
 
-for obj in world.current_bullet_world.objects:
-    print(obj)
+#for obj in world.current_bullet_world.objects:
+#    print(obj)
 
 
 # kitchen.set_joint_state("iai_kitchen:arena:door_origin_revolute_joint", 1)
@@ -39,29 +39,50 @@ def p():
     with real_robot:
         seat = False
         attributes = True
-        # pose = PoseStamped
-        pose = toPoseStamped(2.4,2.1,0)
-        move.query_pose_nav(pose)
 
         if attributes:
             # get attributes
 
-            try:
-                attr_list = DetectAction(technique='attributes', state='start').resolve().perform()
-                guest1.set_attributes(attr_list)
-                print(attr_list)
-                id = DetectAction(technique='human', state='face').resolve().perform()[1][0]
-                print(id)
 
-                rospy.loginfo(attr_list)
-            except PerceptionObjectNotFound:
-                TalkingMotion("please step in front of me").resolve().perform()
-                rospy.sleep(3)
-                attr_list = DetectAction(technique='attributes', state='start').resolve().perform()
-                guest1.set_attributes(attr_list)
-                print(attr_list)
-                id = DetectAction(technique='human', state='face').resolve().perform()[1][0]
-                print(id)
+            TalkingMotion("Test").resolve().perform()
+            rospy.sleep(1)
+            # update poses from guest1 and host
+
+            TalkingMotion("get number of host").resolve().perform()
+            id_humans = DetectAction(technique='human', state='face').resolve().perform()[1]
+            for key in id_humans.keys():
+                host.set_id(key)
+                host_pose = id_humans[host.id]
+                print(host.id)
+
+            TalkingMotion("get number of guest").resolve().perform()
+            guest1.set_id("44")
+
+            rospy.sleep(1)
+            TalkingMotion("please switch seats").resolve().perform()
+            rospy.sleep(2)
+
+            id_humans = DetectAction(technique='human', state='face').resolve().perform()[1]
+
+            try:
+                print(host.id)
+                host_pose = id_humans[host.id]
+                host.set_pose(host_pose)
+            except KeyError:
+                print("host pose not updated")
+
+            try:
+                print(guest1.id)
+                guest1_pose = id_humans[guest1.id]
+                guest1.set_pose(guest1_pose)
+            except KeyError:
+                print("guest1 pose not updated")
+
+            HeadFollowAction('start').resolve().perform()
+            introduce(guest1, host)
+
+
+
 
             # TODO: face recognition
             # TODO face and attr at same time??
