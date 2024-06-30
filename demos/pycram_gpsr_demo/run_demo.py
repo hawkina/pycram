@@ -2,11 +2,11 @@ import rospy
 
 from demos.pycram_gpsr_demo import track_human, nlp_listening
 from demos.pycram_gpsr_demo.setup_demo import *
-from . import utils
+from demos.pycram_gpsr_demo import utils
 import demos.pycram_gpsr_demo.nlp_processing as nlp
 import demos.pycram_gpsr_demo.high_level_plans
 from stringcase import snakecase
-import perception_interface as pc
+import demos.pycram_gpsr_demo.perception_interface as pc
 
 
 # --- main control ---
@@ -37,3 +37,5 @@ def gpsr():
     todo_plans = []
 
 
+#setup()
+#pc.test_perception()

@@ -15,7 +15,7 @@ def init_knowrob():
 
 
 def get_room_entry_pose(Room):
-    kb.prolog_client.once(f"entry_pose({Room}, PoseStamped).")
+    kb.prolog_client.once(f"entry_pose('{Room}', PoseStamped).")
 
 
 def test_queries():
