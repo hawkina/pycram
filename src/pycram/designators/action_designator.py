@@ -532,6 +532,11 @@ class PlaceAction(ActionDesignatorDescription):
             if execute:
                 MoveTCPMotion(push_baseTm, self.arm).resolve().perform()
             if self.object_designator.type == "Metalplate":
+                loweringTm = push_baseTm
+                loweringTm.pose.position.z -= 0.08
+                BulletWorld.current_bullet_world.add_vis_axis(loweringTm)
+                if execute:
+                    MoveTCPMotion(loweringTm, self.arm).resolve().perform()
                 # rTb = Pose([0,-0.1,0], [0,0,0,1],"base_link")
                 rospy.logwarn("sidepush monitoring")
                 TalkingMotion("sidepush.").resolve().perform()
@@ -702,6 +707,7 @@ class PlaceGivenObjAction(ActionDesignatorDescription):
 
             # placing everything else or the Metalplate in the dishwasher
             else:
+                print("In else of placing")
                 if self.grasp == "top":
                     oTm.pose.position.z += 0.05
 
@@ -733,11 +739,16 @@ class PlaceGivenObjAction(ActionDesignatorDescription):
                 if execute:
                     MoveTCPMotion(push_baseTm, self.arm).resolve().perform()
                 if self.object_type == "Metalplate":
+                    loweringTm = push_baseTm
+                    loweringTm.pose.position.z -= 0.08
+                    BulletWorld.current_bullet_world.add_vis_axis(loweringTm)
+                    if execute:
+                        MoveTCPMotion(loweringTm, self.arm).resolve().perform()
                     # rTb = Pose([0,-0.1,0], [0,0,0,1],"base_link")
                     rospy.logwarn("sidepush monitoring")
                     TalkingMotion("sidepush.").resolve().perform()
                     side_push = Pose(
-                        [push_baseTm.pose.position.x, push_baseTm.pose.position.y + 0.08, push_baseTm.pose.position.z],
+                        [push_baseTm.pose.position.x, push_baseTm.pose.position.y + 0.125, loweringTm.pose.position.z],
                         [push_baseTm.orientation.x, push_baseTm.orientation.y, push_baseTm.orientation.z,
                          push_baseTm.orientation.w])
                     try:
@@ -1874,17 +1885,8 @@ class HeadFollowAction(ActionDesignatorDescription):
         def perform(self) -> None:
             HeadFollowMotion(self.state).resolve().perform()
 
-        # def insert(self, session: sqlalchemy.orm.session.Session, **kwargs) -> ORMAction:
-        #    print("in insert parkArms")
-        #    action = super().insert(session)
-        #    session.add(action)
-        #    session.commit()
-        #    return action
-
     def __init__(self, state: str, resolver=None):
         """
-        Moves the arms in the pre-defined parking position. Arms are taken from pycram.enum.Arms
-
         :param state: defines if the robot should start/stop looking at human
         :param resolver: An optional resolver that returns a performable designator from the designator description
         """
@@ -1893,8 +1895,43 @@ class HeadFollowAction(ActionDesignatorDescription):
 
     def ground(self) -> Action:
         """
-        Default resolver that returns a performable designator with the first element of the list of possible arms
-
+        Default resolver
         :return: A performable designator
         """
         return self.Action(self.state)
+
+
+class DoorOpenAction(ActionDesignatorDescription):
+    """
+    grasp and open door
+    """
+
+    @dataclasses.dataclass
+    class Action(ActionDesignatorDescription.Action):
+        handle: str
+        """
+        defines the handle of the door to open
+        """
+
+        @with_tree
+        def perform(self) -> None:
+            MoveGripperMotion(motion="open", gripper="left").resolve().perform()
+            GraspHandleMotion(self.handle).resolve().perform()
+            MoveGripperMotion(motion="close", gripper="left").resolve().perform()
+            DoorOpenMotion(self.handle).resolve().perform()
+            MoveGripperMotion(motion="open", gripper="left").resolve().perform()
+
+    def __init__(self, handle: str, resolver=None):
+        """
+        :param handle: handle in tf to grasp
+        :param resolver: An optional resolver that returns a performable designator from the designator description
+        """
+        super().__init__(resolver)
+        self.handle = handle
+
+    def ground(self) -> Action:
+        """
+        Default resolver
+        :return: A performable designator
+        """
+        return self.Action(self.handle)
