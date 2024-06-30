@@ -22,7 +22,6 @@ import rosnode
 import atexit
 
 import urdf_parser_py.urdf
-from betterpybullet import Vector3
 from geometry_msgs.msg import Quaternion, Point, TransformStamped
 from urdf_parser_py.urdf import URDF
 
@@ -61,7 +60,7 @@ class BulletWorld:
 
     # Check is for sphinx autoAPI to be able to work in a CI workflow
     if rosgraph.is_master_online():  # and "/pycram" not in rosnode.get_node_names():
-        rospy.init_node('pycram_vee')
+        rospy.init_node('pycram_hasu')
 
     def __init__(self, type: str = "GUI", is_shadow_world: bool = False):
         """
@@ -566,8 +565,8 @@ class Gui(threading.Thread):
             # Disable the side windows of the GUI
             p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
             # Change the init camera pose
-            p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=270.0, cameraPitch=-50,
-                                         cameraTargetPosition=[-2, 0, 1])
+            p.resetDebugVisualizerCamera(cameraDistance=1.40, cameraYaw= (180), cameraPitch= -45,
+                                         cameraTargetPosition=[5.3,4.8, 0.74])
 
             # Get the initial camera target location
             cameraTargetPosition = p.getDebugVisualizerCamera()[11]
@@ -584,8 +583,8 @@ class Gui(threading.Thread):
             maxSpeed = 16
 
             # Set initial Camera Rotation
-            cameraYaw = 50
-            cameraPitch = -35
+            cameraYaw = -90
+            cameraPitch = -45
 
             # Keep track of the mouse state
             mouseState = [0, 0, 0]
