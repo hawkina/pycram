@@ -6,6 +6,7 @@ from . import utils
 import demos.pycram_gpsr_demo.nlp_processing as nlp
 import demos.pycram_gpsr_demo.high_level_plans
 from stringcase import snakecase
+import perception_interface as pc
 
 
 # --- main control ---
