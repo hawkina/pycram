@@ -50,8 +50,10 @@ class KnowrobKnowledge(KnowledgeSource, QueryKnowledge, UpdateKnowledge):
         :param query: the knowrob query string
         :return: the rosprolog_client PrologQuery object the current client returned
         """
+        rospy.loginfo("[KnowRob] query sent: " + str(query))
         query = self.prolog_client.query(query)
         atexit.register(query.finish)
+        rospy.loginfo("[KnowRob] result: " + str(query))
         return query
 
     def query(self, designator: DesignatorDescription) -> DesignatorDescription:
