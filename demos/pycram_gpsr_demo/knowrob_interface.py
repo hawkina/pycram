@@ -29,3 +29,7 @@ def test_queries():
     kb.prolog_client.all_solutions("middle(Rooms, PoseStamped).")
     kb.prolog_client.once("entry_pose('kitchen', PoseStamped).")  # this works!
     kb.prolog_client.once("entry_pose('kitchen', [Frame, Pose, Quaternion]).") # this is better
+    kb.prolog_client.all_solutions("grasp_pose(ObjectType, Pose).") # returns bowl = above
+    kb.prolog_client.all_solutions("has_value(Objname, Property, Value).")
+    kb.prolog_client.all_solutions("predefined_origin_location(Class, OriginLocation).")
+    kb.prolog_client.all_solutions("is_inside_of(Obj, Room).")

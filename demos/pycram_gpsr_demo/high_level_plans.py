@@ -15,23 +15,29 @@ import demos.pycram_gpsr_demo.utils as utils
 
 kb = KnowrobKnowledge()
 
+
 # navigate the robot to LOCATION
 def moving_to(param_json):
+    # ToDo: test
     global kb
+    rospy.loginfo("[CRAM] MovingTo plan." + str(param_json))
     kb.connect()
-    setup_demo.tts.pub_now("in Moving-to plan.")
-    rospy.loginfo("Moving To." + str(param_json))
-
-    # ToDo: does it always make sense to use enter pose?
-    # get pose of room from KnowRob
-    room_name = str(param_json.get('from-location').lower()) # ToDo: this should be to-location
+    # get room pose from knowrob
+    room_name = str(param_json.get('from-location').lower())  # ToDo: this should be to-location or smth else
     k_pose = kb.prolog_client.once(f"entry_pose('{room_name}', [Frame, Pose, Quaternion]).")
-    if k_pose == [] or k_pose == None:
-        rospy.loginfo("[KnowRob] query was empty.")
+
+    if k_pose == [] or k_pose is None:
+        rospy.loginfo("[CRAM] KnowRob result was empty.")
+        setup_demo.tts.pub_now("I am sorry. I don't know where " + room_name + "is.")  # asking for help would be fun
+        return  # abort mission
+    # continue
     pose = utils.kpose_to_pose_stamped(k_pose)
     rospy.loginfo(f"[CRAM] Going to {room_name} Pose : " + str(pose))
+    setup_demo.tts.pub_now("Going to the " + room_name)
+    move.query_pose_nav(pose)
+    setup_demo.tts.pub_now("done")
+    # ToDo: does it always make sense to use enter pose?
 
-    # NavigateAction([pose1]).resolve().perform()
 
 
 
