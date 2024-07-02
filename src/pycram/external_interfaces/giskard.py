@@ -525,9 +525,11 @@ def stop_looking():
     giskard_wrapper.execute(wait=False)
     rospy.loginfo("hsr looks forward instead of looking at human")
 
+
 def cancel_all_called_goals():
     giskard_wrapper.cancel_all_goals()
     rospy.loginfo("Canceling all goals towards Giskard")
+
 
 def move_head_to_pose(pose: PointStamped):
     """
@@ -564,7 +566,7 @@ def move_arm_to_pose(pose: PointStamped):
 
 
 def grasp_doorhandle(handle_name: str):
-    print("open door with handle")
+    print("grasp handle")
 
     giskard_wrapper.set_hsrb_door_handle_grasp(handle_name=handle_name)
     giskard_wrapper.allow_all_collisions()
@@ -588,9 +590,9 @@ def open_doorhandle(handle_name: str):
 
 
 def spawn_kitchen():
-    env_urdf = rospy.get_param('/kitchen_description')
+    env_urdf = rospy.get_param('/iai_kitchen')
     kitchen_pose = tf.lookup_pose('map', 'iai_kitchen/urdf_main')
-    print (kitchen_pose)
+    print(kitchen_pose)
     giskard_wrapper.add_urdf(name='arena',
                              urdf=env_urdf,
                              pose=kitchen_pose)
@@ -621,6 +623,8 @@ def place_objects(object, target, grasp):
 def park_arms():
     giskard_wrapper.take_pose("park")
     giskard_wrapper.execute()
+
+
 
 # def reaching(self,
 #                #context,

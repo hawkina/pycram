@@ -4,8 +4,8 @@ from __future__ import annotations
 import numpy as np
 import pybullet as p
 import rospy
-#import matplotlib.pyplot as plt
-#from matplotlib import colors
+# import matplotlib.pyplot as plt
+# from matplotlib import colors
 import psutil
 import time
 from .bullet_world import BulletWorld, Use_shadow_world, Object
@@ -685,7 +685,8 @@ class SemanticCostmap(Costmap):
     table surface.
     """
 
-    def __init__(self, object, urdf_link_name, size=100, resolution=0.02, world=None):
+    def __init__(self, object, urdf_link_name, size=100, resolution=0.02, world=None, margin_cm=0.2,
+                 inner_margin_cm=0.1):
         """
         Creates a semantic costmap for the given parameter. The semantic costmap will be on top of the link of the given
         Object.
@@ -703,24 +704,55 @@ class SemanticCostmap(Costmap):
         self.height: int = 0
         self.width: int = 0
         self.map: np.ndarray = []
+        self.margin_cm = margin_cm
+        self.inner_margin_cm = inner_margin_cm
         self.generate_map()
-
         Costmap.__init__(self, resolution, self.height, self.width, self.origin, self.map)
+
+    import numpy as np
 
     def generate_map(self) -> None:
         """
-        Generates the semantic costmap according to the provided parameters. To do this the axis aligned bounding box (AABB)
-        for the link name will be used. Height and width of the final Costmap will be the x and y sizes of the AABB.
+        Generates the semantic costmap according to the provided parameters, with a 20 cm margin excluded from the outer
+        edges of the map. The central part of the map is used, while the outer 20 cm margin is marked to indicate it's
+        not part of the semantic costmap.
         """
-        min, max = self.get_aabb_for_link()
-        self.height = int((max[0] - min[0]) // self.resolution)
-        self.width = int((max[1] - min[1]) // self.resolution)
+        aabb_min, aabb_max = self.get_aabb_for_link()  # Get the axis-aligned bounding box for the link
+        margin = int(self.margin_cm / self.resolution)  # Convert 20 cm margin to pixels based on the resolution
+
+        # Calculate height and width considering the resolution
+        self.height = int((aabb_max[0] - aabb_min[0]) // self.resolution)
+        self.width = int((aabb_max[1] - aabb_min[1]) // self.resolution)
+
+        # Initialize the map with ones
         self.map = np.ones((self.height, self.width))
+
+        # Apply margin from one side (e.g., only the top)
+        if margin < self.height:
+            self.map[:margin, :] = 0  # Top margin
+
+        # Apply margin from one side (e.g., only the left)
+        if margin < self.width:
+            self.map[:, :margin] = 1
+            # # Right margin
+            self.map[:, -margin:] = 1
+
+        # Invert the map values: 0s become 1s, and everything else becomes 0
+        self.map = 1 - self.map
+
+        # Trim the left and right sides, only keep points before the 0s
+        non_zero_cols = np.where(self.map.any(axis=0))[0]
+        if len(non_zero_cols) > 0:
+            self.map = self.map[:, :non_zero_cols[-1] + 1]
+
+        non_zero_rows = np.where(self.map.any(axis=1))[0]
+        if len(non_zero_rows) > 0:
+            self.map = self.map[:non_zero_rows[-1] + 1, :]
 
     def get_aabb_for_link(self) -> Tuple[List[float], List[float]]:
         """
-        Returns the axis aligned bounding box (AABB) of the link provided when creating this costmap. To try and let the
-        AABB as close to the actual object as possible, the Object will be rotated such that the link will be in the
+        Returns the axis-aligned bounding box (AABB) of the link provided when creating this costmap. To try and let the
+        AABB as close to the actual object as possible, the object will be rotated such that the link will be in the
         identity orientation.
 
         :return: Two points in world coordinate space, which span a rectangle
@@ -733,7 +765,6 @@ class SemanticCostmap(Costmap):
             inverse_orientation = link_orientation_trans.invert()
             shadow_obj.set_orientation(inverse_orientation.to_pose())
             return shadow_obj.get_AABB(self.link)
-
 
 # cmap = colors.ListedColormap(['white', 'black', 'green', 'red', 'blue'])
 #
