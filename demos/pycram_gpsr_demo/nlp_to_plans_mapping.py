@@ -4,6 +4,10 @@ import rospy
 from .import utils, high_level_plans
 
 
+# NLP Terminology
+
+
+
 # def nlp_to_plans_mapping(todo_plans):
 #     global plans_list
 #     rospy.logdebug("plans to do are: " + str(todo_plans))

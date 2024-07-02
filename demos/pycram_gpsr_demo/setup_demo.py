@@ -5,6 +5,7 @@ from pycram.pose import Pose
 from pycram.process_module import simulated_robot, real_robot
 from pycram.robot_descriptions import robot_description
 from pycram.enums import ObjectType
+from pycram.ros.robot_state_updater import RobotStateUpdater, KitchenStateUpdater
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
 from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, SoundRequestPublisher
 from . import utils, high_level_plans
@@ -42,6 +43,9 @@ def setup():
         environment = Object("environment", ObjectType.ENVIRONMENT, "suturo_lab_version_15.urdf")
         environment_desig = ObjectDesignatorDescription(names=["environment"])
         #plan_list = utils.get_plans(high_level_plans)
+        # sync to kitchen and robot
+        RobotStateUpdater("/tf", "/hsrb/robot_state/joint_states")
+        KitchenStateUpdater("/tf", "/iai_kitchen/joint_states")
         rospy.loginfo("done with setup")
 
 

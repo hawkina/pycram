@@ -1,5 +1,4 @@
 import rospy
-
 from pycram.designators.action_designator import *
 from pycram.pose import Pose
 from pycram.utilities.robocup_utils import StartSignalWaiter, TextToSpeechPublisher, ImageSwitchPublisher, SoundRequestPublisher
@@ -9,12 +8,13 @@ import demos.pycram_gpsr_demo.setup_demo as setup_demo
 from pycram.utilities.robocup_utils import StartSignalWaiter
 from demos.pycram_gpsr_demo.knowrob_interface import KnowrobKnowledge
 import demos.pycram_gpsr_demo.utils as utils
+from stringcase import snakecase
 
 # these are all the high level plans, to which we map the NLP output.
 # they should either connect to low level plans or be filled with data from knowledge
 
 kb = KnowrobKnowledge()
-
+move = PoseNavigator()
 
 # navigate the robot to LOCATION
 def moving_to(param_json):
@@ -23,7 +23,7 @@ def moving_to(param_json):
     rospy.loginfo("[CRAM] MovingTo plan." + str(param_json))
     kb.connect()
     # get room pose from knowrob
-    room_name = str(param_json.get('from-location').lower())  # ToDo: this should be to-location or smth else
+    room_name = snakecase(str(param_json.get('from-location').lower()))  # ToDo: this should be to-location or smth else
     k_pose = kb.prolog_client.once(f"entry_pose('{room_name}', [Frame, Pose, Quaternion]).")
 
     if k_pose == [] or k_pose is None:

@@ -33,3 +33,6 @@ def test_queries():
     kb.prolog_client.all_solutions("has_value(Objname, Property, Value).")
     kb.prolog_client.all_solutions("predefined_origin_location(Class, OriginLocation).")
     kb.prolog_client.all_solutions("is_inside_of(Obj, Room).")
+    kb.prolog_client.all_solutions("tf:tf_get_pose('http://www.ease-crc.org/ont/SOMA.owl#Table_WDOVGYLZ', ['map', Pos, Rot]).")
+    kb.prolog_client.all_solutions("tf:tf_get_pose('http://www.ease-crc.org/ont/SOMA.owl#Table_WDOVGYLZ', ['map', Pos, Rot]).")
+
