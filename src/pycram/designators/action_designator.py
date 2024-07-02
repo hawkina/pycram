@@ -246,7 +246,7 @@ class ParkArmsAction(ActionDesignatorDescription):
                 kwargs["left_arm_config"] = "park"
                 MoveArmJointsMotion(**kwargs).resolve().perform()
                 # MoveTorsoAction([0.005]).resolve().perform()
-                MoveTorsoAction([0.20]).resolve().perform()
+                MoveTorsoAction([0.10]).resolve().perform()
             # add park right arm if wanted
             if self.arm in [Arms.RIGHT, Arms.BOTH]:
                 kwargs["right_arm_config"] = "park"
@@ -345,7 +345,7 @@ class PickUpAction(ActionDesignatorDescription):
             # Move to the pre-grasp position and visualize the action
             rospy.logwarn("Picking up now")
             BulletWorld.current_bullet_world.add_vis_axis(oTmG)
-            # Execute Bool, because sometimes u only want to visualize the poses to test things
+            # Execute Bool, because sometimes u only want to visualize the poses to pp.py things
             if execute:
                 MoveTCPMotion(oTmG, self.arm, allow_gripper_collision=False).resolve().perform()
 
@@ -707,7 +707,6 @@ class PlaceGivenObjAction(ActionDesignatorDescription):
 
             # placing everything else or the Metalplate in the dishwasher
             else:
-                print("In else of placing")
                 if self.grasp == "top":
                     oTm.pose.position.z += 0.05
 
@@ -1646,7 +1645,7 @@ class PouringAction(ActionDesignatorDescription):
             # rospy.logwarn("Pre Pour")
             # BulletWorld.current_bullet_world.add_vis_axis(oTmso)
             #
-            # #Execute Bool, because sometimes u only want to visualize the poses to test things
+            # #Execute Bool, because sometimes u only want to visualize the poses to pp.py things
             # if execute:
             #     MoveTCPMotion(oTmso, self.arm, allow_gripper_collision=False).resolve().perform()
             #
