@@ -348,6 +348,7 @@ class SemanticCostmapLocation(LocationDesignatorDescription):
         height_offset = 0
         if self.for_object:
             min, max = self.for_object.bullet_world_object.get_AABB()
+
             height_offset = ((max[2] - min[2]) / 2) + 0.01
         for maybe_pose in pose_generator(sem_costmap):
             maybe_pose.position.z += height_offset

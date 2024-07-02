@@ -5,6 +5,7 @@ from demos.pycram_storing_groceries_demo.utils.misc import *
 from pycram.designators.location_designator import find_placeable_pose
 from pycram.language import Code
 
+
 from pycram.ros.robot_state_updater import RobotStateUpdater, KitchenStateUpdater
 from pycram.designators.action_designator import *
 from pycram.enums import ObjectType
@@ -169,6 +170,7 @@ def pickerino(object_desig, grasp, arm, talk):
     giskardpy.achieve_sequence_pick_up(oTmG, special_knowledge_offsetTm, push_baseTm, liftingTm)
     # MoveGripperMotion(motion="open", gripper=arm, allow_gripper_collision=True).resolve().perform()
 
+
     tool_frame = robot_description.get_tool_frame(arm)
     robot.attach(object=object_desig.bullet_world_object, link=tool_frame)
 
@@ -228,17 +230,11 @@ def placerino(grasp, arm, talk, target_location):
     # MoveGripperMotion(motion="open", gripper="left").resolve().perform()
     # robot.detach_all()
 
-
-
-
-
-
-
-
 def demo(step):
     with real_robot:
         # Wait for the start signal
         pakerino()
+
 
         groups_in_shelf = {
             "Kitchen Utensils and Tools": None,

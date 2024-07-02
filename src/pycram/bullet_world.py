@@ -22,7 +22,6 @@ import rosnode
 import atexit
 
 import urdf_parser_py.urdf
-from betterpybullet import Vector3
 from geometry_msgs.msg import Quaternion, Point, TransformStamped
 from urdf_parser_py.urdf import URDF
 
@@ -61,7 +60,7 @@ class BulletWorld:
 
     # Check is for sphinx autoAPI to be able to work in a CI workflow
     if rosgraph.is_master_online():  # and "/pycram" not in rosnode.get_node_names():
-        rospy.init_node('pycram_vee')
+        rospy.init_node('pycram_hasu')
 
     def __init__(self, type: str = "GUI", is_shadow_world: bool = False):
         """
