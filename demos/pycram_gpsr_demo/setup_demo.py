@@ -10,6 +10,7 @@ from pycram.ros.robot_state_updater import RobotStateUpdater, KitchenStateUpdate
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
 from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, SoundRequestPublisher
 from . import utils, high_level_plans, knowrob_interface, perception_interface
+import tf
 
 
 # initialize interfaces
@@ -26,6 +27,7 @@ tts = TextToSpeechPublisher()
 image_switch = ImageSwitchPublisher()
 sound_pub = SoundRequestPublisher()
 kb = KnowrobKnowledge()
+tf_listener = tf.listener.TransformListener()
 
 # init demo in repl:  import demos.pycram_gpsr_demo as gpsr
 
@@ -70,8 +72,11 @@ def test():
     rospy.loginfo(plan_list)
     rospy.loginfo("attempt to call cleaning with param test")
     utils.call_plan_by_name(plan_list, "cleaning", "test")
+    # rviz marker publisher
+    marker = ManualMarkerPublisher()
+    tp = Pose(frame='map', position=[1, 1, 0], orientation=[1, 0, 0, 0])
+    marker.publish(tp)
 
 
 
-
-# setup() only if launching via pycharm
+    # setup() only if launching via pycharm

@@ -16,7 +16,7 @@ from stringcase import snakecase
 
 # navigate the robot to LOCATION
 def moving_to(param_json):
-    # ToDo: test
+    # ToDo: test - works
     rospy.loginfo("[CRAM] MovingTo plan." + str(param_json))
     # get room pose from knowrob
     room_name = snakecase(str(param_json.get('from-location').lower()))  # ToDo: this should be to-location or smth else
@@ -31,7 +31,7 @@ def moving_to(param_json):
     rospy.loginfo(f"[CRAM] Going to {room_name} Pose : " + str(pose))
     setup_demo.tts.pub_now("Going to the " + room_name)
     setup_demo.move.pub_now(pose)
-    setup_demo.tts.pub_now("done")
+    setup_demo.tts.pub_now("[CRAM] done")
     # ToDo: does it always make sense to use enter pose?
 
 
@@ -41,6 +41,8 @@ def moving_to(param_json):
 def looking_for(param_json):
     setup_demo.tts.pub_now("in looking for plan")
     rospy.loginfo("Looking For: " + str(param_json))
+    # step 0: go to the requested room - if it was mentioned explicitly OR
+    # step 1: go to the furniture/surface item that got mentioned and look on it for the specified obj
 
 
 def picking(param_json):

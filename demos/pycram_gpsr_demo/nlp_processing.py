@@ -42,6 +42,7 @@ def intent_processing(msg):
             todo_plans = []
             return False
     else:
+        # TODO replace with just json_loads
         response = msg.data.replace(": ", ":").replace("'", "\"")  # formatting for making json
         response = json.loads(response)
         todo_plans.append(response)
