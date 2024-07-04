@@ -10,31 +10,44 @@ from pycram.ros.robot_state_updater import RobotStateUpdater, KitchenStateUpdate
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
 from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, SoundRequestPublisher
 from . import utils, high_level_plans, knowrob_interface, perception_interface
+# import pycram.external_interfaces.giskard_new as giskard
 import tf
-
 
 # initialize interfaces
 world = 0
 robot = 0
 environment = 0
 rviz = 0
+instruction_point = Pose([1.45, 4.5, 0], [0, 0, 1, 0])
+move = None
+tts = None
+image_switch = None
+sound_pub = None
+kb = None
+tf_listener = None
 
 
 # maybe move this into the setup function so that it doesn't get auto-executed?
-move = PoseNavigator()
-instruction_point = Pose([1.45, 4.5, 0], [0, 0, 1, 0])
-tts = TextToSpeechPublisher()
-image_switch = ImageSwitchPublisher()
-sound_pub = SoundRequestPublisher()
-kb = KnowrobKnowledge()
-tf_listener = tf.listener.TransformListener()
-
 # init demo in repl:  import demos.pycram_gpsr_demo as gpsr
 
 
 def setup():
     with real_robot:
-        global world, robot, environment, rviz, plan_list
+        rospy.loginfo("step0")
+        global world, robot, environment, rviz, plan_list, giskard, kb, move, tts, image_switch, sound_pub, kb, tf_listener
+        rospy.loginfo("step1")
+        move = PoseNavigator()
+        rospy.loginfo("step2")
+        tts = TextToSpeechPublisher()
+        rospy.loginfo("step3")
+        image_switch = ImageSwitchPublisher()
+        rospy.loginfo("step4")
+        sound_pub = SoundRequestPublisher()
+        rospy.loginfo("step5")
+        kb = KnowrobKnowledge()
+        tf_listener = tf.listener.TransformListener()
+        # giskard.init_giskard_interface()
+        # giskard.sync_worlds()
         # world = BulletWorld("DIRECT") #rviz only, without any parameters, spawns bullet
         rospy.loginfo("init setup")
         world = BulletWorld("DIRECT")
@@ -49,7 +62,8 @@ def setup():
         kb.connect()
         # sync to kitchen and robot
         RobotStateUpdater("/tf", "/hsrb/robot_state/joint_states")
-        KitchenStateUpdater("/tf", "/iai_kitchen/joint_states")
+        # KitchenStateUpdater("/tf", "/iai_kitchen/joint_states")
+        # giskard.sync_worlds()
         rospy.loginfo("done with setup")
 
 
@@ -78,5 +92,6 @@ def test():
     marker.publish(tp)
 
 
-
-    # setup() only if launching via pycharm
+# setup() only if launching via pycharm
+# import importlib
+# importlib.reload(gpsr)

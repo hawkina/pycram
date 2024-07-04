@@ -1,8 +1,6 @@
 import inspect
-
 import rospy
 from pycram.pose import Pose
-
 from . import high_level_plans
 
 

@@ -58,6 +58,25 @@ def get_navigation_pose_for_all_tables_in_room(room_iri, obj_name='p_table'):
             poses_list.append(pose)
     return poses_list
 
+# for testing: pose_list = gpsr.get_nav_pose_for_furniture(furniture_name=f'p_table')
+# for testing: gpsr.move.pub_now(pose_list[0])
+def get_nav_pose_for_furniture(room_iri=arena, furniture_class=f"", furniture_name=f"Name"):
+    # todo ensure '' are set for knowrob
+    knowrob_poses_list = setup_demo.kb.prolog_client.all_solutions(f"has_type(Obj, soma:'DesignedFurniture'), "
+                                                                   f"has_type(Room, '{room_iri}'), "
+                                                                   f"is_inside_of(Obj, Room), "
+                                                                   f"furniture_rel_pose(Obj, 'perceive', Pose),"
+                                                                   f"has_robocup_name(Obj, {furniture_name}).")
+    poses_list = []
+    for p in knowrob_poses_list:
+        for item in p.get('Pose'):
+            pose = utils.lpose_to_pose_stamped(item)
+            # transform into map frame
+            pose = setup_demo.tf_listener.transformPose("map", pose)
+            # item[p.get('Name')] = pose # TODO make this a class so that you have KnowRobName, Pos1, Pos2, and other stuff
+            poses_list.append(pose)
+    return poses_list
+
 
 def test_queries():
     setup_demo.kb.prolog_client.once("findall(Room, has_type(Room, soma:'Room'), RoomList).")
