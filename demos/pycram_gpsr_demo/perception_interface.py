@@ -60,6 +60,9 @@ def test_pc():
     print(result.res[0].type)
 
 
+def test_lookat(pose):
+    with real_robot:
+        LookAtAction(targets=[pose]).resolve().perform()
 
 # this would be the designator way, which we are currently not using since it is slow
 #def test_perception():

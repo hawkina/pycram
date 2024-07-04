@@ -4,6 +4,8 @@ import rospy
 import demos.pycram_gpsr_demo.utils as utils
 import tf
 
+from pycram.pose import Pose
+
 # available rooms iri types
 kitchen = 'http://www.ease-crc.org/ont/SOMA.owl#Kitchen'
 living_room = 'http://www.ease-crc.org/ont/SUTURO.owl#LivingRoom'
@@ -39,17 +41,20 @@ def get_room_entry_pose(Room):
     return pose
 
 
-def get_navigation_pose_for_all_tables_in_room(room_iri):
+# TODO WIP
+def get_navigation_pose_for_all_tables_in_room(room_iri, obj_name='p_table'):
     knowrob_poses_list = setup_demo.kb.prolog_client.all_solutions(f"has_type(Obj, soma:'Table'), "
                                                                    f"has_type(Room, '{room_iri}'), "
                                                                    f"is_inside_of(Obj, Room), "
-                                                                   f"furniture_rel_pose(Obj, 'perceive', Pose).")
+                                                                   f"furniture_rel_pose(Obj, 'perceive', Pose),"
+                                                                   f"has_robocup_name(Obj, '{obj_name}').")
     poses_list = []
     for p in knowrob_poses_list:
         for item in p.get('Pose'):
             pose = utils.lpose_to_pose_stamped(item)
             # transform into map frame
             pose = setup_demo.tf_listener.transformPose("map", pose)
+            # item[p.get('Name')] = pose # TODO make this a class so that you have KnowRobName, Pos1, Pos2, and other stuff
             poses_list.append(pose)
     return poses_list
 
@@ -97,3 +102,6 @@ def test_queries():
 # from pycram.ros.viz_marker_publisher import ManualMarkerPublisher
 # marker = ManualMarkerPublisher()
 # marker.publish(Pose.from_pose_stamped(human_p))
+
+
+
