@@ -6,17 +6,17 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 move_client = None
 
 
-def interrupt():
-    global move_client
-    move_client.cancel_all_goals()
-
 class PoseNavigator():
     def __init__(self):
         global move_client
-
-        self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
-        self.client.wait_for_server()
+        self.client = actionlib.SimpleActionClient('move_base/goal', MoveBaseAction)
         move_client = self.client
+
+    def init_navigation(self):
+        if self.client.wait_for_server():
+            rospy.loginfo("[Navi] Waiting for action server...")
+        else:
+            rospy.loginfo("[Navi] Ready.")
 
     def interrupt(self):
         self.client.cancel_all_goals()
@@ -35,3 +35,12 @@ class PoseNavigator():
             rospy.signal_shutdown("Action server not available!")
         else:
             return self.client.get_result()
+
+
+def interrupt():
+    global move_client
+    move_client.cancel_all_goals()
+
+def test():
+    global move
+    move = actionlib.SimpleActionClient('/move_base', MoveBaseAction)
