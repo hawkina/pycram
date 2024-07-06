@@ -10,9 +10,10 @@ from pycram.pose import Pose
 kitchen = 'http://www.ease-crc.org/ont/SOMA.owl#Kitchen'
 living_room = 'http://www.ease-crc.org/ont/SUTURO.owl#LivingRoom'
 arena = 'http://www.ease-crc.org/ont/SUTURO.owl#Arena'
+rooms = {'kitchen': kitchen, 'living_room': living_room, 'arena': arena}
 
 
-def init_knowrob():
+def init_knowrob(): # works
     retry = 7
     while (not setup_demo.kb.is_connected) and retry > 0:
         rospy.loginfo(f"[CRAM-KNOW] Waiting for knowrob connection... {retry} retries left.")
@@ -22,8 +23,7 @@ def init_knowrob():
     rospy.loginfo("[CRAM-KNOW] Connected.")
 
 
-def get_obj_instance_of_type(type_iri):
-    # TODO test - works
+def get_obj_instance_of_type(type_iri): # test
     # returns the instance of smth given the type iri. e.g. 'http://www.ease-crc.org/ont/SUTURO.owl#LivingRoom'
     tmp = setup_demo.kb.prolog_client.once(f"has_type(Instance, '{type_iri}').")
     if tmp is []:
@@ -35,46 +35,91 @@ def get_obj_instance_of_type(type_iri):
         return tmp
 
 
-def get_room_entry_pose(Room):
-    result = setup_demo.kb.prolog_client.once(f"entry_pose('{Room}', PoseStamped).")
-    pose = utils.kpose_to_pose_stamped(result)
-    return pose
+# room = 'kitchen' but iri will get matched from knowrob
+def get_room_entry_pose_class(room):  # works
+    if rooms.get(room):
+        result = setup_demo.kb.prolog_client.once(f"has_type(Room, '{rooms.get(room)}'), entry_pose(Room, PoseStamped).")
+        if result is None or result == []:
+            rospy.logerr(f"[KnowRob] No entry pose for {room} found. :(")
+            return None
+        pose = utils.lpose_to_pose_stamped(result)
+        return pose
+    else:
+        rospy.logerr(f"[KnowRob] No Room with name {room} found. :(")
+        return None
 
 
-# TODO WIP
-def get_navigation_pose_for_all_tables_in_room(room_iri, obj_name='p_table'):
+# room = 'kitchen'
+# entry_or_exit = 'entry' | 'exit' > those are two different knowrob queries
+def get_room_pose(room, entry_or_exit='entry'):  # Works
+    if rooms.get(room):
+        result = setup_demo.kb.prolog_client.once(f"{entry_or_exit}_pose('{room}', PoseStamped).")
+        if result is None or result == []:
+            rospy.logerr(f"[KnowRob] No entry pose for {room} found. :(")
+            return None
+        pose = utils.lpose_to_pose_stamped(result.get('PoseStamped'))
+        return pose
+    else:
+        rospy.logerr(f"[KnowRob] No Room with name {room} found. :(")
+        return None
+
+
+# room = 'kitchen'
+# obj_name = 'p_table' | robocup Name
+# result: list of dicts. accessible like: res[0].get('Item').get('room')
+# NOTE the result can contain multiple poses if the table is large enough to require this
+def get_navigation_poses_for_all_tables_in_room(room='arena', obj_name=None):  # works
+    if rooms.get(room):
+        room_iri = rooms.get(room)
+    else:
+        rospy.logerr(f"[KnowRob] unknown room with name {room}.")
+        return None
+    if obj_name is not None:
+        obj_name = "'%s'" % obj_name
+    else:
+        obj_name = 'Name'
     knowrob_poses_list = setup_demo.kb.prolog_client.all_solutions(f"has_type(Obj, soma:'Table'), "
                                                                    f"has_type(Room, '{room_iri}'), "
                                                                    f"is_inside_of(Obj, Room), "
                                                                    f"furniture_rel_pose(Obj, 'perceive', Pose),"
-                                                                   f"has_robocup_name(Obj, '{obj_name}').")
+                                                                   f"has_robocup_name(Obj, {obj_name}).")
     poses_list = []
-    for p in knowrob_poses_list:
-        for item in p.get('Pose'):
-            pose = utils.lpose_to_pose_stamped(item)
-            # transform into map frame
-            pose = setup_demo.tf_listener.transformPose("map", pose)
-            # item[p.get('Name')] = pose # TODO make this a class so that you have KnowRobName, Pos1, Pos2, and other stuff
-            poses_list.append(pose)
+    if knowrob_poses_list:
+        poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
+    else:
+        rospy.logerr("[KnowRob] query returned empty :(")
     return poses_list
+
 
 # for testing: pose_list = gpsr.get_nav_pose_for_furniture(furniture_name=f'p_table')
 # for testing: gpsr.move.pub_now(pose_list[0])
-def get_nav_pose_for_furniture(room_iri=arena, furniture_class=f"", furniture_name=f"Name"):
-    # todo ensure '' are set for knowrob
-    knowrob_poses_list = setup_demo.kb.prolog_client.all_solutions(f"has_type(Obj, soma:'DesignedFurniture'), "
+# works: but might need more test-ing
+def get_nav_poses_for_furniture_item(room='arena', furniture_class=None, furniture_name=f"Name"):  # works
+    # unless another class is specified, ensure soma:'DesignedFurniture' is the default
+    if furniture_class is not None:
+        # ensure correct formatting
+        if "'" not in furniture_class:
+            furniture_class = f"{furniture_class.split(':', 1)[0]}:'{furniture_class.split(':', 1)[1]}'"
+    else:
+        furniture_class = f"soma:'DesignedFurniture'"
+    # ensure room exists
+    if rooms.get(room):
+        room_iri = rooms.get(room)
+    else:
+        rospy.logerr(f"[KnowRob] unknown room with name {room}.")
+        return None
+
+    knowrob_poses_list = setup_demo.kb.prolog_client.all_solutions(f"has_type(Obj, {furniture_class}), "
                                                                    f"has_type(Room, '{room_iri}'), "
                                                                    f"is_inside_of(Obj, Room), "
                                                                    f"furniture_rel_pose(Obj, 'perceive', Pose),"
-                                                                   f"has_robocup_name(Obj, {furniture_name}).")
+                                                                   f"has_robocup_name(Obj, {furniture_name}),"
+                                                                   f"has_robocup_name(Obj, Name).")  # CHANGE find a prettier way?
     poses_list = []
-    for p in knowrob_poses_list:
-        for item in p.get('Pose'):
-            pose = utils.lpose_to_pose_stamped(item)
-            # transform into map frame
-            pose = setup_demo.tf_listener.transformPose("map", pose)
-            # item[p.get('Name')] = pose # TODO make this a class so that you have KnowRobName, Pos1, Pos2, and other stuff
-            poses_list.append(pose)
+    if knowrob_poses_list:
+        poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
+    else:
+        rospy.logerr("[KnowRob] query returned empty :(")
     return poses_list
 
 
@@ -121,6 +166,3 @@ def test_queries():
 # from pycram.ros.viz_marker_publisher import ManualMarkerPublisher
 # marker = ManualMarkerPublisher()
 # marker.publish(Pose.from_pose_stamped(human_p))
-
-
-

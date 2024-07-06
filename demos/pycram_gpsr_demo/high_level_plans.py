@@ -7,6 +7,7 @@ from std_msgs.msg import String
 import demos.pycram_gpsr_demo.setup_demo as setup_demo
 from pycram.utilities.robocup_utils import StartSignalWaiter
 from demos.pycram_gpsr_demo.knowrob_interface import KnowrobKnowledge
+from demos.pycram_gpsr_demo import perception_interface
 import demos.pycram_gpsr_demo.utils as utils
 from stringcase import snakecase
 
@@ -15,11 +16,12 @@ from stringcase import snakecase
 
 
 # navigate the robot to LOCATION
-def moving_to(param_json):
-    # ToDo: test - works
+def moving_to(param_json):  # test
+    # ToDo: test
+    global with_real_robot
     rospy.loginfo("[CRAM] MovingTo plan." + str(param_json))
     # get room pose from knowrob
-    room_name = snakecase(str(param_json.get('from-location').lower()))  # ToDo: this should be to-location or smth else
+    room_name = snakecase(param_json.get('Destination').get('value').lower())
     k_pose = setup_demo.kb.prolog_client.once(f"entry_pose('{room_name}', [Frame, Pose, Quaternion]).")
 
     if k_pose == [] or k_pose is None:
@@ -30,18 +32,27 @@ def moving_to(param_json):
     pose = utils.kpose_to_pose_stamped(k_pose)
     rospy.loginfo(f"[CRAM] Going to {room_name} Pose : " + str(pose))
     setup_demo.tts.pub_now("Going to the " + room_name)
-    setup_demo.move.pub_now(pose)
+    if setup_demo.with_real_robot:
+        setup_demo.move.pub_now(pose)
     setup_demo.tts.pub_now("[CRAM] done")
     # ToDo: does it always make sense to use enter pose?
 
 
-
-
 # also finding + searching
-def looking_for(param_json):
+def looking_for(param_json): # WIP
     setup_demo.tts.pub_now("in looking for plan")
     rospy.loginfo("Looking For: " + str(param_json))
+    physical_place, physical_artifact = None, None
     # step 0: go to the requested room - if it was mentioned explicitly OR
+    if param_json.get('Location') and param_json.get('Location').get('entity') == 'PhysicalPlace':
+        physical_place = snakecase(param_json.get('Location').get('value'))
+    if param_json.get('Destination') and param_json.get('Destination').get('entity') == 'PhysicalArtifact':
+        physical_artifact = param_json.get('Destination').get('value')
+    # make msg for perception
+    rk_msg = perception_interface.make_robokudo_obj_msg(param_json.get('Item'))
+    # get navigation pose from knowrob depending on what info is known
+
+
     # step 1: go to the furniture/surface item that got mentioned and look on it for the specified obj
 
 
@@ -56,8 +67,28 @@ def placing(param_json):
 
 
 def fetching(param_json):
+    # go to a target location, pick up object, bring it back
     setup_demo.tts.pub_now("in fetching plan")
     rospy.loginfo("fetching: " + str(param_json))
+    # BeneficiaryRole: target
+    if param_json.get('BeneficiaryRole').get('entity') == 'NaturalPerson':
+        # Goal is natural pearson. Means we need to HRI
+        # if person is 'me', save current pose and person name
+        if param_json.get('BeneficiaryRole').get('value') == 'me': # or part of a list of names?
+            # save current pose
+            me_pose = setup_demo.tf_listener.lookupTransform(target_frame='map', source_frame='base_link', time=rospy.get_time())
+            # alternatively, try to memorize the human person from perception? ... uff
+            person = 'you'
+    # go to the destination to pick the obj
+    # --- Step 1 ---
+    # get the pose of 'PhysicalPlace' = 'Room' (if available) CHANGE (Potentially)
+    if param_json.get('Destination').get('entity') == 'PhysicalPlace':
+        physical_place = param_json.get('Destination').get('value')  # CHANGE this actually should be Origin
+
+    # perceive obj
+    # TODO WIP
+
+
 
 
 def cleaning(param_json):
@@ -68,6 +99,7 @@ def cleaning(param_json):
 def transporting(param_json):
     setup_demo.tts.pub_now("in transporting plan")
     rospy.loginfo("transporting: " + str(param_json))
+    # from BeneficiaryRole
 
 
 def arranging(param_json):
