@@ -9,7 +9,7 @@ move_client = None
 class PoseNavigator():
     def __init__(self):
         global move_client
-        self.client = actionlib.SimpleActionClient('move_base/goal', MoveBaseAction)
+        self.client = actionlib.SimpleActionClient('move_base/move/goal', MoveBaseAction)
         move_client = self.client
 
     def init_navigation(self):
