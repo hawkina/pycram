@@ -1,5 +1,5 @@
 # TODO: import only specific functions. For testing, doesn't matter
-
+from .objects import *
 from .utils import *
 from .nlp_processing import *
 from .knowrob_interface import *

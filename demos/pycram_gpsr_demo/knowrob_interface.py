@@ -178,6 +178,8 @@ def test_queries():
     kb.prolog_client.all_solutions(f"predefined_destination_location(X, Y).")
     # get all fruits
     kb.prolog_client.all_solutions(f"subclass_of(X, 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupFruits').")
+    # get obj of that instance by name
+    kb.prolog_client.all_solutions(f"what_object('living room', Obj), instance_of(Inst, Obj).")
 
     # drop databases
     # kb.prolog_client.all_solutions("drop_graph(user), tf_mem_clear, mng_drop(roslog, tf).")

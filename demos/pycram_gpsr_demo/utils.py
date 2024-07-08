@@ -7,6 +7,7 @@ from typing import Callable
 
 tf_listener = tf.listener.TransformListener()
 colors = mcolors.cnames
+objects_path = 'demos/pycram_gpsr_demo/objects.py'
 
 
 # generate a list of all plans instead of having to hardcode them
@@ -54,12 +55,11 @@ def lpose_to_pose_stamped(list_pose):  # works
         return pose
     except IndexError or ValueError:
         rospy.logerr("[UTILS]: Got empty pose for conversion.")
-        return Pose() # identity pose
+        return Pose()  # identity pose
 
 
-def cond_pairs(cond: bool, pairs: Callable[[], dict],) -> dict:
+def cond_pairs(cond: bool, pairs: Callable[[], dict], ) -> dict:
     return pairs() if cond else {}
-
 
 
 def knowrob_poses_result_to_list_dict(knowrob_output):  # works
@@ -72,11 +72,11 @@ def knowrob_poses_result_to_list_dict(knowrob_output):  # works
             # make sure only fields with data are filled
             # maybeh add more fields if needed
             poses_list.append({'Item': {k: v for k, v in {
-                                        'value': item.get('Obj'),
-                                        'name': item.get('Name'),
-                                        'link': raw_pose[0],
-                                        'room': item.get('Room'),
-                                        'pose': pose}.items() if v is not None}})
+                'value': item.get('Obj'),
+                'name': item.get('Name'),
+                'link': raw_pose[0],
+                'room': item.get('Room'),
+                'pose': pose}.items() if v is not None}})
     return poses_list
 
 
@@ -92,3 +92,19 @@ def find_color(attribute_list):  # works
     return ['', attribute_list]
 
 
+# for autogenerate a dict of knowledge objects from a file
+def autogenerate_dict_from_file(file_path):
+    ontology_dict = {}
+    with open(file_path, 'r') as file:
+        for line in file:
+            # Assuming each line is in the format variable_name = 'ontology_URI'
+            parts = line.strip().split(' = ')
+            if len(parts) == 2:
+                key = parts[0].strip().strip("'")
+                value = parts[1].strip()
+                ontology_dict[key] = value
+    return ontology_dict
+
+
+# autogenerate a dict from all defined objects in the objects.py file
+obj_dict = autogenerate_dict_from_file(objects_path)
