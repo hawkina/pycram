@@ -1,12 +1,12 @@
 import json
 import rospy
 from std_msgs.msg import String
-import demos.pycram_gpsr_demo.setup_demo as setup_demo
-
+#import demos.pycram_gpsr_demo.setup_demo as setup_demo
 from threading import Condition
+from pycram.utilities.robocup_utils import TextToSpeechPublisher
 
 haveNLPOutput = Condition()
-
+tts = TextToSpeechPublisher()
 nlp_pub = rospy.Publisher('/startListener', String, queue_size=10)
 nlp_pub_test = rospy.Publisher('/nlp_test', String, queue_size=10)
 nlp_sub = {}
@@ -33,16 +33,19 @@ def data_cb(data):
     response.append("None")
     callback = True
 
-def whatAmISaying(msg):
+
+def what_am_i_saying(msg):
     global currentSpeech
     if ("" != currentSpeech) and ("" == msg.data):
         with stoppedSpeaking:
             stoppedSpeaking.notify_all()
     currentSpeech=msg.data
-def singMyAngelOfMusic(text):
+
+
+def sing_my_angel_of_music(text):
     rospy.loginfo("SPEAKING: " + text)
     if canSpeak:
-        setup_demo.tts.pub_now(text)
+        tts.pub_now(text)
         with stoppedSpeaking:
             stoppedSpeaking.wait()
 
@@ -54,10 +57,10 @@ def intent_processing(msg):
     #response = msg.data.replace(", ", ",").split(",")
     response = json.loads(msg.data)
     #print(response)
-    if response["intent"] == "affirm":
+    if response["intent"] == "Affirm":
         rospy.loginfo("[NLP] confirmation result: Yes")
         confirm = True
-    elif response["intent"] == "deny":
+    elif response["intent"] == "Deny":
         rospy.loginfo("[NLP] confirmation result: No")
         confirm = False
         todo_plans = []
@@ -76,7 +79,7 @@ def intent_processing(msg):
 def nlp_subscribe():
     global nlp_sub, talk_sub
     nlp_sub = rospy.Subscriber('nlp_out', String, intent_processing)
-    talk_sub = rospy.Subscriber('talking_sentence', String, whatAmISaying)
+    talk_sub = rospy.Subscriber('talking_sentence', String, what_am_i_saying)
     rospy.loginfo("subscriber initialized: " + str(nlp_sub))
 
 
@@ -126,16 +129,16 @@ def confirm_nlp_output(received_output):
         whole_sentence += sentence['sentence']
         whole_sentence += ' '
 
-    singMyAngelOfMusic("I have understood: " + whole_sentence + ".")
-    singMyAngelOfMusic("Please say yes or no, if this is correct or not after the beep.")
+    sing_my_angel_of_music("I have understood: " + whole_sentence + ".")
+    sing_my_angel_of_music("Please say yes or no, if this is correct or not after the beep.")
     nlp_listening()
     rospy.loginfo("[NLP] Confirmation was: " + str(confirm))
     if confirm:
-        singMyAngelOfMusic("Okay. I will go do it.")
+        sing_my_angel_of_music("Okay. I will go do it.")
         confirm = 0
         return True
     else:
-        singMyAngelOfMusic("I am sorry I didn't hear you correctly. Let's try again.")
+        sing_my_angel_of_music("I am sorry I didn't hear you correctly. Let's try again.")
         confirm = 0
         todo_plans = []
         return False
@@ -148,7 +151,7 @@ def listen_to_commands():
     while True:
         if canDisplay:
             setup_demo.image_switch.pub_now(1)
-        singMyAngelOfMusic("Please tell me what to do after the beep.")
+        sing_my_angel_of_music("Please tell me what to do after the beep.")
         # setup_demo.sound_pub.publish_sound_request()
         temp = nlp_listening()
         rospy.loginfo("[NLP] temp: " + str(temp) + "todo_plans:" + str(todo_plans))

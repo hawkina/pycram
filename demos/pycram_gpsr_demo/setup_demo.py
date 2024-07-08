@@ -8,7 +8,7 @@ from pycram.robot_descriptions import robot_description
 from pycram.enums import ObjectType
 from pycram.ros.robot_state_updater import RobotStateUpdater, KitchenStateUpdater
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
-from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, SoundRequestPublisher
+from pycram.utilities.robocup_utils import ImageSwitchPublisher, SoundRequestPublisher
 from . import utils, high_level_plans, knowrob_interface, perception_interface
 from pycram.knowledge.knowrob_knowledge import KnowrobKnowledge
 # import pycram.external_interfaces.giskard_new as giskard
@@ -21,7 +21,6 @@ environment = 0
 rviz = 0
 instruction_point = Pose([1.45, 4.5, 0], [0, 0, 1, 0])
 move = PoseNavigator()
-tts = TextToSpeechPublisher()
 image_switch = ImageSwitchPublisher()
 sound_pub = SoundRequestPublisher()
 kb = KnowrobKnowledge()

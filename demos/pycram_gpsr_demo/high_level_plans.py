@@ -9,6 +9,8 @@ from pycram.utilities.robocup_utils import StartSignalWaiter
 from demos.pycram_gpsr_demo.knowrob_interface import KnowrobKnowledge
 from demos.pycram_gpsr_demo import perception_interface
 import demos.pycram_gpsr_demo.utils as utils
+from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
+
 from stringcase import snakecase
 
 # these are all the high level plans, to which we map the NLP output.
@@ -16,31 +18,31 @@ from stringcase import snakecase
 
 
 # navigate the robot to LOCATION
-def moving_to(param_json):  # test
+def moving_to(param_json):  # WIP Can also be funriture, or a person
     # ToDo: test
     global with_real_robot
     rospy.loginfo("[CRAM] MovingTo plan." + str(param_json))
     # get room pose from knowrob
-    room_name = snakecase(param_json.get('Destination').get('value').lower())
+    room_name = snakecase(param_json.get('DestinationRoom').get('value').lower())
     k_pose = setup_demo.kb.prolog_client.once(f"entry_pose('{room_name}', [Frame, Pose, Quaternion]).")
 
     if k_pose == [] or k_pose is None:
         rospy.loginfo("[CRAM] KnowRob result was empty.")
-        setup_demo.tts.pub_now("I am sorry. I don't know where " + room_name + "is.")  # asking for help would be fun
+        sing_my_angel_of_music("I am sorry. I don't know where " + room_name + "is.")  # asking for help would be fun
         return  # abort mission
     # continue
     pose = utils.kpose_to_pose_stamped(k_pose)
     rospy.loginfo(f"[CRAM] Going to {room_name} Pose : " + str(pose))
-    setup_demo.tts.pub_now("Going to the " + room_name)
+    sing_my_angel_of_music("Going to the " + room_name)
     if setup_demo.with_real_robot:
         setup_demo.move.pub_now(pose)
-    setup_demo.tts.pub_now("[CRAM] done")
+    sing_my_angel_of_music("[CRAM] done")
     # ToDo: does it always make sense to use enter pose?
 
 
 # also finding + searching
 def looking_for(param_json): # WIP
-    setup_demo.tts.pub_now("in looking for plan")
+    sing_my_angel_of_music("in looking for plan")
     rospy.loginfo("Looking For: " + str(param_json))
     physical_place, physical_artifact = None, None
     # step 0: go to the requested room - if it was mentioned explicitly OR
@@ -57,18 +59,18 @@ def looking_for(param_json): # WIP
 
 
 def picking(param_json):
-    setup_demo.tts.pub_now("in picking up plan")
+    sing_my_angel_of_music("in picking up plan")
     rospy.loginfo("Picking: " + str(param_json))
 
 
 def placing(param_json):
-    setup_demo.tts.pub_now("in placing plan")
+    sing_my_angel_of_music("in placing plan")
     rospy.loginfo("Place: " + str(param_json))
 
 
 def fetching(param_json):
     # go to a target location, pick up object, bring it back
-    setup_demo.tts.pub_now("in fetching plan")
+    sing_my_angel_of_music("in fetching plan")
     rospy.loginfo("fetching: " + str(param_json))
     # BeneficiaryRole: target
     if param_json.get('BeneficiaryRole').get('entity') == 'NaturalPerson':
@@ -92,35 +94,35 @@ def fetching(param_json):
 
 
 def cleaning(param_json):
-    setup_demo.tts.pub_now("in cleaning plan")
+    sing_my_angel_of_music("in cleaning plan")
     rospy.loginfo("cleaning: " + str(param_json))
 
 
 def transporting(param_json):
-    setup_demo.tts.pub_now("in transporting plan")
+    sing_my_angel_of_music("in transporting plan")
     rospy.loginfo("transporting: " + str(param_json))
     # from BeneficiaryRole
 
 
 def arranging(param_json):
-    setup_demo.tts.pub_now("in arranging plan")
+    sing_my_angel_of_music("in arranging plan")
     rospy.loginfo("arranging: " + str(param_json))
 
 
 # count obj or person
 def counting(param_json):
-    setup_demo.tts.pub_now("in counting plan")
+    sing_my_angel_of_music("in counting plan")
     rospy.loginfo("count: " + str(param_json))
 
 
 def guiding(param_json):
-    setup_demo.tts.pub_now("in guiding plan")
+    sing_my_angel_of_music("in guiding plan")
     rospy.loginfo("guide: " + str(param_json))
 
 
 # --- utils plans ---
 def track_human():#
-    setup_demo.tts.pub_now("in track human plan")
+    sing_my_angel_of_music("in track human plan")
     # look for a human
     DetectAction(technique='human').resolve().perform()
     # look at guest and introduce
