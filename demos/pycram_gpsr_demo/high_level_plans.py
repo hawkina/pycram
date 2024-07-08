@@ -213,22 +213,22 @@ def tell_day(param_json):  # DONE
     rospy.loginfo("tell day: " + str(param_json))
 
 
-def tell_tomorrow(param_json): # DONE
+def tell_tomorrow(param_json):  # DONE
     sing_my_angel_of_music(llp_tell_stuff.say_tomorrow_day_and_date())
     rospy.loginfo("tell tomorrow: " + str(param_json))
 
 
-def tell_team_name(param_json): # DONE
+def tell_team_name(param_json):  # DONE
     sing_my_angel_of_music(llp_tell_stuff.say_team_name())
     rospy.loginfo("tell team name: " + str(param_json))
 
 
-def tell_team_country(param_json): # DONE
+def tell_team_country(param_json):  # DONE
     sing_my_angel_of_music(llp_tell_stuff.say_team_country())
     rospy.loginfo("tell team country: " + str(param_json))
 
 
-def tell_team_affiliation(param_json): # DONE
+def tell_team_affiliation(param_json):  # DONE
     sing_my_angel_of_music(llp_tell_stuff.say_team_affiliation())
     rospy.loginfo("tell team affiliation: " + str(param_json))
 
@@ -243,13 +243,13 @@ def tell_birthday(param_json):  # CHANGE?
     rospy.loginfo("tell birthday: " + str(param_json))
 
 
-def tell_from(param_json): # DONE
+def tell_from(param_json):  # DONE
     sing_my_angel_of_music(llp_tell_stuff.say_from())
     rospy.loginfo("tell from: " + str(param_json))
 
 
-def tell_something(param_json):
-    sing_my_angel_of_music("in tell something plan")
+def tell_something(param_json):  # CHANGE adapt tp cute toya stuff
+    sing_my_angel_of_music(llp_tell_stuff.say_something())
     rospy.loginfo("tell something: " + str(param_json))
 
 

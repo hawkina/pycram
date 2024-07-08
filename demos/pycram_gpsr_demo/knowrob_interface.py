@@ -11,21 +11,25 @@ kitchen = 'http://www.ease-crc.org/ont/SOMA.owl#Kitchen'
 living_room = 'http://www.ease-crc.org/ont/SUTURO.owl#LivingRoom'
 arena = 'http://www.ease-crc.org/ont/SUTURO.owl#Arena'
 rooms = {'kitchen': kitchen, 'living_room': living_room, 'arena': arena}
+kb = KnowrobKnowledge()
 
 
 def init_knowrob(): # works
+    global kb
     retry = 7
-    while (not setup_demo.kb.is_connected) and retry > 0:
+#    kb = KnowrobKnowledge()
+    while (not kb.is_connected) and retry > 0:
         rospy.loginfo(f"[CRAM-KNOW] Waiting for knowrob connection... {retry} retries left.")
-        setup_demo.kb.connect()
+        kb.connect()
         rospy.sleep(1)
         retry -= 1
+    kb.prolog_client.all_solutions(f"init_gpsr_2024.")
     rospy.loginfo("[CRAM-KNOW] Connected.")
 
 
 def get_obj_instance_of_type(type_iri): # test
     # returns the instance of smth given the type iri. e.g. 'http://www.ease-crc.org/ont/SUTURO.owl#LivingRoom'
-    tmp = setup_demo.kb.prolog_client.once(f"has_type(Instance, '{type_iri}').")
+    tmp = kb.prolog_client.once(f"has_type(Instance, '{type_iri}').")
     if tmp is []:
         rospy.logwarn(f"[KnowRob] no room instance with iri {type_iri} found.")
         return None
@@ -38,7 +42,7 @@ def get_obj_instance_of_type(type_iri): # test
 # room = 'kitchen' but iri will get matched from knowrob
 def get_room_entry_pose_class(room):  # works
     if rooms.get(room):
-        result = setup_demo.kb.prolog_client.once(f"has_type(Room, '{rooms.get(room)}'), entry_pose(Room, PoseStamped).")
+        result = kb.prolog_client.once(f"has_type(Room, '{rooms.get(room)}'), entry_pose(Room, PoseStamped).")
         if result is None or result == []:
             rospy.logerr(f"[KnowRob] No entry pose for {room} found. :(")
             return None
@@ -53,7 +57,7 @@ def get_room_entry_pose_class(room):  # works
 # entry_or_exit = 'entry' | 'exit' > those are two different knowrob queries
 def get_room_pose(room, entry_or_exit='entry'):  # Works
     if rooms.get(room):
-        result = setup_demo.kb.prolog_client.once(f"{entry_or_exit}_pose('{room}', PoseStamped).")
+        result = kb.prolog_client.once(f"{entry_or_exit}_pose('{room}', PoseStamped).")
         if result is None or result == []:
             rospy.logerr(f"[KnowRob] No entry pose for {room} found. :(")
             return None
@@ -63,6 +67,18 @@ def get_room_pose(room, entry_or_exit='entry'):  # Works
         rospy.logerr(f"[KnowRob] No Room with name {room} found. :(")
         return None
 
+
+def get_room_middle_pose(room):  # Works
+    if rooms.get(room):
+        result = kb.prolog_client.once(f"middle('{room}', PoseStamped).")
+        if result is None or result == []:
+            rospy.logerr(f"[KnowRob] No entry pose for {room} found. :(")
+            return None
+        pose = utils.lpose_to_pose_stamped(result.get('PoseStamped'))
+        return pose
+    else:
+        rospy.logerr(f"[KnowRob] No Room with name {room} found. :(")
+        return None
 
 # room = 'kitchen'
 # obj_name = 'p_table' | robocup Name
@@ -78,7 +94,7 @@ def get_navigation_poses_for_all_tables_in_room(room='arena', obj_name=None):  #
         obj_name = "'%s'" % obj_name
     else:
         obj_name = 'Name'
-    knowrob_poses_list = setup_demo.kb.prolog_client.all_solutions(f"has_type(Obj, soma:'Table'), "
+    knowrob_poses_list = kb.prolog_client.all_solutions(f"has_type(Obj, soma:'Table'), "
                                                                    f"has_type(Room, '{room_iri}'), "
                                                                    f"is_inside_of(Obj, Room), "
                                                                    f"furniture_rel_pose(Obj, 'perceive', Pose),"
@@ -109,7 +125,7 @@ def get_nav_poses_for_furniture_item(room='arena', furniture_class=None, furnitu
         rospy.logerr(f"[KnowRob] unknown room with name {room}.")
         return None
 
-    knowrob_poses_list = setup_demo.kb.prolog_client.all_solutions(f"has_type(Obj, {furniture_class}), "
+    knowrob_poses_list = kb.prolog_client.all_solutions(f"has_type(Obj, {furniture_class}), "
                                                                    f"has_type(Room, '{room_iri}'), "
                                                                    f"is_inside_of(Obj, Room), "
                                                                    f"furniture_rel_pose(Obj, 'perceive', Pose),"
@@ -124,42 +140,48 @@ def get_nav_poses_for_furniture_item(room='arena', furniture_class=None, furnitu
 
 
 def test_queries():
-    setup_demo.kb.prolog_client.once("findall(Room, has_type(Room, soma:'Room'), RoomList).")
-    setup_demo.kb.prolog_client.once("member(X,[1,2,3]).")
-    setup_demo.kb.prolog_client.all_solutions("member(X,[1,2,3]).")
-    setup_demo.kb.prolog_client.all_solutions("entry_pose(Rooms, PoseStamped).")
-    setup_demo.kb.prolog_client.all_solutions("middle(Rooms, PoseStamped).")
-    setup_demo.kb.prolog_client.once("entry_pose('kitchen', PoseStamped).")  # this works!
-    setup_demo.kb.prolog_client.once("entry_pose('kitchen', [Frame, Pose, Quaternion]).")  # this is better
-    setup_demo.kb.prolog_client.all_solutions("grasp_pose(ObjectType, Pose).")  # returns bowl = above
-    setup_demo.kb.prolog_client.all_solutions("has_value(Objname, Property, Value).")
-    setup_demo.kb.prolog_client.all_solutions("predefined_origin_location(Class, OriginLocation).")
-    setup_demo.kb.prolog_client.all_solutions("is_inside_of(Obj, Room).")
+    kb.prolog_client.once("findall(Room, has_type(Room, soma:'Room'), RoomList).")
+    kb.prolog_client.once("member(X,[1,2,3]).")
+    kb.prolog_client.all_solutions("member(X,[1,2,3]).")
+    kb.prolog_client.all_solutions("entry_pose(Rooms, PoseStamped).")
+    kb.prolog_client.all_solutions("middle(Rooms, PoseStamped).")
+    kb.prolog_client.once("entry_pose('kitchen', PoseStamped).")  # this works!
+    kb.prolog_client.once("entry_pose('kitchen', [Frame, Pose, Quaternion]).")  # this is better
+    kb.prolog_client.all_solutions("grasp_pose(ObjectType, Pose).")  # returns bowl = above
+    kb.prolog_client.all_solutions("has_value(Objname, Property, Value).")
+    kb.prolog_client.all_solutions("predefined_origin_location(Class, OriginLocation).")
+    kb.prolog_client.all_solutions("is_inside_of(Obj, Room).")
     # iris ändern sich bei jedem launch
-    setup_demo.kb.prolog_client.all_solutions(
+    kb.prolog_client.all_solutions(
         "tf:tf_get_pose('http://www.ease-crc.org/ont/SOMA.owl#Table_WDOVGYLZ', ['map', Pos, Rot]).")
-    setup_demo.kb.prolog_client.all_solutions(
+    kb.prolog_client.all_solutions(
         "tf:tf_get_pose('http://www.ease-crc.org/ont/SOMA.owl#Table_WDOVGYLZ', ['map', Pos, Rot]).")
-    setup_demo.kb.prolog_client.all_solutions(
+    kb.prolog_client.all_solutions(
         "has_type(Table, 'http://www.ease-crc.org/ont/SOMA.owl#DesignedHandle'), is_inside_of(Table,Room), has_type(Room, suturo:'LivingRoom'), object_rel_pose(Table, 'perceive', Pose).")
     # check for navigation pose to furniture for e.g. searching
-    setup_demo.kb.prolog_client.all_solutions(
+    kb.prolog_client.all_solutions(
         "has_type(Obj, 'http://www.ease-crc.org/ont/SOMA.owl#DesignedFurniture').")  # returns the instances of obj currently present
-    setup_demo.kb.prolog_client.all_solutions(
+    kb.prolog_client.all_solutions(
         "triple(Obj, P, 'http://www.ease-crc.org/ont/SOMA.owl#DesignedFurniture').")  # returns the class names
     # get all obj of type table and their robocup names
-    setup_demo.kb.prolog_client.all_solutions(
+    kb.prolog_client.all_solutions(
         "has_type(Obj, soma:'Table'), triple(Obj, suturo:'hasRobocupName', Result).")
     # all semantic map items
-    setup_demo.kb.prolog_client.all_solutions("has_urdf_name(Furniture, UrdfLink).")
+    kb.prolog_client.all_solutions("has_urdf_name(Furniture, UrdfLink).")
     # all robocup item names
-    setup_demo.kb.prolog_client.all_solutions("has_robocup_name(Furniture, RobocupName).")
+    kb.prolog_client.all_solutions("has_robocup_name(Furniture, RobocupName).")
     # gets all shelf layers
-    setup_demo.kb.prolog_client.all_solutions("has_type(Obj, suturo:'ShelfLayer').")
+    kb.prolog_client.all_solutions("has_type(Obj, suturo:'ShelfLayer').")
+    # get predefined location
+    kb.prolog_client.all_solutions(f"predefined_origin_location(X, Y).")
+    # get predifined destination
+    kb.prolog_client.all_solutions(f"predefined_destination_location(X, Y).")
+    # get all fruits
+    kb.prolog_client.all_solutions(f"subclass_of(X, 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupFruits').")
 
     # drop databases
-    # setup_demo.kb.prolog_client.all_solutions("drop_graph(user), tf_mem_clear, mng_drop(roslog, tf).")
-    # setup_demo.kb.prolog_client.all_solutions(f"reset_user_data.")
+    # kb.prolog_client.all_solutions("drop_graph(user), tf_mem_clear, mng_drop(roslog, tf).")
+    # kb.prolog_client.all_solutions(f"reset_user_data.")
 
 # debugging:
 # importlib.reload(gpsr)

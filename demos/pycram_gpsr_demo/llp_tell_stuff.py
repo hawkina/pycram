@@ -45,15 +45,18 @@ def say_team_name():
     spoken_team_name = f"We are {team_name}. Suturo stands for sudo tidy up my kitchen."
     return spoken_team_name
 
+
 def say_team_country():
     team_country = "Bremen, Germany"
     spoken_team_country = f"We are from {team_country}."
     return spoken_team_country
 
+
 def say_team_affiliation():
     team_affiliation = "Institute of Artificial Intelligence at the University of Bremen"
     spoken_team_affiliation = f"We are affiliated with the {team_affiliation}."
     return
+
 
 def say_day_of_week():
     # Get today's date
@@ -70,10 +73,12 @@ def say_birthday():
     spoken_birthdate = f"I started my journey with SUTURO on the  {birthdate}, so I would consider that my birthday."
     return spoken_birthdate
 
+
 def say_from():
     from_current = "Bremen, Germany"
     spoken_from = f"I was born in Japan, but I am now living in  {from_current}."
     return spoken_from
+
 
 def say_something():
     facts = [
@@ -85,4 +90,3 @@ def say_something():
         "There's a robot that can solve a Rubik's cube in less than a second."
     ]
     return random.choice(facts)
-

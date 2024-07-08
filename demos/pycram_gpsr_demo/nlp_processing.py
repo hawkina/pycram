@@ -150,7 +150,8 @@ def listen_to_commands():
     global response, todo_plans
     while True:
         if canDisplay:
-            setup_demo.image_switch.pub_now(1)
+            #setup_demo.image_switch.pub_now(1) # CHANGE or FIX
+            rospy.loginfo("[CRAM] displaying")
         sing_my_angel_of_music("Please tell me what to do after the beep.")
         # setup_demo.sound_pub.publish_sound_request()
         temp = nlp_listening()
