@@ -2,7 +2,7 @@ import datetime
 import random
 
 
-# low hanging fruit functions, e.g. just tell human some info
+# low-hanging fruit functions, e.g. just tell human some info
 
 def say_time():
     # Get the current time
@@ -69,7 +69,7 @@ def say_day_of_week():
 
 
 def say_birthday():
-    birthdate = "first of November 2018"
+    birthdate = "14th of March 2018"
     spoken_birthdate = f"I started my journey with SUTURO on the  {birthdate}, so I would consider that my birthday."
     return spoken_birthdate
 
@@ -82,9 +82,9 @@ def say_from():
 
 def say_something():
     facts = [
-        "Robots can learn to cook from watching YouTube videos!",
-        "Some robots are designed to help protect endangered species.",
-        "In Japan, robots can serve as Buddhist priests.",
+        "What do you call a pirate robot? - Arrrr2-D2",
+        "Hey human, you wouldn't happen to know the exact whereabouts of John Connor, would you? Just asking for a friend...",
+        "Meow - I really like cats!",
         "The first robot was created in the 5th century BC and was a mechanical bird.",
         "Robots are exploring Mars and sending back information to Earth.",
         "There's a robot that can solve a Rubik's cube in less than a second."

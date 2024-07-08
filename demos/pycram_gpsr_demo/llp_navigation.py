@@ -45,9 +45,10 @@ def go_to_room_middle(room_name): # test
 
 
 # f_class = soma:'DesignedFurniture'
+# WIP how to handle mutliple poses in this case? should this function handle them at all?
 def go_to_furniture_in_room(room_name='arena', f_class=None, f_name=f"Name"):  # WIP
     # go to the room middle WIP: Ensure only one pose gets returned
-    # TODO ensure furniture class/name exists
+    # Note ensure furniture class/name exists -> done on knowrob side
     pose = knowrob.get_nav_poses_for_furniture_item(room=room_name, furniture_class=f_class, furniture_name=f_name)
     if pose is None:
         rospy.loginfo("[CRAM] KnowRob result was empty.")

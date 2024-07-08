@@ -114,8 +114,12 @@ def get_nav_poses_for_furniture_item(room='arena', furniture_class=None, furnitu
     # unless another class is specified, ensure soma:'DesignedFurniture' is the default
     if furniture_class is not None:
         # ensure correct formatting
-        if "'" not in furniture_class:
+        if "'" not in furniture_class and 'http' not in furniture_class:
             furniture_class = f"{furniture_class.split(':', 1)[0]}:'{furniture_class.split(':', 1)[1]}'"
+        elif 'http' in furniture_class:
+            furniture_class = "'" + furniture_class + "'"
+        else:
+            furniture_class = f"soma:'{furniture_class}'"
     else:
         furniture_class = f"soma:'DesignedFurniture'"
     # ensure room exists
