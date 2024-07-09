@@ -34,7 +34,7 @@ with_real_robot = False
 def setup():
     with (real_robot):
         rospy.loginfo("init")
-        global world, robot, environment, rviz, plan_list, giskard, move, tts, image_switch, sound_pub, kb
+        global world, robot, environment, rviz, plan_list, giskard, move, tts, image_switch, sound_pub
         global tf_listener, with_real_robot
         # giskard.init_giskard_interface()
         # giskard.sync_worlds()
@@ -50,7 +50,7 @@ def setup():
 
         environment = Object("environment", ObjectType.ENVIRONMENT, "suturo_lab_version_15.urdf")
         environment_desig = ObjectDesignatorDescription(names=["environment"])
-        kb.connect()
+
         # sync to kitchen and robot
         RobotStateUpdater("/tf", "/hsrb/robot_state/joint_states")
         # KitchenStateUpdater("/tf", "/iai_kitchen/joint_states")

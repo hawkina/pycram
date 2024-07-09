@@ -1,10 +1,12 @@
 import rospy
 from pycram.designators.action_designator import *
-import demos.pycram_gpsr_demo.setup_demo as setup_demo
 from pycram.utilities.robocup_utils import StartSignalWaiter
-from demos.pycram_gpsr_demo import perception_interface, llp_navigation, llp_tell_stuff
+from demos.pycram_gpsr_demo import perception_interface, llp_tell_stuff
+from demos.pycram_gpsr_demo import knowrob_interface as knowrob
+from demos.pycram_gpsr_demo import llp_navigation as navi
 import demos.pycram_gpsr_demo.utils as utils
 from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
+
 
 from stringcase import snakecase
 
@@ -20,64 +22,139 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
     global with_real_robot
     rospy.loginfo("[CRAM] MovingTo plan." + str(param_json))
     # check which fields are filled:
-    is_room, is_furniture, is_person = False, False, False
+    room, furniture, person, furniture_class = None, None, None, None
+    nav_poses = []
+    # get all parameters
     if param_json.get('Destination') is not None:
-        is_furniture = True
+        # ensure furniture obj exists
+        furniture = param_json.get('Destination').get('value').lower()
+        if knowrob.check_existence_of_instance(snakecase(furniture)):
+            rospy.loginfo(f"[CRAM] found instance of furniture item " + furniture)
+            furniture = snakecase(furniture)
+        # if instance does not exist,check if class does ?
+        elif knowrob.check_existence_of_class(furniture):
+            rospy.loginfo("[CRAM] found class of furniture item " + furniture)
+            furniture_class = knowrob.check_existence_of_class(furniture)[0].get('Class')
+            furniture = False
+        elif utils.obj_dict.get(furniture) is not None:
+            furniture = utils.obj_dict.get(furniture)
+            rospy.loginfo("[CRAM] Fallback: of furniture item found in list. item : " + furniture)
+        else:
+            rospy.loginfo("[CRAM] could not find furniture item " + furniture)
+            sing_my_angel_of_music(f"I am sorry. I don't know where {furniture} is.")
+            return None
+
     if param_json.get('DestinationRoom') is not None:
-        is_room = True
+        # ensure room exists
+        if knowrob.rooms.get(snakecase(param_json.get('DestinationRoom').get('value').lower())) is not None:
+            room = param_json.get('DestinationRoom').get('value').lower()
+        else:
+            room = 'arena'
+
     if param_json.get('BeneficiaryRole') is not None:
-        is_person = True
+        person = param_json.get('BeneficiaryRole')
+
+    rospy.logwarn(f"room: {room}, furniture: {furniture}, person: {person}, furniture_class: {furniture_class}")
 
     # --- Cases ---
     # Room + Furniture + Person WIP---------------------------------------
-    if is_room and is_furniture and is_person:
+    if room and furniture and person:
         rospy.loginfo("[CRAM] moving to person at furniture item in room")
+        # TODO
         # go to person at furniture item in room
     # Room + Person WIP---------------------------------------------------
-    elif is_room and is_person:
+    elif room and person:  # DONE one value
         # go to the person in the room
         rospy.loginfo("[CRAM] moving to person in room")
-        llp_navigation.go_to_room_middle(snakecase(param_json.get('DestinationRoom').get('value').lower()))
-        # look for person in room
+        navi.go_to_room_middle(room)
+        # look for person in room TODO ------------------------------------------
 
     # Furniture + Person WIP----------------------------------------------
-    elif is_furniture and is_person:
+    elif furniture and person: # TODO - remove duplicates
         rospy.loginfo("[CRAM] moving to person at furniture item")
-        # go to person at furniture item
-    # Room +  Furniture WIP-----------------------------------------------
-    elif is_room and is_furniture:
+        # can have multiple poses
+        nav_poses = []
+        # try matching furniture name to knowrob obj, if it doesn't exist fall back to class
+        if furniture:
+            nav_poses = knowrob.get_nav_poses_for_furniture_item(furniture_name=furniture)
+        # if instance does not exist,check class?
+        elif furniture_class:
+            if furniture == furniture_class:
+                #  matched knowledge and nlp
+                nav_poses = knowrob.get_nav_poses_for_furniture_item(furniture_name=furniture, furniture_iri=furniture)  # change might get removed
+            else:
+                nav_poses = knowrob.get_nav_poses_for_furniture_item(furniture_iri=furniture_class)
+        # go to person at furniture item TODO ----------------------------------------------------------
+
+    elif room and furniture:  # DONE has multiple poses TODO remove duplicate code
         rospy.loginfo("[CRAM] moving to furniture item in room")
-        llp_navigation.go_to_furniture_in_room(snakecase(param_json.get('DestinationRoom').get('value').lower()),
-                                               snakecase(param_json.get('Destination').get('value')))
+        if furniture:
+            rospy.loginfo(f"[CRAM] found instance of furniture item " + str(furniture))
+            nav_poses = knowrob.get_nav_poses_for_furniture_item(room=room, furniture_name=furniture)
+        # if instance does not exist,check class?
+        elif furniture_class:  # maybeh make this an and?
+            if furniture == furniture_class:
+                #  matched knowledge and nlp
+                nav_poses = knowrob.get_nav_poses_for_furniture_item(room=room, furniture_name=furniture)  # change might get removed
+            else:
+                nav_poses = knowrob.get_nav_poses_for_furniture_item(room=room, furniture_iri=furniture_class)
         # go to furniture item in room
-    # Furniture WIP-------------------------------------------------------
-    elif is_furniture:
+        if nav_poses is not None and nav_poses != []:
+            # go to furniture item
+            navi.go_to_pose(nav_poses[0])
+
+    elif furniture:  # DONE
+        # try matching furniture name to knowrob obj, if it doesn't exist fall back to class
+        if furniture:
+            nav_poses = knowrob.get_nav_poses_for_furniture_item(furniture_name=furniture)
+        # if instance does not exist,check class?
+        elif furniture_class:
+            if furniture == furniture_class:
+                #  matched knowledge and nlp
+                nav_poses = knowrob.get_nav_poses_for_furniture_item(furniture_iri=furniture)
+            else:
+                nav_poses = knowrob.get_nav_poses_for_furniture_item(furniture_iri=furniture_class)
+
+        # try to move -----------------------------------------------
+        if nav_poses is not None and nav_poses != []:
+            # go to furniture item
+            # TODO maybe add more items?
+            navi.go_to_pose(nav_poses[0])
+
+        else:
+            rospy.loginfo("[CRAM] could not find furniture item " + str(param_json.get('Destination').get('value')))
+            sing_my_angel_of_music("I am sorry. I don't know where that is.")
+            return None  # abort mission
+
+        # drive
+        navi.go_to_pose(nav_poses[0])
         rospy.loginfo("[CRAM] moving to furniture item")
         # go to furniture item
-    # Room WIP------------------------------------------------------------
-    elif is_room:
+
+    elif room:  # DONE
+        # has only one pose
         rospy.loginfo("[CRAM] moving to room")
         # go to room
-        llp_navigation.go_to_room_middle(snakecase(param_json.get('DestinationRoom').get('value').lower()))
+        navi.go_to_room_middle(snakecase(param_json.get('DestinationRoom').get('value').lower()))
     # fallback
     else:
         rospy.logerr("[CRAM]: MovingTo plan failed. No valid parameters found.")
 
     # WIP depricated?
-    room_name = snakecase(param_json.get('DestinationRoom').get('value').lower())
-    k_pose = setup_demo.kb.prolog_client.once(f"entry_pose('{room_name}', [Frame, Pose, Quaternion]).")
+    #room_name = snakecase(param_json.get('DestinationRoom').get('value').lower())
+    #k_pose = setup_demo.kb.prolog_client.once(f"entry_pose('{room_name}', [Frame, Pose, Quaternion]).")
 
-    if k_pose == [] or k_pose is None:
-        rospy.loginfo("[CRAM] KnowRob result was empty.")
-        sing_my_angel_of_music("I am sorry. I don't know where " + room_name + "is.")  # asking for help would be fun
-        return  # abort mission
+    #if k_pose == [] or k_pose is None:
+    #    rospy.loginfo("[CRAM] KnowRob result was empty.")
+    #    sing_my_angel_of_music("I am sorry. I don't know where " + room_name + "is.")  # asking for help would be fun
+    #    return  # abort mission
     # continue
-    pose = utils.kpose_to_pose_stamped(k_pose)
-    rospy.loginfo(f"[CRAM] Going to {room_name} Pose : " + str(pose))
-    sing_my_angel_of_music("Going to the " + room_name)
-    if setup_demo.with_real_robot:
-        setup_demo.move.pub_now(pose)
-    sing_my_angel_of_music("[CRAM] done")
+    #pose = utils.kpose_to_pose_stamped(k_pose)
+    #rospy.loginfo(f"[CRAM] Going to {room_name} Pose : " + str(pose))
+    #sing_my_angel_of_music("Going to the " + room_name)
+    #if setup_demo.with_real_robot:
+    #    setup_demo.move.pub_now(pose)
+    #sing_my_angel_of_music("[CRAM] done")
 
 
 # also finding + searching
@@ -117,7 +194,7 @@ def fetching(param_json):
         # if person is 'me', save current pose and person name
         if param_json.get('BeneficiaryRole').get('value') == 'me':  # or part of a list of names?
             # save current pose
-            me_pose = setup_demo.tf_listener.lookupTransform(target_frame='map', source_frame='base_link',
+            me_pose = utils.tf_l.lookupTransform(target_frame='map', source_frame='base_link',
                                                              time=rospy.get_time())
             # alternatively, try to memorize the human person from perception? ... uff
             person = 'you'
