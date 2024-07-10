@@ -1,17 +1,26 @@
 import json
 import rospy
 from std_msgs.msg import String
-import demos.pycram_gpsr_demo.setup_demo as setup_demo
+#import demos.pycram_gpsr_demo.setup_demo as setup_demo
+from threading import Condition
+from pycram.utilities.robocup_utils import TextToSpeechPublisher
 
+haveNLPOutput = Condition()
+tts = TextToSpeechPublisher()
 nlp_pub = rospy.Publisher('/startListener', String, queue_size=10)
 nlp_pub_test = rospy.Publisher('/nlp_test', String, queue_size=10)
 nlp_sub = {}
+talk_sub={}
 response = ""
 callback = False
 doorbell = False
 confirm = {}
 todo_plans = []
-
+currentSpeech=""
+stoppedSpeaking = Condition()
+canSpeak = True
+canListen = True
+canDisplay = False
 
 # might be deprecated?
 def data_cb(data):
@@ -25,35 +34,52 @@ def data_cb(data):
     callback = True
 
 
+def what_am_i_saying(msg):
+    global currentSpeech
+    if ("" != currentSpeech) and ("" == msg.data):
+        with stoppedSpeaking:
+            stoppedSpeaking.notify_all()
+    currentSpeech=msg.data
+
+
+def sing_my_angel_of_music(text):
+    rospy.loginfo("SPEAKING: " + text)
+    if canSpeak:
+        tts.pub_now(text)
+        with stoppedSpeaking:
+            stoppedSpeaking.wait()
+
+
 # This is the function that processes/filters the NLP result
 def intent_processing(msg):
     # convert result into json array for easier access. e.g. response["person-name"] would return 'me'
-    global response, todo_plans, confirm
-    response = msg.data.replace(", ", ",").split(",")
-    print(response)
-    if response[0] == "<CONFIRM>":
-        if response[1] == "True":
-            rospy.loginfo("[NLP] result: Yes")
-            confirm = True
-            return True
-        else:
-            rospy.loginfo("[NLP] result: No")
-            confirm = False
-            todo_plans = []
-            return False
+    global response, todo_plans, confirm, haveNLPOutput
+    #response = msg.data.replace(", ", ",").split(",")
+    response = json.loads(msg.data)
+    #print(response)
+    if response["intent"] == "Affirm":
+        rospy.loginfo("[NLP] confirmation result: Yes")
+        confirm = True
+    elif response["intent"] == "Deny":
+        rospy.loginfo("[NLP] confirmation result: No")
+        confirm = False
+        todo_plans = []
     else:
-        # TODO replace with just json_loads
-        response = msg.data.replace(": ", ":").replace("'", "\"")  # formatting for making json
-        response = json.loads(response)
+        print("XXXXXXXXXXXXXXXXXXXXX ", len(todo_plans))
         todo_plans.append(response)
         rospy.loginfo("Got Data from NLP: " + str(todo_plans))
         response = "None"
-
+    with haveNLPOutput:
+        rospy.loginfo("NLP Callback sent notification.")
+        haveNLPOutput.notifyAll()
+    #if response["intent"] in ["Agreement", "Disagreement"]:
+    #    return confirm
 
 # create a subscriber to the /nlp_out topic on which the result from NLP is published
 def nlp_subscribe():
-    global nlp_sub
+    global nlp_sub, talk_sub
     nlp_sub = rospy.Subscriber('nlp_out', String, intent_processing)
+    talk_sub = rospy.Subscriber('talking_sentence', String, what_am_i_saying)
     rospy.loginfo("subscriber initialized: " + str(nlp_sub))
 
 
@@ -64,12 +90,13 @@ def nlp_unsubscribe():
     rospy.loginfo("nlp unsubscribed: " + str(nlp_sub))
 
 
-def test_nlp_string_based():
+def test_nlp_string_based(text=None):
+    if text is None:
+        text = "bring me the red apple from the kitchen."  # and then look for all red cups in the kitchen.
     global response, todo_plans
     rospy.loginfo("test nlp")
-    test_string = "bring me the red apple from the kitchen."  # and then look for all red cups in the kitchen.
-    rospy.loginfo(test_string)
-    nlp_pub_test.publish(test_string)
+    rospy.loginfo(text)
+    nlp_pub_test.publish(text)
     rospy.loginfo("ToDo plans: " + str(todo_plans))
     return todo_plans
 
@@ -79,12 +106,15 @@ def nlp_listening():
     # connect to global vars
     global callback, response, nlp_sub, todo_plans
     # start actually listening
-    nlp_pub.publish("start listening")  # initialize listening
+    if canListen:
+        nlp_pub.publish("start listening")  # initialize listening
 
     # setup_demo.sound_pub.publish_sound_request()  # beep
     rospy.loginfo("waiting for a message...")
-    rospy.wait_for_message('nlp_out', String, timeout=20)
-
+    #rospy.wait_for_message('nlp_out', String, timeout=20)
+    with haveNLPOutput:
+        haveNLPOutput.wait(30)
+    rospy.loginfo("NLP data notification received.")
     # process output from NLP
     rospy.loginfo("message received. todo_plans: " + str(todo_plans))
     return todo_plans
@@ -99,18 +129,16 @@ def confirm_nlp_output(received_output):
         whole_sentence += sentence['sentence']
         whole_sentence += ' '
 
-    setup_demo.tts.pub_now("I have understood: " + whole_sentence + ".")
-    rospy.sleep(2)
-    setup_demo.tts.pub_now("Please say yes or no, if this is correct or not after the beep.")
-    rospy.sleep(3)
+    sing_my_angel_of_music("I have understood: " + whole_sentence + ".")
+    sing_my_angel_of_music("Please say yes or no, if this is correct or not after the beep.")
     nlp_listening()
     rospy.loginfo("[NLP] Confirmation was: " + str(confirm))
     if confirm:
-        setup_demo.tts.pub_now("Okay. I will go do it.")
+        sing_my_angel_of_music("Okay. I will go do it.")
         confirm = 0
         return True
     else:
-        setup_demo.tts.pub_now("I am sorry I didn't hear you correctly. Let's try again.")
+        sing_my_angel_of_music("I am sorry I didn't hear you correctly. Let's try again.")
         confirm = 0
         todo_plans = []
         return False
@@ -120,15 +148,17 @@ def confirm_nlp_output(received_output):
 def listen_to_commands():
     nlp_subscribe()
     global response, todo_plans
-    setup_demo.tts.pub_now(" Please tell me what to do after the beep.")
-    setup_demo.image_switch.pub_now(1)
-    rospy.sleep(3)
-    # setup_demo.sound_pub.publish_sound_request()
-    temp = nlp_listening()
-    rospy.loginfo("[NLP] temp: " + str(temp) + "todo_plans:" + str(todo_plans))
-    if confirm_nlp_output(temp):
-        rospy.loginfo("[CRAM] do stuff")
-        return todo_plans
-    else:
-        listen_to_commands()
+    while True:
+        if canDisplay:
+            #setup_demo.image_switch.pub_now(1) # CHANGE or FIX
+            rospy.loginfo("[CRAM] displaying")
+        sing_my_angel_of_music("Please tell me what to do after the beep.")
+        # setup_demo.sound_pub.publish_sound_request()
+        temp = nlp_listening()
+        rospy.loginfo("[NLP] temp: " + str(temp) + "todo_plans:" + str(todo_plans))
+        if confirm_nlp_output(temp):
+            break
+    rospy.loginfo("[CRAM] do stuff")
+    nlp_unsubscribe()
+    return todo_plans
 
