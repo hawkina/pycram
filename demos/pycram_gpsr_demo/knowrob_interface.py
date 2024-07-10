@@ -15,6 +15,11 @@ arena = 'http://www.ease-crc.org/ont/SUTURO.owl#Arena'
 rooms = {'kitchen': kitchen, 'living_room': living_room, 'arena': arena}
 kb = KnowrobKnowledge()
 
+#hopefully tmp
+dishes = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupDishes'
+snacks = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupSnacks'
+fruits = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupFruits'
+
 
 def init_knowrob():  # works
     global kb
@@ -133,7 +138,7 @@ def get_nav_poses_for_furniture_item(room='arena', furniture_iri=None, furniture
         rospy.logerr(f"[KnowRob] unknown room with name {room}.")
         return None
     # ensure correct formatting of name
-    if "'" not in furniture_name and furniture_name is not "Name":
+    if "'" not in furniture_name and furniture_name != "Name":
         furniture_name = f"'{furniture_name}'"
 
     print(room, room_iri, furniture_iri, furniture_name)
@@ -178,6 +183,44 @@ def check_existence_of_class(nlp_name):
     else:
         rospy.loginfo(f"[KnowRob] object class {tmp} of type {nlp_name} found")
         return tmp
+
+
+def get_predefined_source_item_location(items_iri):
+    knowrob_poses_list = kb.prolog_client.all_solutions(f"subclass_of(Obj, {items_iri}), "
+                                                        f""f"predefined_origin_location(Obj, Furniture), "
+                                                        f"furniture_rel_pose(Furniture, 'perceive', Pose).")
+    poses_list = []
+    if knowrob_poses_list:
+        poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
+    else:
+        rospy.logerr("[KnowRob] query returned empty :(")
+    return poses_list
+
+
+def get_predefined_destination_item_location(items_iri):
+    knowrob_poses_list = kb.prolog_client.all_solutions(f"subclass_of(Obj, {items_iri}), "
+                                                        f""f"predefined_destination_location(Obj, Furniture), "
+                                                        f"furniture_rel_pose(Furniture, 'perceive', Pose).")
+    poses_list = []
+    if knowrob_poses_list:
+        poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
+    else:
+        rospy.logerr("[KnowRob] query returned empty :(")
+    return poses_list
+
+
+def test_predefined_locations():
+    source_list = []
+    destination_list = []
+    for item in utils.obj_dict.values():
+        get_dest = get_predefined_destination_item_location(item)
+        if get_dest:
+            destination_list.append(get_dest)
+
+        get_source = get_predefined_source_item_location(item)
+        if get_source:
+            source_list.append(get_source)
+    return {'source': source_list, 'destination': destination_list}
 
 
 def test_queries():

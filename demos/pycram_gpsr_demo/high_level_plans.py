@@ -60,18 +60,21 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
     # Room + Furniture + Person WIP---------------------------------------
     if room and furniture and person:
         rospy.loginfo("[CRAM] moving to person at furniture item in room")
+        sing_my_angel_of_music(f"I will go to the {furniture} in {room} to look for a person.")
         # TODO
         # go to person at furniture item in room
     # Room + Person WIP---------------------------------------------------
     elif room and person:  # DONE one value
         # go to the person in the room
         rospy.loginfo("[CRAM] moving to person in room")
+        sing_my_angel_of_music(f"I will go to the {room} and look for the person.")
         navi.go_to_room_middle(room)
         # look for person in room TODO ------------------------------------------
 
     # Furniture + Person WIP----------------------------------------------
     elif furniture and person: # TODO - remove duplicates
         rospy.loginfo("[CRAM] moving to person at furniture item")
+        sing_my_angel_of_music(f"I will go to the {furniture} and look for a person.")
         # can have multiple poses
         nav_poses = []
         # try matching furniture name to knowrob obj, if it doesn't exist fall back to class
@@ -88,6 +91,7 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
 
     elif room and furniture:  # DONE has multiple poses TODO remove duplicate code
         rospy.loginfo("[CRAM] moving to furniture item in room")
+        sing_my_angel_of_music(f"I will go to the {furniture} in {room}.")
         if furniture:
             rospy.loginfo(f"[CRAM] found instance of furniture item " + str(furniture))
             nav_poses = knowrob.get_nav_poses_for_furniture_item(room=room, furniture_name=furniture)
@@ -101,9 +105,10 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
         # go to furniture item in room
         if nav_poses is not None and nav_poses != []:
             # go to furniture item
-            navi.go_to_pose(nav_poses[0])
+            navi.go_to_pose(nav_poses[0].get('pose'))
 
     elif furniture:  # DONE
+        sing_my_angel_of_music(f"I will go to the {furniture}.")
         # try matching furniture name to knowrob obj, if it doesn't exist fall back to class
         if furniture:
             nav_poses = knowrob.get_nav_poses_for_furniture_item(furniture_name=furniture)
@@ -114,12 +119,11 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
                 nav_poses = knowrob.get_nav_poses_for_furniture_item(furniture_iri=furniture)
             else:
                 nav_poses = knowrob.get_nav_poses_for_furniture_item(furniture_iri=furniture_class)
-
         # try to move -----------------------------------------------
         if nav_poses is not None and nav_poses != []:
+            rospy.logwarn("in going to room")
             # go to furniture item
-            # TODO maybe add more items?
-            navi.go_to_pose(nav_poses[0])
+            navi.go_to_pose(nav_poses[0].get('pose'))
 
         else:
             rospy.loginfo("[CRAM] could not find furniture item " + str(param_json.get('Destination').get('value')))
@@ -127,34 +131,20 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
             return None  # abort mission
 
         # drive
-        navi.go_to_pose(nav_poses[0])
-        rospy.loginfo("[CRAM] moving to furniture item")
+        navi.go_to_pose(nav_poses[0].get('pose'))
+        # rospy.loginfo("[CRAM] moving to furniture item")
         # go to furniture item
 
     elif room:  # DONE
         # has only one pose
+        sing_my_angel_of_music(f"I am going to {room}.")
         rospy.loginfo("[CRAM] moving to room")
         # go to room
         navi.go_to_room_middle(snakecase(param_json.get('DestinationRoom').get('value').lower()))
     # fallback
     else:
+        sing_my_angel_of_music(f"I am sorry. I don't know where that is.")
         rospy.logerr("[CRAM]: MovingTo plan failed. No valid parameters found.")
-
-    # WIP depricated?
-    #room_name = snakecase(param_json.get('DestinationRoom').get('value').lower())
-    #k_pose = setup_demo.kb.prolog_client.once(f"entry_pose('{room_name}', [Frame, Pose, Quaternion]).")
-
-    #if k_pose == [] or k_pose is None:
-    #    rospy.loginfo("[CRAM] KnowRob result was empty.")
-    #    sing_my_angel_of_music("I am sorry. I don't know where " + room_name + "is.")  # asking for help would be fun
-    #    return  # abort mission
-    # continue
-    #pose = utils.kpose_to_pose_stamped(k_pose)
-    #rospy.loginfo(f"[CRAM] Going to {room_name} Pose : " + str(pose))
-    #sing_my_angel_of_music("Going to the " + room_name)
-    #if setup_demo.with_real_robot:
-    #    setup_demo.move.pub_now(pose)
-    #sing_my_angel_of_music("[CRAM] done")
 
 
 # also finding + searching

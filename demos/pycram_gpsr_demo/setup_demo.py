@@ -22,7 +22,6 @@ instruction_point = Pose([1.45, 4.5, 0], [0, 0, 1, 0])
 move = PoseNavigator()
 image_switch = ImageSwitchPublisher()
 sound_pub = SoundRequestPublisher()
-#kb = KnowrobKnowledge()
 tf_listener = tf.listener.TransformListener()
 with_real_robot = False
 
@@ -43,7 +42,7 @@ def setup():
         knowrob_interface.init_knowrob()
         rospy.loginfo("init setup")
         world = BulletWorld("DIRECT")
-        rviz = VizMarkerPublisher()
+        #rviz = VizMarkerPublisher()
 
         robot = Object("hsrb", "robot", "../../resources/" + robot_description.name + ".urdf")
         robot_desig = ObjectDesignatorDescription(names=["hsrb"]).resolve()
@@ -56,7 +55,6 @@ def setup():
         RobotStateUpdater("/tf", "/hsrb/robot_state/joint_states")
         KitchenStateUpdater("/tf", "/iai_kitchen/joint_states")
         # giskard.sync_worlds()
-        #move.init_navigation()
 
         rospy.loginfo("done with setup")
 
@@ -84,8 +82,3 @@ def test():
     marker = ManualMarkerPublisher()
     tp = Pose(frame='map', position=[1, 1, 0], orientation=[1, 0, 0, 0])
     marker.publish(tp)
-
-
-# setup() only if launching via pycharm
-# import importlib
-# importlib.reload(gpsr)

@@ -8,7 +8,6 @@ import demos.pycram_gpsr_demo.setup_demo as setup_demo
 from pycram.utilities.robocup_utils import StartSignalWaiter
 from demos.pycram_gpsr_demo import perception_interface
 from demos.pycram_gpsr_demo import knowrob_interface as knowrob
-import demos.pycram_gpsr_demo.utils as utils
 from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
 from stringcase import snakecase
 

@@ -9,7 +9,7 @@ import time
 
 tf_l= tf.listener.TransformListener()
 colors = mcolors.cnames
-objects_path = 'demos/pycram_gpsr_demo/objects.py'
+objects_path = '/home/hawkin/ros/pycram_ws/src/pycram/demos/pycram_gpsr_demo/objects.py'
 
 
 # generate a list of all plans instead of having to hardcode them
@@ -100,7 +100,7 @@ def transform_pose(tf_listener, target_frame, pose_stamped, max_attempts=5, atte
 
 
 
-def knowrob_poses_result_to_list_dict(knowrob_output):  # works
+def knowrob_poses_result_to_list_dict(knowrob_output, nav_or_perc='nav'):  # works
     poses_list = []
     for item in knowrob_output:
         for raw_pose in item.get('Pose'):
@@ -109,7 +109,10 @@ def knowrob_poses_result_to_list_dict(knowrob_output):  # works
             # pose = tf_l.transformPose("map", pose) # issues with time
             pose = transform_pose(tf_l, "map", pose)
             # ensure z is 0
-            pose.pose.position.z = 0
+            if nav_or_perc == 'nav':
+                # make it naviagtion pose by ensuring you remove z
+                pose.pose.position.z = 0
+
             # make sure only fields with data are filled
             # maybeh add more fields if needed
             poses_list.append({'Item': {k: v for k, v in {

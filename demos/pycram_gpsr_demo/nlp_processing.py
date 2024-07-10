@@ -44,6 +44,8 @@ def what_am_i_saying(msg):
 
 def sing_my_angel_of_music(text):
     rospy.loginfo("SPEAKING: " + text)
+    #tts.pub_now(text)
+    # handled on other side now
     if canSpeak:
         tts.pub_now(text)
         with stoppedSpeaking:
@@ -134,7 +136,7 @@ def confirm_nlp_output(received_output):
     nlp_listening()
     rospy.loginfo("[NLP] Confirmation was: " + str(confirm))
     if confirm:
-        sing_my_angel_of_music("Okay. I will go do it.")
+        sing_my_angel_of_music("Okay.")
         confirm = 0
         return True
     else:
