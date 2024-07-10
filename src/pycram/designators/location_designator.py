@@ -346,6 +346,8 @@ class SemanticCostmapLocation(LocationDesignatorDescription):
 
         height_offset = 0
         if self.for_object:
+        height_offset = 0
+        if self.for_object:
             try:
                 min, max = self.for_object.bullet_world_object.get_AABB()
             except AttributeError:
