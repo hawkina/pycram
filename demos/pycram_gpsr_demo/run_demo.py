@@ -5,6 +5,7 @@ import demos.pycram_gpsr_demo.nlp_processing as nlp
 from stringcase import snakecase
 import demos.pycram_gpsr_demo.perception_interface as pc
 from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
+import src.pycram.utilities.gpsr_utils as gpsr_utils
 
 
 # --- main control ---
@@ -47,5 +48,26 @@ def test_gpsr():
     sing_my_angel_of_music(f"I am done with your bs")
 
 
+def test_pick_place():
+    # get 2 move poses
+    with real_robot:
+        shelf_pose = Pose([4.375257854937237, 4.991582584825204, 0.0], [0.0, 0.0, 0, 1])
+        rotated_shelf_pose = Pose([4.375257854937237, 4.991582584825204, 0.0],
+                                  [0.0, 0.0, 0.7220721042045632, 0.6918178057332686])
+        table_pose = Pose([2.862644998141083, 5.046512935221523, 0.0], [0.0, 0.0, 0.7769090622619312, 0.6296128246591604])
+        table_pose_pre = Pose([2.862644998141083, 4.946512935221523, 0.0],
+                              [0.0, 0.0, 0.7769090622619312, 0.6296128246591604])
+
+        move.pub_now(table_pose)
+        gasped_bool, grasp, found_object = gpsr_utils.process_pick_up_objects('cup',  "popcorn_table:p_table:table_front_edge_center")
+        target_pose = gpsr_utils.get_place_poses_for_surface(found_object, 'shelf:shelf:shelf_floor_2')
+        move.pub_now(rotated_shelf_pose)
+        move.pub_now(shelf_pose)
+        if target_pose:
+            gpsr_utils.place(found_object, grasp, target_pose, 'shelf:shelf:shelf_floor_2')
+
+
 # CHANGE CARE THIS STUFF GETS ACTUALLY EXECUTED
 # test_gpsr()
+setup()
+test_pick_place()

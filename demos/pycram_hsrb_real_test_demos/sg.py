@@ -28,6 +28,8 @@ import random
 world = BulletWorld()
 v = VizMarkerPublisher()
 kitchen = Object("kitchen", ObjectType.ENVIRONMENT, "pre_robocup_sg.urdf")
+print(kitchen.name)
+
 kitchen_desig = ObjectDesignatorDescription(names=["kitchen"])
 grasp_listener = GraspListener()
 talk = TextToSpeechPublisher()
