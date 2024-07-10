@@ -18,8 +18,8 @@ confirm = {}
 todo_plans = []
 currentSpeech=""
 stoppedSpeaking = Condition()
-canSpeak = False
-canListen = False
+canSpeak = True
+canListen = True
 canDisplay = False
 
 # might be deprecated?

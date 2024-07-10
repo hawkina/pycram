@@ -36,9 +36,10 @@ def setup():
         rospy.loginfo("init")
         global world, robot, environment, rviz, plan_list, giskard, move, tts, image_switch, sound_pub
         global tf_listener, with_real_robot
+        with_real_robot = True
         # giskard.init_giskard_interface()
         # giskard.sync_worlds()
-        # world = BulletWorld("DIRECT") #rviz only, without any parameters, spawns bullet
+        #world = BulletWorld("DIRECT") #rviz only, without any parameters, spawns bullet
         knowrob_interface.init_knowrob()
         rospy.loginfo("init setup")
         world = BulletWorld("DIRECT")
@@ -53,9 +54,10 @@ def setup():
 
         # sync to kitchen and robot
         RobotStateUpdater("/tf", "/hsrb/robot_state/joint_states")
-        # KitchenStateUpdater("/tf", "/iai_kitchen/joint_states")
+        KitchenStateUpdater("/tf", "/iai_kitchen/joint_states")
         # giskard.sync_worlds()
-        with_real_robot = True
+        #move.init_navigation()
+
         rospy.loginfo("done with setup")
 
 
