@@ -22,7 +22,8 @@ import rosnode
 import atexit
 
 import urdf_parser_py.urdf
-from geometry_msgs.msg import Quaternion, Point, TransformStamped
+from betterpybullet import Vector3
+from geometry_msgs.msg import Quaternion, Point, TransformStamped, PointStamped, PoseStamped
 from urdf_parser_py.urdf import URDF
 
 from . import utils
@@ -60,7 +61,7 @@ class BulletWorld:
 
     # Check is for sphinx autoAPI to be able to work in a CI workflow
     if rosgraph.is_master_online():  # and "/pycram" not in rosnode.get_node_names():
-        rospy.init_node('pycram_hasu')
+        rospy.init_node('pycram_vee')
 
     def __init__(self, type: str = "GUI", is_shadow_world: bool = False):
         """
@@ -244,7 +245,7 @@ class BulletWorld:
         # ToDo find out what this is for and where it is used
         for o in self.objects:
             objects2attached[o] = (o.attachments.copy(), o.cids.copy())
-        return p.saveState(self.client_id), objects2attached
+        return p.saveState(self.client_id)
 
     def restore_state(self, state, objects2attached: Dict = {}) -> None:
         """
@@ -279,7 +280,7 @@ class BulletWorld:
         return world
 
     def add_vis_axis(self, pose: Pose,
-                     length: Optional[float] = 0.2) -> None:
+                     length: Optional[float] = 0.2, z_color: Optional[List] = [0, 0, 1, 0.8]) -> None:
         """
         Creates a Visual object which represents the coordinate frame at the given
         position and orientation. There can be an unlimited amount of vis axis objects.
@@ -297,7 +298,7 @@ class BulletWorld:
         vis_y = p.createVisualShape(p.GEOM_BOX, halfExtents=[0.01, length, 0.01],
                                     rgbaColor=[0, 1, 0, 0.8], visualFramePosition=[0.01, length, 0.01])
         vis_z = p.createVisualShape(p.GEOM_BOX, halfExtents=[0.01, 0.01, length],
-                                    rgbaColor=[0, 0, 1, 0.8], visualFramePosition=[0.01, 0.01, length])
+                                    rgbaColor=z_color, visualFramePosition=[0.01, 0.01, length])
 
         obj = p.createMultiBody(baseVisualShapeIndex=-1, linkVisualShapeIndices=[vis_x, vis_y, vis_z],
                                 basePosition=position, baseOrientation=orientation,
@@ -341,6 +342,10 @@ class BulletWorld:
         for id in self.vis_axis:
             p.removeBody(id)
         self.vis_axis = []
+
+    def remove_object_w_id(self, id) -> None:
+        for ids in id:
+            p.removeBody(ids)
 
     def register_collision_callback(self, objectA: Object, objectB: Object,
                                     callback_collision: Callable,
@@ -565,8 +570,8 @@ class Gui(threading.Thread):
             # Disable the side windows of the GUI
             p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
             # Change the init camera pose
-            p.resetDebugVisualizerCamera(cameraDistance=1.40, cameraYaw= (180), cameraPitch= -45,
-                                         cameraTargetPosition=[5.3,4.8, 0.74])
+            p.resetDebugVisualizerCamera(cameraDistance=1.40, cameraYaw=(180), cameraPitch=-45,
+                                         cameraTargetPosition=[5.3, 4.8, 0.74])
 
             # Get the initial camera target location
             cameraTargetPosition = p.getDebugVisualizerCamera()[11]
@@ -807,8 +812,6 @@ class Object:
 
         self.tf_frame = ("shadow/" if self.world.is_shadow_world else "") + self.name
 
-
-
         if path:
             # This means "world" is not the shadow world since it has a reference to a shadow world
             if self.world.shadow_world != None:
@@ -827,7 +830,6 @@ class Object:
 
         self._current_pose = pose_in_map
         self._update_link_poses()
-
 
         self.base_origin_shift = np.array(position) - np.array(self.get_base_origin().position_as_list())
         self.local_transformer.update_transforms_for_object(self)
@@ -988,6 +990,7 @@ class Object:
 
         :param prev_object: A list of Objects that were already moved, these will be excluded to prevent loops in the update.
         """
+
         for obj in self.attachments:
             if obj in prev_object:
                 continue
@@ -1468,7 +1471,6 @@ class Object:
                 self._current_link_poses[link_name] = self._current_pose
                 self._current_link_transforms[link_name] = self._current_pose.to_transform(self.tf_frame)
 
-
     def _init_current_joint_states(self) -> None:
         """
         Initialize the cached joint position for each joint.
@@ -1479,7 +1481,12 @@ class Object:
 
     @property
     def current_pose(self):
-        return self._current_pose
+        try:
+            return self._current_pose
+        except AttributeError:
+            # Handle the case where _current_pose doesn't exist
+            rospy.logwarn("The attribute '_current_pose' does not exist.")
+            return None  # or some default value if it makes sense
 
 
 def filter_contact_points(contact_points, exclude_ids) -> List:

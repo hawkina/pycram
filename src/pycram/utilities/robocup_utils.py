@@ -1,10 +1,22 @@
+import actionlib
 import rospy
-from sensor_msgs.msg import LaserScan
+from actionlib_msgs.msg import GoalStatusArray
+from sensor_msgs.msg import LaserScan, JointState
 from sound_play.msg import SoundRequestActionGoal, SoundRequest
 from std_msgs.msg import Int32
 from tmc_control_msgs.msg import GripperApplyEffortActionGoal
-from tmc_msgs.msg import Voice
+from tmc_msgs.msg import Voice, TalkRequestAction, TalkRequestActionGoal
+import pycram.external_interfaces.giskard_new as giskardpy
 from pycram.designators.object_designator import *
+
+
+def pakerino(torso_z=0.15, config=None
+    if not config:
+        config = {'arm_lift_joint': torso_z, 'arm_flex_joint': 0, 'arm_roll_joint': -1.2, 'wrist_flex_joint': -1.5,
+                  'wrist_roll_joint': 0}
+    giskardpy.avoid_all_collisions()
+    return giskardpy.achieve_joint_goal(config)
+
 
 
 class SoundRequestPublisher:
@@ -80,49 +92,71 @@ class StartSignalWaiter:
 
         rospy.loginfo("Start signal received.")
 
-
-class TextToSpeechPublisher:
-    """
-    A class to publish text-to-speech requests in a ROS environment.
-    """
-
-    def __init__(self, topic='/talk_request', queue_size=10):
+    def something_in_the_way(self):
         """
-        Initializes the TextToSpeechPublisher with a ROS publisher.
-
-        :param topic: The ROS topic to publish text-to-speech requests to. Default is '/talk_request'.
-        :param queue_size: The size of the message queue for the publisher. Default is 10.
+        Subscribe to the laser scan topic and wait for an obstacle to appear within a specified distance
+        before continuing.
         """
-        self.pub = rospy.Publisher(topic, Voice, queue_size=queue_size)
-        self.talking_sentence = ''
-        rospy.Subscriber('/talking_sentence', String, self.talking_sentence_callback)
 
-    def talking_sentence_callback(self, msg, talk: bool = True):
-        """
-        Callback function to update the talking_sentence attribute.
+        def laser_scan_callback(msg):
+            ranges = list(msg.ranges)
+            rospy.loginfo(f"Received laser scan with {len(ranges)} ranges")
+            # Ensure there are enough elements in ranges
+            if len(ranges) > 501:
+                obstacle_detected = False
+                # Check if any value in the range 461 to 501 is smaller than 1.0
+                for i in range(470, 510):
+                    # print(ranges[i])
+                    if ranges[i] < 0.98:
+                        obstacle_detected = True
+                        rospy.loginfo(f"Obstacle detected at index {i} with range {ranges[i]}")
+                        break
+                if obstacle_detected:
+                    self.fluent.set_value(True)
+                    rospy.loginfo("Obstacle detected within 1.0 meter, unsubscribing from topic")
+                    self.current_subscriber.unregister()
+                    return True
+                else:
+                    self.fluent.set_value(True)
+                    rospy.loginfo("No Obstacle detected within 1.0 meter, unsubscribing from topic")
+                    self.current_subscriber.unregister()
+                    return False
 
-        :param msg: The ROS message received from the /talking_sentence topic.
-        """
-        if talk:
-            self.talking_sentence = msg.data
+        rospy.loginfo("Waiting for obstacle detection signal.")
+        self.current_subscriber = rospy.Subscriber("hsrb/base_scan", LaserScan, laser_scan_callback)
 
-    def pub_now(self, text, language=1):
-        """
-        Publishes a text-to-speech request with the given text and language.
+        rospy.loginfo("Waiting for obstacle to be detected")
+        self.fluent.wait_for()
 
-        :param text: The text to be spoken.
-        :param language: The language of the text. 1 for English, 0 for Japanese. Default is 1 (English).
-        """
-        rospy.loginfo("talkstring:" + text)
-        # while self.talking_sentence != '':
-        #     rospy.sleep(0.1)  # Sleep for 100ms and check again
-        text_to_speech = Voice()
-        text_to_speech.language = language
-        text_to_speech.sentence = text
-        while self.pub.get_num_connections() == 0:
-            rospy.sleep(0.1)  # Sleep for 100ms and check again
-        self.pub.publish(text_to_speech)
+        rospy.loginfo("Obstacle detection signal received.")
 
+class TextToSpeechPublisher():
+
+    def __init__(self):
+        self.pub = rospy.Publisher('/talk_request_action/goal', TalkRequestActionGoal, queue_size=10)
+        self.status_sub = rospy.Subscriber('/talk_request_action/status', GoalStatusArray, self.status_callback)
+        self.status_list = []
+
+    def status_callback(self, msg):
+        self.status_list = msg.status_list
+
+    def pub_now(self, sentence, talk_bool: bool = True, wait_bool: bool = True):
+        rospy.logerr("talking sentence: " + str(sentence))
+        if talk_bool:
+            while not rospy.is_shutdown():
+                if not self.status_list or not wait_bool:  # Check if the status list is empty
+                    goal_msg = TalkRequestActionGoal()
+                    goal_msg.header.stamp = rospy.Time.now()
+                    goal_msg.goal.data.language = 1
+                    goal_msg.goal.data.sentence = sentence
+
+                    while self.pub.get_num_connections() == 0:
+                        rospy.sleep(0.1)
+
+                    self.pub.publish(goal_msg)
+                    break
+
+                    
 
 class ImageSwitchPublisher:
     """
@@ -168,6 +202,58 @@ class HSRBMoveGripperReal():
         elif motion == "close":
             self.msg.goal.effort = -0.8
             self.pub.publish(self.msg)
+
+
+class GraspListener:
+    def __init__(self):
+
+        # Subscribe to the joint_states topic
+        rospy.Subscriber("/hsrb/robot_state/joint_states", JointState, self.joint_states_callback)
+
+        # Define the positions that indicate a grasp
+        # Define the positions that indicate a grasp
+        self.grasp_thresholds = {
+            "hand_r_distal_joint": (-1.3, 0.63),  # Adjusted based on open and closed state data with offset
+            "hand_l_distal_joint": (-1.3, 0.63)
+        }
+        # Open
+        # State:
+        # hand_r_distal_joint: -1.477408
+        # hand_l_distal_joint: -1.477408
+        # Closed
+        # State:
+        # hand_r_distal_joint: 0.800545
+        # hand_l_distal_joint: 0.782546
+
+        # Variable to store the grasp state
+        self.grasped = False
+
+    def check_grasp(self):
+        print(self.grasped)
+        return self.grasped
+
+    def joint_states_callback(self, msg):
+        # Extract the position of the relevant joints
+        try:
+            hand_r_index = msg.name.index("hand_r_distal_joint")
+            hand_l_index = msg.name.index("hand_l_distal_joint")
+
+            hand_r_position = msg.position[hand_r_index]
+            hand_l_position = msg.position[hand_l_index]
+
+            # Check if the positions are within the grasping thresholds
+            if (self.grasp_thresholds["hand_r_distal_joint"][0] <= hand_r_position <=
+                    self.grasp_thresholds["hand_r_distal_joint"][1] and
+                    self.grasp_thresholds["hand_l_distal_joint"][0] <= hand_l_position <=
+                    self.grasp_thresholds["hand_l_distal_joint"][1]):
+                self.grasped = True
+            else:
+                self.grasped = False
+
+            # rospy.loginfo("Grasp state: %s", "Grasped" if self.grasped else "Not grasped")
+
+        except ValueError as e:
+            rospy.logerr("Joint names not found in joint_states message: %s", e)
 
 # Hints: List for image view (mit Zahlen ändert man das Bild)
 # "hi.png" -> 0

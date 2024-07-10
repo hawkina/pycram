@@ -78,7 +78,7 @@ def sync_worlds() -> None:
     bullet_object_names = set()
     for obj in BulletWorld.current_bullet_world.objects:
         if obj.name != robot_description.name and len(obj.links) != 1:
-            if obj.name != 'floor':
+            if obj.name != 'floor' or obj.type != "robot":
                 bullet_object_names.add(obj.name + "_" + str(obj.id))
 
     giskard_object_names = set(giskard_wrapper.get_group_names())
@@ -268,8 +268,10 @@ def achieve_align_planes_goal(goal_normal: List[float], tip_link: str, tip_norma
     sync_worlds()
     giskard_wrapper.set_align_planes_goal(make_vector_stamped(goal_normal), tip_link, make_vector_stamped(tip_normal),
                                           root_link)
-    return giskard_wrapper.execute()
-
+    g_return= giskard_wrapper.execute()
+    while not g_return:
+        rospy.sleep(0.1)
+    return g_return
 
 def achieve_open_container_goal(tip_link: str, environment_link: str, goal_state: Optional[float] = None,
                                 special_door: Optional[bool] = False) -> 'MoveResult':
