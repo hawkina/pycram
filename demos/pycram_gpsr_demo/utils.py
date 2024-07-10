@@ -3,7 +3,7 @@ import rospy
 from pycram.pose import Pose as PoseStamped
 import matplotlib.colors as mcolors
 import tf
-from geometry_msgs.msg import Pose, Point, Quaternion
+import json
 from typing import Callable
 import time
 
@@ -148,6 +148,58 @@ def autogenerate_dict_from_file(file_path):
                 value = parts[1].strip()
                 ontology_dict[key] = value
     return ontology_dict
+
+
+
+def write_json_to_file(json_data, file_path='home/hawkin/ros_out_files'):
+    # Call the function to get the result
+
+
+    # Convert the result to a JSON string
+    result_json = json.dumps(json_data, indent=4)
+
+    # Open the file in write mode and write the result
+    with open(file_path, 'w') as file:
+        file.write(result_json)
+
+    print(f"Result written to {file_path}")
+
+
+def pose_stamped_to_json(pose_stamped):
+    """
+    Convert a PoseStamped object to a JSON string.
+
+    Args:
+        pose_stamped (PoseStamped): The PoseStamped object to convert.
+
+    Returns:
+        str: The JSON string representation of the PoseStamped object.
+    """
+    pose_dict = {
+        "header": {
+            "seq": pose_stamped.header.seq,
+            "stamp": {
+                "secs": pose_stamped.header.stamp.secs,
+                "nsecs": pose_stamped.header.stamp.nsecs
+            },
+            "frame_id": pose_stamped.header.frame_id
+        },
+        "pose": {
+            "position": {
+                "x": pose_stamped.pose.position.x,
+                "y": pose_stamped.pose.position.y,
+                "z": pose_stamped.pose.position.z
+            },
+            "orientation": {
+                "x": pose_stamped.pose.orientation.x,
+                "y": pose_stamped.pose.orientation.y,
+                "z": pose_stamped.pose.orientation.z,
+                "w": pose_stamped.pose.orientation.w
+            }
+        }
+    }
+    return json.dumps(pose_dict, indent=4)
+
 
 
 # autogenerate a dict from all defined objects in the objects.py file
