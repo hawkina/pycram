@@ -7,9 +7,21 @@ import json
 from typing import Callable
 import time
 
-tf_l= tf.listener.TransformListener()
+tf_l = tf.listener.TransformListener()
 colors = mcolors.cnames
 objects_path = '/home/hawkin/ros/pycram_ws/src/pycram/demos/pycram_gpsr_demo/objects.py'
+
+
+# make rosout more colorful
+class Colors:
+    PINK = '\033[95m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    GREY = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 
 # generate a list of all plans instead of having to hardcode them
@@ -99,7 +111,6 @@ def transform_pose(tf_listener, target_frame, pose_stamped, max_attempts=5, atte
     return None
 
 
-
 def knowrob_poses_result_to_list_dict(knowrob_output, nav_or_perc='nav'):  # works
     poses_list = []
     for item in knowrob_output:
@@ -150,10 +161,8 @@ def autogenerate_dict_from_file(file_path):
     return ontology_dict
 
 
-
 def write_json_to_file(json_data, file_path='home/hawkin/ros_out_files'):
     # Call the function to get the result
-
 
     # Convert the result to a JSON string
     result_json = json.dumps(json_data, indent=4)
@@ -199,7 +208,6 @@ def pose_stamped_to_json(pose_stamped):
         }
     }
     return json.dumps(pose_dict, indent=4)
-
 
 
 # autogenerate a dict from all defined objects in the objects.py file
