@@ -1,5 +1,4 @@
 import re
-
 import rospy
 from pycram.designators.action_designator import *
 from pycram.utilities.robocup_utils import StartSignalWaiter, pakerino
@@ -11,9 +10,11 @@ from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
 import pycram.utilities.gpsr_utils as plans
 from demos.pycram_gpsr_demo import setup_demo as sd
 from demos.pycram_gpsr_demo import nlp_processing as nlp
-
 from stringcase import snakecase
+from perception_to_knowrob import perc_to_know
 
+
+object_in_hand = None
 
 # these are all the high level plans, to which we map the NLP output.
 # they should either connect to low level plans or be filled with data from knowledge
@@ -184,6 +185,8 @@ def looking_for(param_json):  # WIP
 
 # subplan of fetching and transporting
 def pick_up(param_json):
+    # TODO add obj to knowrob?
+    global object_in_hand
     item, source, source_room, look_at_link, look_at_pose = None, None, None, None, None
     obj_types_dict = utils.obj_dict
     sing_my_angel_of_music("in picking up plan")
@@ -194,7 +197,7 @@ def pick_up(param_json):
     source_params = utils.remap_source_to_destination(source_params)
     result = moving_to(source_params)
     rospy.loginfo(utils.PC.BLUE + "[CRAM] Navigation done. result: " + str(result))
-    # get values
+    #get values
     # get position of where robot should look at
     if param_json.get('Item') is not None:
         item = param_json.get('Item').get('value')
@@ -216,7 +219,7 @@ def pick_up(param_json):
     pick_up_retries = 3
     grasped_bool, grasp, found_object = None, None, None
     while pick_up_retries > 0 and found_object is None:
-        if item is not None and look_at_link is not None:
+        if item is not None and look_at_link is not None and grasped_bool is None:
             try:
                 gasped_bool, grasp, found_object = plans.process_pick_up_objects(obj_type=item, obj_types_dict=obj_types_dict,
                                                                                  link=utils.remove_prefix(look_at_link, 'iai_kitchen/'),
@@ -239,7 +242,7 @@ def pick_up(param_json):
             found_object_name = re.sub(r'\d+', '', name)
             rospy.loginfo(utils.PC.BLUE + f"[CRAM] found object of type {name} and picked it up")
             pick_up_retries = 0
-            #plans.pakerino()
+            object_in_hand = found_object
             return grasped_bool, grasp, found_object
         break
     else:
@@ -252,8 +255,34 @@ def pick_up(param_json):
 
 
 def placing(param_json):
+    global object_in_hand
+    destination_link = None
+    if not object_in_hand:
+        rospy.logerr("[CRAM] I have no object in my hand so I cannot place :(")
+        return None
     sing_my_angel_of_music("in placing plan")
-    rospy.loginfo("Place: " + str(param_json))
+    # move to playing destination
+    result = moving_to(param_json)
+    if result is None:
+        rospy.logerr("[CRAM] Navigation failed to Destination location.")
+        return None
+    obj_type = object_in_hand.type
+    # match with knowrob
+    # PLACE WHERE HUMAN TOLD U
+    if param_json.get('Destination'):
+        destination_link = utils.remove_prefix(result.get('Item').get('link'), 'iai_kitchen/')
+
+    # PLACE at PREDEFINED LOCATION FROM KNOWROB
+    if obj_type in perc_to_know.keys():
+        knowrob_iri = perc_to_know.get('type')
+        item_location = knowrob.get_predefined_destination_item_location(knowrob_iri)
+        destination_link = utils.remove_prefix(item_location.get('Item').get('link'), 'iai_kitchen/')
+
+    plans.place(object=object_in_hand, grasp='front', link=destination_link, giskard=sd.giskard, talk=nlp.tts,
+                robot_description=sd.robot_description, lt=sd.lt, environment_raw=sd.environment_raw,
+                environment_desig=sd.environment_desig,
+                gripper=sd.gripper, world=sd.world, robot_desig=sd.robot_desig)
+
 
 
 def fetching(param_json):

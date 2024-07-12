@@ -84,7 +84,7 @@ def get_place_poses_for_surface(object_to_place, link, environment_desig, enviro
         return NoPlacePoseFoundCondition
 
 
-def place(object, grasp, link, giskard, talk, fts, robot_description, lt, environment_raw, gripper, world):
+def place(object, grasp, link, giskard, talk, robot_description, lt, environment_raw, environment_desig, gripper, world, robot_desig):
     def monitor_func_place():
         global previous_value
         der = fts.get_last_value()
@@ -127,7 +127,9 @@ def place(object, grasp, link, giskard, talk, fts, robot_description, lt, enviro
         talk.pub_now("I was not able to perceive any objects")
 
     #todo ifno target_location  then do handover
-    target_location = get_place_poses_for_surface(object, 'shelf:shelf:shelf_floor_2')
+    target_location = get_place_poses_for_surface(object_to_place=object, link=link, environment_desig=environment_desig,
+                                                  environment_raw=environment_raw, robot_desig=robot_desig, world=world,
+                                                  lt=lt)
 
     oTm = target_location
     oTm.pose.position.z += 0.02
@@ -207,7 +209,7 @@ def process_pick_up_objects(obj_type, obj_types_dict, link, look_pose_given, env
                         found_object = value
                         found_object_name = found_object.bullet_world_object.name.replace('_', ' ')
                         found_object_name = re.sub(r'\d+', '', found_object_name)
-                        talk.pub_now(f"I haven't seen {obj_type}, but found {found_object_name} instead.")
+                        talk.pub_now(f"I haven't seen {obj_type}, but found {found_object_name}")
 
         giskardpy.sync_worlds()
     except PerceptionObjectNotFound:
