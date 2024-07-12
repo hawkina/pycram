@@ -1,9 +1,7 @@
 """Implementation of base classes for orm modelling."""
 import datetime
 import getpass
-import os
 from typing import Optional
-
 import git
 import rospkg
 import sqlalchemy.sql.functions

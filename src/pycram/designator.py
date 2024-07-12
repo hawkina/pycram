@@ -12,7 +12,6 @@ import rospy
 from .bullet_world import (Object as BulletWorldObject, BulletWorld)
 from .helper import GeneratorList, bcolors
 from threading import Lock
-from time import time
 from typing import List, Dict, Any, Type, Optional, Union, get_type_hints, Callable, Tuple, Iterable
 
 from .local_transformer import LocalTransformer

@@ -1,4 +1,3 @@
-import time
 import rospy
 import threading
 import atexit

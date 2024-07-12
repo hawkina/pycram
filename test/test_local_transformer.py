@@ -1,6 +1,5 @@
 import unittest
 import rospy
-from time import sleep
 
 
 from pycram.bullet_world import BulletWorld, Object

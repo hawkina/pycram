@@ -11,60 +11,58 @@ from pycram.external_interfaces.navigate import PoseNavigator
 from pycram.designators.object_designator import *
 from pycram.bullet_world import BulletWorld, Object
 from pycram.process_module import real_robot
-from pycram.ros.robot_state_updater import RobotStateUpdater, KitchenStateUpdater
 from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, StartSignalWaiter, \
     HSRBMoveGripperReal, pakerino, GraspListener
 
-world = None  # BulletWorld()
-environment_raw = None  # Object("kitchen", ObjectType.ENVIRONMENT, "pre_robocup_sg.urdf")
-environment_desig = None  #ObjectDesignatorDescription(names=["kitchen"])
+# world = None  # BulletWorld()
+# environment_raw = None  # Object("kitchen", ObjectType.ENVIRONMENT, "pre_robocup_sg.urdf")
+# environment_desig = None  #ObjectDesignatorDescription(names=["kitchen"])
+#
+# grasp_listener = None  # GraspListener()
+# talk = None  # TextToSpeechPublisher()
+# img_swap = None  # ImageSwitchPublisher()
+# start_signal_waiter = None  # StartSignalWaiter()
+# move = None  # PoseNavigator()
+# lt = None  # LocalTransformer()
+# gripper = None  # HSRBMoveGripperReal()
+# robot = None  # Object("hsrb", "robot", "../../resources/" + "hsrb" + ".urdf")
+# #robot.set_color([0.5, 0.5, 0.9, 1])
+# robot_desig = None  #  ObjectDesignatorDescription(names=["hsrb"])
+# giskard_obj = None
+# # giskardpy.init_giskard_interface()
+# # giskardpy.clear()
+# # giskardpy.sync_worlds()
+#
+# previous_value = None
 
-grasp_listener = None  # GraspListener()
-talk = None  # TextToSpeechPublisher()
-img_swap = None  # ImageSwitchPublisher()
-start_signal_waiter = None  # StartSignalWaiter()
-move = None  # PoseNavigator()
-lt = None  # LocalTransformer()
-gripper = None  # HSRBMoveGripperReal()
-robot = None  # Object("hsrb", "robot", "../../resources/" + "hsrb" + ".urdf")
-#robot.set_color([0.5, 0.5, 0.9, 1])
-robot_desig = None  #  ObjectDesignatorDescription(names=["hsrb"])
-robot_state_updater = None  # RobotStateUpdater("/tf", "/hsrb/robot_state/joint_states")
-kitchen_state_updater = None  # KitchenStateUpdater("/tf", "/iai_kitchen/joint_states")
 
-# giskardpy.init_giskard_interface()
-# giskardpy.clear()
-# giskardpy.sync_worlds()
+# TODO find a better way of doing this
+# def handover_all_variables(other_world, other_environment_raw, other_environment_desig, other_grasp_listener,
+#                            other_talk, other_img_swap, other_start_signal_waiter, other_move, other_lt, other_gripper,
+#                            other_robot, other_robot_desig, other_giskard):
+#     global world, environment_raw, environment_desig, grasp_listener, talk, img_swap, start_signal_waiter, move, lt
+#     global gripper, robot, robot_desig, giskard_obj
+#     rospy.loginfo("[PLAN-CRAM] remapping...")
+#     world = other_world
+#     environment_raw = other_environment_raw
+#     environment_desig = other_environment_desig
+#     grasp_listener = other_grasp_listener
+#     talk = other_talk
+#     img_swap = other_img_swap
+#     start_signal_waiter = other_start_signal_waiter
+#     move = other_move
+#     lt = other_lt
+#     gripper = other_gripper
+#     robot = other_robot
+#     robot_desig = other_robot_desig
+#     giskard_obj = other_giskard
+#     rospy.loginfo('\033[92m' + "[PLAN-CRAM] done remapping")  # green
 
 previous_value = None
 
 
-# TODO find a better way of doing this
-def handover_all_variables(other_world, other_environment_raw, other_environment_desig, other_grasp_listener,
-                           other_talk, other_img_swap, other_start_signal_waiter, other_move, other_lt, other_gripper,
-                           other_robot, other_robot_desig, other_robot_state_updater, other_kitchen_state_updater):
-    global world, environment_raw, environment_desig, grasp_listener, talk, img_swap, start_signal_waiter, move, lt
-    global gripper, robot, robot_desig, robot_state_updater, kitchen_state_updater
-    rospy.loginfo("[PLAN-CRAM] remapping...")
-    world = other_world
-    environment_raw = other_environment_raw
-    environment_desig = other_environment_desig
-    grasp_listener = other_grasp_listener
-    talk = other_talk
-    img_swap = other_img_swap
-    start_signal_waiter = other_start_signal_waiter
-    move = other_move
-    lt = other_lt
-    gripper = other_gripper
-    robot = other_robot
-    robot_desig = other_robot_desig
-    robot_state_updater = other_robot_state_updater
-    kitchen_state_updater = other_kitchen_state_updater
-    rospy.loginfo('\033[92m' + "[PLAN-CRAM] done remapping")  # green
-
-
 # return a pose if pose found otherwise NoPlacePoseFoundCondition
-def get_place_poses_for_surface(object_to_place, link):
+def get_place_poses_for_surface(object_to_place, link, environment_desig, environment_raw, robot_desig, world, lt):
     place_poses = find_placeable_pose(link, environment_desig.resolve(), robot_desig.resolve(), "left",
                                       world, 0.1,
                                       object_desig=object_to_place)
@@ -86,7 +84,7 @@ def get_place_poses_for_surface(object_to_place, link):
         return NoPlacePoseFoundCondition
 
 
-def place(object, grasp, link):
+def place(object, grasp, link, giskard, talk, fts, robot_description, lt, environment_raw, gripper, world):
     def monitor_func_place():
         global previous_value
         der = fts.get_last_value()
@@ -124,7 +122,7 @@ def place(object, grasp, link):
         table_obj = DetectAction(technique='all').resolve().perform()
         found_object = None
         first, *remaining = table_obj
-        giskardpy.sync_worlds()
+        giskard.sync_worlds()
     except PerceptionObjectNotFound:
         talk.pub_now("I was not able to perceive any objects")
 
@@ -172,8 +170,9 @@ def place(object, grasp, link):
     return True
 
 
-#return grasped_bool, grasp, found_object
-def process_pick_up_objects(obj_type, link):
+# return grasped_bool, grasp, found_object
+def process_pick_up_objects(obj_type, look_at_pose, link, environment_raw, giskardpy, pakerino, gripper, talk, lt, robot_description,
+                            BulletWorld, DetectAction, PerceptionObjectNotFound, grasp_listener):
     look_pose = environment_raw.get_link_pose(link)
     # park
     perceive_conf = {'arm_lift_joint': 0.20, 'wrist_flex_joint': 1.8, 'arm_roll_joint': -1, }
@@ -298,8 +297,8 @@ def process_pick_up_objects(obj_type, link):
 #
 # def follow_human():
 
-
-def pick_place_demo():
+# todo port this into my high level plans
+def pick_place_demo(move):
     # get 2 move poses
     with real_robot:
         pakerino()
@@ -324,4 +323,4 @@ def pick_place_demo():
         place(found_object, "front", 'shelf:shelf:shelf_floor_2')
 
 
-pick_place_demo()
+#pick_place_demo()
