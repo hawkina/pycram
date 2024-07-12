@@ -1,5 +1,5 @@
+import re
 import rospy
-
 from demos.pycram_storing_groceries_demo.utils.misc import *
 from pycram.designators.location_designator import find_placeable_pose
 from pycram.language import Code
@@ -171,16 +171,20 @@ def place(object, grasp, link, giskard, talk, fts, robot_description, lt, enviro
 
 
 # return grasped_bool, grasp, found_object
-def process_pick_up_objects(obj_type, look_at_pose, link, environment_raw, giskardpy, pakerino, gripper, talk, lt, robot_description,
-                            BulletWorld, DetectAction, PerceptionObjectNotFound, grasp_listener):
-    look_pose = environment_raw.get_link_pose(link)
+def process_pick_up_objects(obj_type, obj_types_dict, link, look_pose_given, environment_raw, giskardpy, gripper, talk,
+                            lt, robot_description,
+                            BulletWorld, grasp_listener):
+    try:
+        look_pose = environment_raw.get_link_pose(link)
+    except KeyError as e:
+        rospy.logerr(f"[CRAM] cool not find link {link} in environment_urdf of BulletWorld. Fallback to given pose")
+        look_pose = look_pose_given
     # park
+    gripper.pub_now('close')
     perceive_conf = {'arm_lift_joint': 0.20, 'wrist_flex_joint': 1.8, 'arm_roll_joint': -1, }
     pakerino(config=perceive_conf)
     # look
-    #todo here should be look pose
-    locationtoplace = Pose([2.6868790796016738, 5.717920690528091, 0.715])
-    giskardpy.move_head_to_pose(locationtoplace)
+    giskardpy.move_head_to_pose(look_pose)
 
     talk.pub_now("perceiving", True)
     # noteme detect on table
@@ -191,8 +195,20 @@ def process_pick_up_objects(obj_type, look_at_pose, link, environment_raw, giska
         print(first)
         for dictionary in remaining:
             for value in dictionary.values():
+                # check if type matches exactly
                 if value.type == obj_type:
                     found_object = value
+
+        if found_object is None:
+            for dictionary in remaining:
+                for value in dictionary.values():
+                    # check if substring matches
+                    if obj_type in value.type:  # CHANGE todo ensure
+                        found_object = value
+                        found_object_name = found_object.bullet_world_object.name.replace('_', ' ')
+                        found_object_name = re.sub(r'\d+', '', found_object_name)
+                        talk.pub_now(f"I haven't seen {obj_type}, but found {found_object_name} instead.")
+
         giskardpy.sync_worlds()
     except PerceptionObjectNotFound:
         talk.pub_now("I was not able to perceive any objects")
@@ -200,6 +216,7 @@ def process_pick_up_objects(obj_type, look_at_pose, link, environment_raw, giska
 
     # noteme if groups were found
     if found_object:
+        talk.pub_now(f"I will pick up {found_object} now")
         obj_pose = found_object.bullet_world_object.pose
         object_raw = found_object
         tf_link = environment_raw.get_link_tf_frame(link)
@@ -248,11 +265,31 @@ def process_pick_up_objects(obj_type, look_at_pose, link, environment_raw, giska
 
         grasp_rotation = robot_description.grasps.get_orientation_for_grasp(grasp)
         if grasp == "top":
-            grasp_q = Quaternion(grasp_rotation[0], grasp_rotation[1], grasp_rotation[2], grasp_rotation[3])
-            oTb.orientation = multiply_quaternions(oTb.pose.orientation, grasp_q)
-        else:
-            oTb.orientation = grasp_rotation
+            angle = helper.quaternion_to_angle(
+                (oTb.pose.orientation.x, oTb.pose.orientation.y, oTb.pose.orientation.z,
+                 oTb.pose.orientation.w))
+            print("angle: " + str(angle))
 
+            if angle > 110:
+                oTb.orientation.x = grasp_rotation[0]
+                oTb.orientation.y = grasp_rotation[1]
+                oTb.orientation.z = grasp_rotation[2]
+                oTb.orientation.w = grasp_rotation[3]
+            else:
+                grasp_q = (grasp_rotation[0], grasp_rotation[1], grasp_rotation[2], grasp_rotation[3])
+                otb_list_q = [oTb.pose.orientation.x, oTb.pose.orientation.y, oTb.pose.orientation.z,
+                              oTb.pose.orientation.w]
+                q1 = multiply_quaternions(otb_list_q, grasp_rotation)
+                oTb.orientation.x = q1[0]
+                oTb.orientation.y = q1[1]
+                oTb.orientation.z = q1[2]
+                oTb.orientation.w = q1[3]
+
+        else:
+            oTb.orientation.x = grasp_rotation[0]
+            oTb.orientation.y = grasp_rotation[1]
+            oTb.orientation.z = grasp_rotation[2]
+            oTb.orientation.w = grasp_rotation[3]
         oTmG = lt.transform_pose(oTb, "map")
         after_pose = oTmG.copy()
         after_pose.pose.position.z += 0.02
@@ -263,11 +300,12 @@ def process_pick_up_objects(obj_type, look_at_pose, link, environment_raw, giska
             config_for_placing = {'arm_lift_joint': -1, 'arm_flex_joint': -0.16, 'arm_roll_joint': -0.0145,
                                   'wrist_flex_joint': -1.417, 'wrist_roll_joint': 0.0}
         else:
-            config_for_placing = {'arm_flex_joint': -1.1, 'arm_lift_joint': 1.15, 'arm_roll_joint': 0,
+            config_for_placing = {'arm_flex_joint': -0.9, 'arm_lift_joint': 1.15, 'arm_roll_joint': 0,
                                   'wrist_flex_joint': -1.6, 'wrist_roll_joint': 0, }
 
-        pakerino(config=config_for_placing)
+        pakerino(config=config_for_placing)  # perceive/pick up pose?
 
+        # --- ACTUALLY PICKUP NOW ----
         gripper.pub_now("open")
         talk.pub_now(f"Pick Up now! {object_name.split('_')[0]} from: {grasp}")
         giskard_return = giskardpy.achieve_sequence_pick_up(oTmG)
@@ -285,7 +323,7 @@ def process_pick_up_objects(obj_type, look_at_pose, link, environment_raw, giska
             rospy.sleep(0.1)
         grasped_bool = None
         if grasp_listener.check_grasp():
-            talk.pub_now("Grasped a object")
+            talk.pub_now("Grasped an object")
             grasped_bool = True
         else:
             talk.pub_now("I was not able to grasped a object")
@@ -321,6 +359,5 @@ def pick_place_demo(move):
         move.pub_now(rotated_shelf_pose)
         move.pub_now(shelf_pose)
         place(found_object, "front", 'shelf:shelf:shelf_floor_2')
-
 
 #pick_place_demo()

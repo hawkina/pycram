@@ -7,7 +7,8 @@ import demos.pycram_gpsr_demo.utils as utils
 kitchen = 'http://www.ease-crc.org/ont/SOMA.owl#Kitchen'
 living_room = 'http://www.ease-crc.org/ont/SUTURO.owl#LivingRoom'
 arena = 'http://www.ease-crc.org/ont/SUTURO.owl#Arena'
-rooms = {'kitchen': kitchen, 'living_room': living_room, 'arena': arena}
+dining_room = 'http://www.ease-crc.org/ont/SUTURO.owl#DiningRoom'
+rooms = {'kitchen': kitchen, 'living_room': living_room, 'arena': arena, 'dining_room': dining_room}
 kb = KnowrobKnowledge()
 
 #hopefully tmp
@@ -99,7 +100,7 @@ def get_nav_poses_for_furniture_item(room='arena', furniture_iri=None, furniture
         else:
             furniture_iri = f"soma:'{furniture_iri}'"
         # check that the iri is actually a furniture item
-        if kb.prolog_client.once(f"subclass_of({furniture_iri}, soma:'DesignedFurniture')."):
+        if kb.prolog_client.all_solutions(f"subclass_of({furniture_iri}, soma:'DesignedFurniture')."):
             pass
         else:
             rospy.logwarn(f"[KnowRob] unknown furniture class with name {furniture_iri}. "
@@ -120,9 +121,10 @@ def get_nav_poses_for_furniture_item(room='arena', furniture_iri=None, furniture
     print(room, room_iri, furniture_iri, furniture_name)
     knowrob_poses_list = kb.prolog_client.all_solutions(f"has_type(Room, '{room_iri}'), "
                                                         f"(what_object_transitive({furniture_name}, Obj); "
-                                                        f"has_robocup_name(Obj, {furniture_name});"
-                                                        f"what_object_transitive(Obj, {furniture_iri})), "
-                                                        f"instance_of(Inst, Obj),"
+                                                        f"has_robocup_name(Obj, {furniture_name})),"
+                                                        f"has_type(Obj, {furniture_iri}), "
+                                                        # f"instance_of(Inst, Obj),"
+                                                        f"Inst = Obj,"
                                                         f"is_inside_of(Inst, Room),"
                                                         f"furniture_rel_pose(Inst, 'perceive', Pose).")  # CHANGE find a prettier way?
     poses_list = []
