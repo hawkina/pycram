@@ -1,5 +1,4 @@
 import dataclasses
-import time
 from typing import List, Tuple, Union, Iterable, Optional, Callable
 
 import rospy
@@ -344,8 +343,6 @@ class SemanticCostmapLocation(LocationDesignatorDescription):
         sem_costmap.visualize()
         # sem_costmap.close_visualization()
 
-        height_offset = 0
-        if self.for_object:
         height_offset = 0
         if self.for_object:
             try:

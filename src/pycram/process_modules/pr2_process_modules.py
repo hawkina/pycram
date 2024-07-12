@@ -6,7 +6,6 @@ import actionlib
 
 import pycram.bullet_world_reasoning as btr
 import numpy as np
-import time
 import rospy
 import pybullet as p
 

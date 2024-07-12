@@ -1,3 +1,5 @@
+import rospy
+
 from demos.pycram_storing_groceries_demo.utils.misc import *
 from pycram.designators.location_designator import find_placeable_pose
 from pycram.language import Code
@@ -9,41 +11,58 @@ from pycram.external_interfaces.navigate import PoseNavigator
 from pycram.designators.object_designator import *
 from pycram.bullet_world import BulletWorld, Object
 from pycram.process_module import real_robot
-from pycram.ros.robot_state_updater import RobotStateUpdater, KitchenStateUpdater
 from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, StartSignalWaiter, \
     HSRBMoveGripperReal, pakerino, GraspListener
 
-world = BulletWorld()
+# world = None  # BulletWorld()
+# environment_raw = None  # Object("kitchen", ObjectType.ENVIRONMENT, "pre_robocup_sg.urdf")
+# environment_desig = None  #ObjectDesignatorDescription(names=["kitchen"])
+#
+# grasp_listener = None  # GraspListener()
+# talk = None  # TextToSpeechPublisher()
+# img_swap = None  # ImageSwitchPublisher()
+# start_signal_waiter = None  # StartSignalWaiter()
+# move = None  # PoseNavigator()
+# lt = None  # LocalTransformer()
+# gripper = None  # HSRBMoveGripperReal()
+# robot = None  # Object("hsrb", "robot", "../../resources/" + "hsrb" + ".urdf")
+# #robot.set_color([0.5, 0.5, 0.9, 1])
+# robot_desig = None  #  ObjectDesignatorDescription(names=["hsrb"])
+# giskard_obj = None
+# # giskardpy.init_giskard_interface()
+# # giskardpy.clear()
+# # giskardpy.sync_worlds()
+#
+# previous_value = None
 
 
-
-environment_raw = Object("kitchen", ObjectType.ENVIRONMENT, "pre_robocup_sg.urdf")
-environment_desig = ObjectDesignatorDescription(names=["kitchen"])
-
-grasp_listener = GraspListener()
-talk = TextToSpeechPublisher()
-img_swap = ImageSwitchPublisher()
-start_signal_waiter = StartSignalWaiter()
-move = PoseNavigator()
-lt = LocalTransformer()
-gripper = HSRBMoveGripperReal()
-robot = Object("hsrb", "robot", "../../resources/" + "hsrb" + ".urdf")
-robot.set_color([0.5, 0.5, 0.9, 1])
-robot_desig = ObjectDesignatorDescription(names=["hsrb"])
-RobotStateUpdater("/tf", "/hsrb/robot_state/joint_states")
-KitchenStateUpdater("/tf", "/iai_kitchen/joint_states")
-
-giskardpy.init_giskard_interface()
-giskardpy.clear()
-giskardpy.sync_worlds()
-
+# TODO find a better way of doing this
+# def handover_all_variables(other_world, other_environment_raw, other_environment_desig, other_grasp_listener,
+#                            other_talk, other_img_swap, other_start_signal_waiter, other_move, other_lt, other_gripper,
+#                            other_robot, other_robot_desig, other_giskard):
+#     global world, environment_raw, environment_desig, grasp_listener, talk, img_swap, start_signal_waiter, move, lt
+#     global gripper, robot, robot_desig, giskard_obj
+#     rospy.loginfo("[PLAN-CRAM] remapping...")
+#     world = other_world
+#     environment_raw = other_environment_raw
+#     environment_desig = other_environment_desig
+#     grasp_listener = other_grasp_listener
+#     talk = other_talk
+#     img_swap = other_img_swap
+#     start_signal_waiter = other_start_signal_waiter
+#     move = other_move
+#     lt = other_lt
+#     gripper = other_gripper
+#     robot = other_robot
+#     robot_desig = other_robot_desig
+#     giskard_obj = other_giskard
+#     rospy.loginfo('\033[92m' + "[PLAN-CRAM] done remapping")  # green
 
 previous_value = None
 
 
 # return a pose if pose found otherwise NoPlacePoseFoundCondition
-def get_place_poses_for_surface(object_to_place,link):
-
+def get_place_poses_for_surface(object_to_place, link, environment_desig, environment_raw, robot_desig, world, lt):
     place_poses = find_placeable_pose(link, environment_desig.resolve(), robot_desig.resolve(), "left",
                                       world, 0.1,
                                       object_desig=object_to_place)
@@ -65,7 +84,7 @@ def get_place_poses_for_surface(object_to_place,link):
         return NoPlacePoseFoundCondition
 
 
-def place(object, grasp, link):
+def place(object, grasp, link, giskard, talk, fts, robot_description, lt, environment_raw, gripper, world):
     def monitor_func_place():
         global previous_value
         der = fts.get_last_value()
@@ -90,7 +109,6 @@ def place(object, grasp, link):
 
     global previous_value
 
-
     if grasp == "front":
         config_for_placing = {'arm_lift_joint': 0.20, 'arm_flex_joint': -0.16, 'arm_roll_joint': -0.0145,
                               'wrist_flex_joint': -1.417, 'wrist_roll_joint': 0.0}
@@ -104,7 +122,7 @@ def place(object, grasp, link):
         table_obj = DetectAction(technique='all').resolve().perform()
         found_object = None
         first, *remaining = table_obj
-        giskardpy.sync_worlds()
+        giskard.sync_worlds()
     except PerceptionObjectNotFound:
         talk.pub_now("I was not able to perceive any objects")
 
@@ -152,8 +170,9 @@ def place(object, grasp, link):
     return True
 
 
-#return grasped_bool, grasp, found_object
-def process_pick_up_objects(obj_type, link):
+# return grasped_bool, grasp, found_object
+def process_pick_up_objects(obj_type, look_at_pose, link, environment_raw, giskardpy, pakerino, gripper, talk, lt, robot_description,
+                            BulletWorld, DetectAction, PerceptionObjectNotFound, grasp_listener):
     look_pose = environment_raw.get_link_pose(link)
     # park
     perceive_conf = {'arm_lift_joint': 0.20, 'wrist_flex_joint': 1.8, 'arm_roll_joint': -1, }
@@ -275,25 +294,26 @@ def process_pick_up_objects(obj_type, link):
         return grasped_bool, grasp, found_object
 
 
-
 #
 # def follow_human():
 
-
-def pick_place_demo():
+# todo port this into my high level plans
+def pick_place_demo(move):
     # get 2 move poses
     with real_robot:
         pakerino()
         shelf_pose = Pose([4.375257854937237, 4.991582584825204, 0.0], [0.0, 0.0, 0, 1])
         rotated_shelf_pose = Pose([4.375257854937237, 4.991582584825204, 0.0],
                                   [0.0, 0.0, 0.7220721042045632, 0.6918178057332686])
-        table_pose = Pose([2.862644998141083, 5.046512935221523, 0.0], [0.0, 0.0, 0.7769090622619312, 0.6296128246591604])
+        table_pose = Pose([2.862644998141083, 5.046512935221523, 0.0],
+                          [0.0, 0.0, 0.7769090622619312, 0.6296128246591604])
         table_pose_pre = Pose([2.862644998141083, 4.946512935221523, 0.0],
                               [0.0, 0.0, 0.7769090622619312, 0.6296128246591604])
 
         move.pub_now(table_pose)
         try:
-            gasped_bool, grasp, found_object = process_pick_up_objects('cup_small',  "popcorn_table:p_table:table_front_edge_center")
+            gasped_bool, grasp, found_object = process_pick_up_objects('cup_small',
+                                                                       "popcorn_table:p_table:table_front_edge_center")
         except TypeError:
             print("pick other iten")
             return
@@ -302,4 +322,5 @@ def pick_place_demo():
         move.pub_now(shelf_pose)
         place(found_object, "front", 'shelf:shelf:shelf_floor_2')
 
-pick_place_demo()
+
+#pick_place_demo()

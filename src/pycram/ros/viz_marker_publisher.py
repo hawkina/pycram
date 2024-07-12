@@ -1,7 +1,6 @@
 import atexit
 import logging
 import threading
-import time
 from enum import Enum
 
 from geometry_msgs.msg import Vector3, Quaternion, Point
@@ -49,7 +48,7 @@ class VizMarkerPublisher:
             marker_array = self._make_marker_array()
 
             self.pub.publish(marker_array)
-            time.sleep(self.interval)
+            rospy.sleep(self.interval)
 
 
     def _make_marker_array(self) -> MarkerArray:
@@ -195,10 +194,10 @@ class ManualMarkerPublisher:
         stop_thread = False
         duration = 1
         frequency = 0.2
-        start_time = time.time()
+        start_time = rospy.get_time()
 
         while not stop_thread:
-            if time.time() - start_time > duration:
+            if rospy.get_time() - start_time > duration:
                 stop_thread = True
 
             if self.bulletworld_object is None:

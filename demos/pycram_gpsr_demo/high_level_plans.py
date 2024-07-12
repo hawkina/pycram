@@ -1,12 +1,13 @@
 import rospy
 from pycram.designators.action_designator import *
-from pycram.utilities.robocup_utils import StartSignalWaiter
+from pycram.utilities.robocup_utils import StartSignalWaiter, pakerino
 from demos.pycram_gpsr_demo import perception_interface, llp_tell_stuff
 from demos.pycram_gpsr_demo import knowrob_interface as knowrob
 from demos.pycram_gpsr_demo import llp_navigation as navi
 import demos.pycram_gpsr_demo.utils as utils
 from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
-
+import pycram.utilities.gpsr_utils as plan
+import time
 
 from stringcase import snakecase
 
@@ -14,7 +15,7 @@ from stringcase import snakecase
 # these are all the high level plans, to which we map the NLP output.
 # they should either connect to low level plans or be filled with data from knowledge
 
-
+# todo replace obj_dict with the nlp to knowrob one
 # navigate the robot to LOCATION
 def moving_to(param_json):  # WIP Can also be funriture, or a person
     # ToDo: test
@@ -59,21 +60,23 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
     # --- Cases ---
     # Room + Furniture + Person WIP---------------------------------------
     if room and furniture and person:
-        rospy.loginfo("[CRAM] moving to person at furniture item in room")
+        rospy.loginfo(utils.PC.BLUE + "[CRAM] moving to person at furniture item in room")
         sing_my_angel_of_music(f"I will go to the {furniture} in {room} to look for a person.")
         # TODO
         # go to person at furniture item in room
     # Room + Person WIP---------------------------------------------------
     elif room and person:  # DONE one value
         # go to the person in the room
-        rospy.loginfo("[CRAM] moving to person in room")
+        rospy.loginfo(utils.PC.BLUE + "[CRAM] moving to person in room")
         sing_my_angel_of_music(f"I will go to the {room} and look for the person.")
-        navi.go_to_room_middle(room)
+        result = navi.go_to_room_middle(room)
         # look for person in room TODO ------------------------------------------
+        rospy.loginfo(utils.PC.BLUE + "[CRAM] result: " + str(result))
+        return result
 
     # Furniture + Person WIP----------------------------------------------
-    elif furniture and person: # TODO - remove duplicates
-        rospy.loginfo("[CRAM] moving to person at furniture item")
+    elif furniture and person:  # TODO - remove duplicates
+        rospy.loginfo(utils.PC.BLUE + "[CRAM] moving to person at furniture item")
         sing_my_angel_of_music(f"I will go to the {furniture} and look for a person.")
         # can have multiple poses
         nav_poses = []
@@ -88,9 +91,18 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
             else:
                 nav_poses = knowrob.get_nav_poses_for_furniture_item(furniture_iri=furniture_class)
         # go to person at furniture item TODO ----------------------------------------------------------
+        # go to furniture item in room
+        if nav_poses is not None and nav_poses != []:
+            # go to furniture item
+            rospy.loginfo(utils.PC.BLUE + "[CRAM] going to furniture item and person")
+            result = navi.go_to_pose(nav_poses[0].get('Item').get('pose'))
+            rospy.loginfo(utils.PC.BLUE + "[CRAM] result: " + str(result))
+            # TODO look for person
+            return nav_poses[0]
+
 
     elif room and furniture:  # DONE has multiple poses TODO remove duplicate code
-        rospy.loginfo("[CRAM] moving to furniture item in room")
+        rospy.loginfo(utils.PC.BLUE + "[CRAM] moving to furniture item in room")
         sing_my_angel_of_music(f"I will go to the {furniture} in {room}.")
         if furniture:
             rospy.loginfo(f"[CRAM] found instance of furniture item " + str(furniture))
@@ -105,7 +117,10 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
         # go to furniture item in room
         if nav_poses is not None and nav_poses != []:
             # go to furniture item
-            navi.go_to_pose(nav_poses[0].get('pose'))
+            rospy.loginfo(utils.PC.BLUE + f"[CRAM] going to furniture item in Room pose {nav_poses[0].get('Item').get('pose')}")
+            result = navi.go_to_pose(nav_poses[0].get('Item').get('pose'))
+            rospy.loginfo(utils.PC.BLUE + "[CRAM] result: " + str(result))
+            return nav_poses[0]
 
     elif furniture:  # DONE
         sing_my_angel_of_music(f"I will go to the {furniture}.")
@@ -121,30 +136,30 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
                 nav_poses = knowrob.get_nav_poses_for_furniture_item(furniture_iri=furniture_class)
         # try to move -----------------------------------------------
         if nav_poses is not None and nav_poses != []:
-            rospy.logwarn("in going to room")
+            rospy.loginfo(utils.PC.BLUE + "[CRAM] in going to room")
             # go to furniture item
-            navi.go_to_pose(nav_poses[0].get('pose'))
+            result = navi.go_to_pose(nav_poses[0].get('Item').get('pose'))
+            rospy.loginfo(utils.PC.BLUE + "[CRAM] result: " + str(result))
+            return nav_poses[0]  # needed for perception
 
         else:
-            rospy.loginfo("[CRAM] could not find furniture item " + str(param_json.get('Destination').get('value')))
+            rospy.loginfo(utils.PC.BLUE + "[CRAM] could not find furniture item " + str(param_json.get('Destination').get('value')))
             sing_my_angel_of_music("I am sorry. I don't know where that is.")
             return None  # abort mission
-
-        # drive
-        navi.go_to_pose(nav_poses[0].get('pose'))
-        # rospy.loginfo("[CRAM] moving to furniture item")
-        # go to furniture item
 
     elif room:  # DONE
         # has only one pose
         sing_my_angel_of_music(f"I am going to {room}.")
-        rospy.loginfo("[CRAM] moving to room")
+        rospy.loginfo(utils.PC.BLUE + "[CRAM] moving to room")
         # go to room
-        navi.go_to_room_middle(snakecase(param_json.get('DestinationRoom').get('value').lower()))
+        result = navi.go_to_room_middle(snakecase(param_json.get('DestinationRoom').get('value').lower()))
+        rospy.loginfo(utils.PC.BLUE + "[CRAM] result: " + str(result))
+        return result
     # fallback
     else:
-        sing_my_angel_of_music(f"I am sorry. I don't know where that is.")
+        sing_my_angel_of_music(utils.PC.BLUE + f"I am sorry. I don't know where that is.")
         rospy.logerr("[CRAM]: MovingTo plan failed. No valid parameters found.")
+        return None
 
 
 # also finding + searching
@@ -164,9 +179,26 @@ def looking_for(param_json):  # WIP
     # step 1: go to the furniture/surface item that got mentioned and look on it for the specified obj
 
 
-def picking(param_json):
+# subplan of fetching and transporting
+def pick_up(param_json):
     sing_my_angel_of_music("in picking up plan")
-    rospy.loginfo("Picking: " + str(param_json))
+    rospy.loginfo(utils.PC.BLUE + "Pick-up plan called with params: " + str(param_json))
+    # TODO get data from knowrob
+    # 1.navigate to object
+    source_params = {'Source': param_json.get('Source'), 'SourceRoom': param_json.get('SourceRoom')}
+    source_params = utils.remap_source_to_destination(source_params)
+    result = moving_to(source_params)
+    # 2. pick up object
+    # get position of where robot should look at
+    if param_json.get('Item').get('value'):
+        item = param_json.get('Item').get('value')
+    if param_json.get('Source').get('value'):
+        source = param_json.get('Source').get('value')
+    if param_json.get('SourceRoom').get('value'):
+        source_room = param_json.get('SourceRoom').get('value') # FIX AttributeError: 'NoneType' object has no attribute 'get'
+
+    # get link of pose you went to
+
 
 
 def placing(param_json):

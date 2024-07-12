@@ -1,12 +1,8 @@
 import rospy
 import actionlib
-
 from demos.pycram_gpsr_demo.utils import find_color
 from pycram.designators.action_designator import LookAtAction, DetectAction
-from pycram.plan_failures import PerceptionObjectNotFound
-from pycram.process_modules import hsrb_process_modules
 from pycram.process_module import real_robot
-from pycram.external_interfaces import robokudo
 from robokudo_msgs.msg import QueryAction, QueryGoal, QueryResult, QueryActionResult
 
 

@@ -1,5 +1,4 @@
 import atexit
-import time
 import threading
 from typing import List
 
@@ -75,7 +74,7 @@ class ForceTorqueSensorSimulated:
 
             self.fts_pub.publish(wrench_msg)
             seq += 1
-            time.sleep(self.interval)
+            rospy.sleep(self.interval)
 
     def _stop_publishing(self) -> None:
         """
