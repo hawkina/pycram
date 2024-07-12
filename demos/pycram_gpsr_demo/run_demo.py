@@ -1,9 +1,7 @@
-import rospy
 from demos.pycram_gpsr_demo.setup_demo import *
 from demos.pycram_gpsr_demo import utils
 import demos.pycram_gpsr_demo.nlp_processing as nlp
 from stringcase import snakecase
-import demos.pycram_gpsr_demo.perception_interface as pc
 from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
 import src.pycram.utilities.gpsr_utils as gpsr_utils
 
@@ -69,5 +67,28 @@ def test_pick_place():
 
 # CHANGE CARE THIS STUFF GETS ACTUALLY EXECUTED
 # test_gpsr()
-setup()
-test_pick_place()
+#setup()
+#test_pick_place()
+dest = dict(Destination={'value': 'table',
+                        'entity': 'DesignedFurniture',
+                        'propertyAttribute': [],
+                        'actionAttribute': [],
+                        'numberAttribute': []}, DestinationRoom={'value': 'living room',
+                                                                 'entity': 'Room',
+                                                                 'propertyAttribute': [],
+                                                                 'actionAttribute': [],
+                                                                 'numberAttribute': []})
+
+src = dict(Source={'value': 'table',
+                        'entity': 'DesignedFurniture',
+                        'propertyAttribute': [],
+                        'actionAttribute': [],
+                        'numberAttribute': []}, SourceRoom={'value': 'living room',
+                                                                 'entity': 'Room',
+                                                                 'propertyAttribute': [],
+                                                                 'actionAttribute': [],
+                                                                 'numberAttribute': []})
+knowrob_interface.init_knowrob()
+#knowrob_interface.get_nav_poses_for_furniture_item(room='living room', furniture_name='table')
+#print('###################################################################################')
+#high_level_plans.moving_to(tmp)

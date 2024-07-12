@@ -9,11 +9,12 @@ from pycram.ros.robot_state_updater import RobotStateUpdater, KitchenStateUpdate
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
 from pycram.utilities.robocup_utils import ImageSwitchPublisher, SoundRequestPublisher, GraspListener, \
     StartSignalWaiter, HSRBMoveGripperReal
-from . import utils, high_level_plans, knowrob_interface
+from . import utils, high_level_plans, knowrob_interface, nlp_processing
 import pycram.external_interfaces.giskard_new as giskard
 import tf
+import pycram.utilities.gpsr_utils as plans
 
-with_real_robot = True
+with_real_robot = False
 # initialize interfaces
 instruction_point = PoseStamped([1.45, 4.5, 0], [0, 0, 1, 0])
 world = None
@@ -23,7 +24,7 @@ rviz = None
 move = None
 image_switch = None
 sound_pub = None
-tf_listener = None
+#tf_listener = None
 grasp_listener = None
 start_signal_waiter = None
 lt = None
@@ -49,7 +50,7 @@ def setup():
         move = PoseNavigator()
         image_switch = ImageSwitchPublisher()
         sound_pub = SoundRequestPublisher()
-        tf_listener = tf.listener.TransformListener()
+        #tf_listener = tf.listener.TransformListener()
         grasp_listener = GraspListener()
         start_signal_waiter = StartSignalWaiter()
         lt = LocalTransformer()
@@ -73,8 +74,21 @@ def setup():
         giskard.sync_worlds()
 
         previous_value = None
+        # plans.handover_all_variables(world,
+        #                              environment_raw,
+        #                              environment_desig,
+        #                              grasp_listener,
+        #                              nlp_processing.tts,
+        #                              image_switch,
+        #                              start_signal_waiter,
+        #                              move,
+        #                              lt,
+        #                              gripper,
+        #                              robot,
+        #                              robot_desig,
+        #                              giskard)
 
-        rospy.loginfo(utils.colors.GREEN + "[CRAM] done with setup")
+        rospy.loginfo(utils.PC.GREEN + "[CRAM] done with setup")
 
 
 # def do_stuff():

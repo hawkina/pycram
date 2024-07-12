@@ -1,7 +1,6 @@
 import json
 import rospy
 from std_msgs.msg import String
-#import demos.pycram_gpsr_demo.setup_demo as setup_demo
 from threading import Condition
 from pycram.utilities.robocup_utils import TextToSpeechPublisher
 
@@ -10,16 +9,16 @@ tts = TextToSpeechPublisher()
 nlp_pub = rospy.Publisher('/startListener', String, queue_size=10)
 nlp_pub_test = rospy.Publisher('/nlp_test', String, queue_size=10)
 nlp_sub = {}
-talk_sub={}
+talk_sub = {}
 response = ""
 callback = False
 doorbell = False
 confirm = {}
 todo_plans = []
-currentSpeech=""
+currentSpeech = ""
 stoppedSpeaking = Condition()
-canSpeak = True
-canListen = True
+canSpeak = False
+canListen = False
 canDisplay = False
 
 # might be deprecated?
@@ -56,9 +55,7 @@ def sing_my_angel_of_music(text):
 def intent_processing(msg):
     # convert result into json array for easier access. e.g. response["person-name"] would return 'me'
     global response, todo_plans, confirm, haveNLPOutput
-    #response = msg.data.replace(", ", ",").split(",")
     response = json.loads(msg.data)
-    #print(response)
     if response["intent"] == "Affirm":
         rospy.loginfo("[NLP] confirmation result: Yes")
         confirm = True

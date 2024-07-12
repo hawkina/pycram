@@ -5,15 +5,18 @@ import matplotlib.colors as mcolors
 import tf
 import json
 from typing import Callable
-import time
+
+
+import pycram.utilities.gpsr_utils as plans
 
 tf_l = tf.listener.TransformListener()
+rospy.logerr(f" INITIAL tf listener in utils {tf_l}")
 colors = mcolors.cnames
 objects_path = '/home/hawkin/ros/pycram_ws/src/pycram/demos/pycram_gpsr_demo/objects.py'
 
 
-# make rosout more colorful
-class Colors:
+# make rosout more colorful PC = PrintColors
+class PC:
     PINK = '\033[95m'
     BLUE = '\033[94m'
     GREEN = '\033[92m'
@@ -79,7 +82,7 @@ def cond_pairs(cond: bool, pairs: Callable[[], dict], ) -> dict:
 # this is a helper function to transform a pose into a different frame
 # it is needed since otherwise tf will complain about interpolating into future for movable objects in semantic map
 # since their updates are being published with a too low frequency
-def transform_pose(tf_listener, target_frame, pose_stamped, max_attempts=5, attempt_delay=1):
+def transform_pose(tf_listener, target_frame, pose_stamped, max_attempts=10, attempt_delay=1):
     """
     Attempts to transform a pose to the specified target frame with retry logic.
 
@@ -93,25 +96,29 @@ def transform_pose(tf_listener, target_frame, pose_stamped, max_attempts=5, atte
     Returns:
         PoseStamped or None: The transformed pose if successful, None otherwise.
     """
+    #rospy.logerr(f"tf listener in transform pose {tf_listener}")
+    #rospy.logerr(f"pose: " + str(pose_stamped))
     attempt_count = 0
     while attempt_count < max_attempts:
         try:
             if not tf_listener.canTransform(target_frame, pose_stamped.header.frame_id, rospy.Time(0)):
-                rospy.logwarn("Transform not available. Attempt {} of {}".format(attempt_count + 1, max_attempts))
-                time.sleep(attempt_delay)
+                rospy.logwarn("[TF]Transform not available. Attempt {} of {}".format(attempt_count + 1, max_attempts))
+                rospy.sleep(attempt_delay)
             else:
-                rospy.loginfo("Transform available. Attempting transformation.")
+                rospy.loginfo(f"[TF]Transform available. Attempting transformation to {target_frame}.")
                 transformed_pose = tf_listener.transformPose(target_frame, pose_stamped)
+                #rospy.logerr(PC.GREEN + f"pose: " + str(pose_stamped))
                 return transformed_pose
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
-            rospy.logerr("An error occurred during transformation attempt {}: {}".format(attempt_count + 1, e))
-            time.sleep(attempt_delay)
+            rospy.logerr("[TF]An error occurred during transformation attempt {}: {}".format(attempt_count + 1, e))
+            rospy.sleep(attempt_delay)
         attempt_count += 1
     rospy.logerr("Failed to transform pose after {} attempts.".format(max_attempts))
     return None
 
 
 def knowrob_poses_result_to_list_dict(knowrob_output, nav_or_perc='nav'):  # works
+    global tf_l
     poses_list = []
     for item in knowrob_output:
         for raw_pose in item.get('Pose'):
@@ -120,6 +127,9 @@ def knowrob_poses_result_to_list_dict(knowrob_output, nav_or_perc='nav'):  # wor
             # pose = tf_l.transformPose("map", pose) # issues with time
             pose = transform_pose(tf_l, "map", pose)
             # ensure z is 0
+            if pose is None:
+                rospy.logerr("[UTILS] Could not transform pose. Aborting.")
+                return None
             if nav_or_perc == 'nav':
                 # make it naviagtion pose by ensuring you remove z
                 pose.pose.position.z = 0
@@ -208,6 +218,20 @@ def pose_stamped_to_json(pose_stamped):
         }
     }
     return json.dumps(pose_dict, indent=4)
+
+
+def remap_source_to_destination(json_data):
+    if json_data.get('Source'):
+        json_data['Destination'] = json_data.pop('Source')
+        rospy.loginfo(PC.GREY + '[UTILS] remapped Source to Destination')
+    else:
+        rospy.loginfo(PC.GREY + '[UTILS] no Source found')
+    if json_data.get('SourceRoom'):
+        json_data['DestinationRoom'] = json_data.pop('SourceRoom')
+        rospy.loginfo(PC.GREY + '[UTILS] remapped SourceRoom to DestinationRoom')
+    else:
+        rospy.loginfo(PC.GREY + '[UTILS] no SourceRoom found')
+    return json_data
 
 
 # autogenerate a dict from all defined objects in the objects.py file
