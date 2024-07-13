@@ -13,6 +13,7 @@ from . import utils, high_level_plans, knowrob_interface, nlp_processing
 import pycram.external_interfaces.giskard_new as giskard
 import tf
 import pycram.utilities.gpsr_utils as plans
+from demos.pycram_gpsr_demo import tf_l
 
 with_real_robot = True
 # initialize interfaces
@@ -42,7 +43,9 @@ def setup():
     rospy.loginfo("[CRAM] initialize everything")
     global world, robot, environment_raw, rviz, plan_list, giskard, move, tts, image_switch, sound_pub
     global tf_listener, with_real_robot, grasp_listener, start_signal_waiter, lt, gripper, previous_value
-    global robot_desig, environment_desig
+    global robot_desig, environment_desig, tf_l
+
+    #tf_l = tf.listener.TransformListener()
 
     world = BulletWorld('DIRECT')
     rospy.sleep(2)

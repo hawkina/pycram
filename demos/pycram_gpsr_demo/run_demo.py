@@ -9,27 +9,28 @@ import src.pycram.utilities.gpsr_utils as gpsr_utils
 # --- main control ---
 # TODO: test on real robot
 def gpsr():
-    plan_list = utils.get_plans(high_level_plans)
-    # plan_list = utils.get_plans(high_level_plans) # get list of all available plans
-    # init params
-    # go to instruction point, look at human, etc.
-    # high_level_plans.prepare_for_commands()
+    with real_robot:
+        plan_list = utils.get_plans(high_level_plans)
+        # plan_list = utils.get_plans(high_level_plans) # get list of all available plans
+        # init params
+        # go to instruction point, look at human, etc.
+        # high_level_plans.prepare_for_commands()
 
-    for i in range(5):  # test
-        # listen to instructions
-        instruction_list = nlp.listen_to_commands()
-        rospy.logwarn("[CRAM] instruction list: " + str(instruction_list))
+        for i in range(5):  # test
+            # listen to instructions
+            instruction_list = nlp.listen_to_commands()
+            rospy.logwarn("[CRAM] instruction list: " + str(instruction_list))
 
-        # execute instructions
-        # TODO iterate over list of instructions and do stuff
-        while instruction_list:  # Test
-            rospy.logwarn("[CRAM] in instruction loop")
-            instruction = instruction_list.pop(0)
-            rospy.loginfo(instruction)
-            # do stuff
-            # match instruction to plan
-            utils.call_plan_by_name(plan_list, snakecase(instruction['intent']), instruction)
-            # if plan was successfull, remove it from the list
+            # execute instructions
+            # TODO iterate over list of instructions and do stuff
+            while instruction_list:  # Test
+                rospy.logwarn("[CRAM] in instruction loop")
+                instruction = instruction_list.pop(0)
+                rospy.loginfo(instruction)
+                # do stuff
+                # match instruction to plan
+                utils.call_plan_by_name(plan_list, snakecase(instruction['intent']), instruction)
+                # if plan was successfull, remove it from the list
 
 
 data = {
@@ -57,14 +58,14 @@ data = {
         "numberAttribute": []
     },
     "DestinationRoom": {
-        "value": "living room",
+        "value": "dining room",
         "entity": "Room",
         "propertyAttribute": [],
         "actionAttribute": [],
         "numberAttribute": []
     },
     "Destination": {
-        "value": "couch table",
+        "value": "shelf",
         "entity": "DesignedFurniture",
         "propertyAttribute": [],
         "actionAttribute": [],
@@ -76,12 +77,12 @@ data = {
 # CHANGE CARE THIS STUFF GETS ACTUALLY EXECUTED
 def demo_plan(data):
     with real_robot:
-        high_level_plans.pick_up(data)
-        high_level_plans.placing(data)
+        high_level_plans.transporting(data)
         print('--------------stahp----------------')
         return
 
 
 setup()
-demo_plan(data)
+gpsr()
+#demo_plan(data)
 #setup_demo.gripper.pub_now('open')

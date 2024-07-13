@@ -6,9 +6,6 @@ import tf
 import json
 from typing import Callable
 
-
-import pycram.utilities.gpsr_utils as plans
-
 tf_l = tf.listener.TransformListener()
 colors = mcolors.cnames
 objects_path = '/home/hawkin/ros/pycram_ws/src/pycram/demos/pycram_gpsr_demo/objects.py'

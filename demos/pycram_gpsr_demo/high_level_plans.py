@@ -11,7 +11,7 @@ import pycram.utilities.gpsr_utils as plans
 from demos.pycram_gpsr_demo import setup_demo as sd
 from demos.pycram_gpsr_demo import nlp_processing as nlp
 from stringcase import snakecase
-from perception_to_knowrob import perc_to_know
+from demos.pycram_gpsr_demo import perc_to_know
 
 
 object_in_hand = None
@@ -184,7 +184,7 @@ def looking_for(param_json):  # WIP
 
 
 # subplan of fetching and transporting
-def pick_up(param_json):
+def pick_up(param_json): # works testing
     # TODO add obj to knowrob?
     global object_in_hand
     item, source, source_room, look_at_link, look_at_pose = None, None, None, None, None
@@ -254,7 +254,7 @@ def pick_up(param_json):
             return None
 
 
-def placing(param_json):
+def placing(param_json): # works testing
     global object_in_hand
     destination_link = None
     if not object_in_hand:
@@ -316,8 +316,8 @@ def cleaning(param_json):
 
 def transporting(param_json):
     sing_my_angel_of_music("in transporting plan")
-    rospy.loginfo("transporting: " + str(param_json))
-    # from BeneficiaryRole
+    pick_up(param_json)
+    placing(param_json)
 
 
 def arranging(param_json):
@@ -380,7 +380,7 @@ def follow(param_json):
     rospy.loginfo("follow: " + str(param_json))
 
 
-# WIP --- telling plans -------------------------------------------------------------------------------------
+# DONE --- telling plans -------------------------------------------------------------------------------------
 def tell_time(param_json):  # DONE
     sing_my_angel_of_music(llp_tell_stuff.say_time())
     rospy.loginfo("[TELL] time: " + str(param_json))

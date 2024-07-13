@@ -18,7 +18,7 @@ todo_plans = []
 currentSpeech = ""
 stoppedSpeaking = Condition()
 canSpeak = True
-canListen = False
+canListen = True
 canDisplay = False
 
 # might be deprecated?

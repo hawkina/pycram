@@ -1,3 +1,5 @@
+import rospy
+
 perc_to_know = {
   "Abrasivesponge": "http://www.ease-crc.org/ont/SUTURO.owl#AbrasiveSponge",
   "Apple": "http://www.ease-crc.org/ont/SUTURO.owl#Apple",
