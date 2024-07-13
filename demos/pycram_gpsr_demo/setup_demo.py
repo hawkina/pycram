@@ -76,8 +76,9 @@ def setup():
     giskard.clear()
     giskard.sync_worlds()
 
+    # this is already done in listen to commands
     if nlp_processing.canSpeak:
-        nlp_processing.nlp_subscribe()
+         nlp_processing.nlp_subscribe()
 
     rospy.loginfo(utils.PC.GREEN + "[CRAM] done with setup")
     print("###################################################################")

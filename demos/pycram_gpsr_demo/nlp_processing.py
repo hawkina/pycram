@@ -18,19 +18,8 @@ todo_plans = []
 currentSpeech = ""
 stoppedSpeaking = Condition()
 canSpeak = True
-canListen = True
+canListen = False
 canDisplay = False
-
-# might be deprecated?
-def data_cb(data):
-    global response
-    global callback
-    global doorbell
-
-    rospy.loginfo("in NLP callback")
-    response = data.data.split(",")
-    response.append("None")
-    callback = True
 
 
 def what_am_i_saying(msg):
@@ -38,7 +27,7 @@ def what_am_i_saying(msg):
     if ("" != currentSpeech) and ("" == msg.data):
         with stoppedSpeaking:
             stoppedSpeaking.notify_all()
-    currentSpeech=msg.data
+    currentSpeech = msg.data
 
 
 def sing_my_angel_of_music(text):
@@ -74,6 +63,7 @@ def intent_processing(msg):
         haveNLPOutput.notifyAll()
     #if response["intent"] in ["Agreement", "Disagreement"]:
     #    return confirm
+
 
 # create a subscriber to the /nlp_out topic on which the result from NLP is published
 def nlp_subscribe():
@@ -146,7 +136,7 @@ def confirm_nlp_output(received_output):
 
 # --- THIS IS THE MAIN FUNCTION FOR NLP ---
 def listen_to_commands():
-    nlp_subscribe()
+    #nlp_subscribe() done during setup
     global response, todo_plans
     while True:
         if canDisplay:
@@ -161,4 +151,3 @@ def listen_to_commands():
     rospy.loginfo("[CRAM] do stuff")
     nlp_unsubscribe()
     return todo_plans
-

@@ -73,6 +73,41 @@ data = {
     }
 }
 
+data2 = {
+    "sentence": "  Bring me the cup from the living room table .",
+    "intent": "Transporting",
+    "BeneficiaryRole": {
+        "value": "me",
+        "entity": "NaturalPerson",
+        "propertyAttribute": [],
+        "actionAttribute": [],
+        "numberAttribute": []
+    },
+    "Item": {
+        "value": "cup",
+        "entity": "Transportable",
+        "propertyAttribute": [],
+        "actionAttribute": [],
+        "numberAttribute": []
+    },
+    "SourceRoom": {
+        "value": "living room",
+        "entity": "Room",
+        "propertyAttribute": [],
+        "actionAttribute": [],
+        "numberAttribute": []
+    },
+    "Source": {
+        "value": "couch table",
+        "entity": "DesignedFurniture",
+        "propertyAttribute": [],
+        "actionAttribute": [],
+        "numberAttribute": []
+    }
+}
+
+
+
 
 # CHANGE CARE THIS STUFF GETS ACTUALLY EXECUTED
 def demo_plan(data):
@@ -83,6 +118,6 @@ def demo_plan(data):
 
 
 setup()
-gpsr()
-#demo_plan(data)
+#gpsr()
+demo_plan(data2)
 #setup_demo.gripper.pub_now('open')
