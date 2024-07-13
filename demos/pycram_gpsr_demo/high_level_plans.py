@@ -1,3 +1,4 @@
+import re
 import rospy
 from pycram.designators.action_designator import *
 from pycram.utilities.robocup_utils import StartSignalWaiter, pakerino
@@ -6,11 +7,14 @@ from demos.pycram_gpsr_demo import knowrob_interface as knowrob
 from demos.pycram_gpsr_demo import llp_navigation as navi
 import demos.pycram_gpsr_demo.utils as utils
 from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
-import pycram.utilities.gpsr_utils as plan
-import time
-
+import pycram.utilities.gpsr_utils as plans
+from demos.pycram_gpsr_demo import setup_demo as sd
+from demos.pycram_gpsr_demo import nlp_processing as nlp
 from stringcase import snakecase
+from demos.pycram_gpsr_demo import perc_to_know
 
+
+object_in_hand = None
 
 # these are all the high level plans, to which we map the NLP output.
 # they should either connect to low level plans or be filled with data from knowledge
@@ -180,7 +184,11 @@ def looking_for(param_json):  # WIP
 
 
 # subplan of fetching and transporting
-def pick_up(param_json):
+def pick_up(param_json): # works testing
+    # TODO add obj to knowrob?
+    global object_in_hand
+    item, source, source_room, look_at_link, look_at_pose = None, None, None, None, None
+    obj_types_dict = utils.obj_dict
     sing_my_angel_of_music("in picking up plan")
     rospy.loginfo(utils.PC.BLUE + "Pick-up plan called with params: " + str(param_json))
     # TODO get data from knowrob
@@ -188,22 +196,93 @@ def pick_up(param_json):
     source_params = {'Source': param_json.get('Source'), 'SourceRoom': param_json.get('SourceRoom')}
     source_params = utils.remap_source_to_destination(source_params)
     result = moving_to(source_params)
-    # 2. pick up object
+    rospy.loginfo(utils.PC.BLUE + "[CRAM] Navigation done. result: " + str(result))
+    #get values
     # get position of where robot should look at
-    if param_json.get('Item').get('value'):
+    if param_json.get('Item') is not None:
         item = param_json.get('Item').get('value')
-    if param_json.get('Source').get('value'):
+        #item = 'cup_small' # CHANGE add fancy filtering
+    if param_json.get('Source') is not None:
         source = param_json.get('Source').get('value')
-    if param_json.get('SourceRoom').get('value'):
-        source_room = param_json.get('SourceRoom').get('value') # FIX AttributeError: 'NoneType' object has no attribute 'get'
-
+    if param_json.get('SourceRoom') is not None:
+        source_room = param_json.get('SourceRoom').get('value')
     # get link of pose you went to
+    if result is not None:
+        # remove prefix for bullet
+        look_at_link = result.get('Item').get('link')
+        # get lookup pose
+        look_at_pose = utils.tf_l.lookupTransform(target_frame='map',
+                                                  source_frame=look_at_link,
+                                                  time=rospy.get_rostime())
+    # get link of pose you went to
+    # 2. look at item and pick up
+    pick_up_retries = 3
+    grasped_bool, grasp, found_object = None, None, None
+    while pick_up_retries > 0 and found_object is None:
+        if item is not None and look_at_link is not None and grasped_bool is None:
+            try:
+                gasped_bool, grasp, found_object = plans.process_pick_up_objects(obj_type=item, obj_types_dict=obj_types_dict,
+                                                                                 link=utils.remove_prefix(look_at_link, 'iai_kitchen/'),
+                                                                                 look_pose_given=look_at_pose,
+                                                                                 environment_raw=sd.environment_raw,
+                                                                                 giskardpy=sd.giskard,
+                                                                                 gripper=sd.gripper,
+                                                                                 talk=nlp.tts,
+                                                                                 lt=sd.lt,
+                                                                                 robot_description=sd.robot_description,
+                                                                                 BulletWorld=sd.world,
+                                                                                 grasp_listener=sd.grasp_listener)
+            except TypeError:
+                rospy.logerr("[CRAM] Could not pick up object. Will retry...")
+                sing_my_angel_of_music("Something went wrong during the pick up process. I will try again.")
+                return grasped_bool, grasp, found_object
+        pick_up_retries -= 1
+        if found_object is not None:
+            name = found_object_name = found_object.bullet_world_object.name.replace('_', ' ')
+            found_object_name = re.sub(r'\d+', '', name)
+            rospy.loginfo(utils.PC.BLUE + f"[CRAM] found object of type {name} and picked it up")
+            pick_up_retries = 0
+            object_in_hand = found_object
+            return grasped_bool, grasp, found_object
+        break
+    else:
+        if found_object:
+            sing_my_angel_of_music("[CRAM] picked up object.")
+            return found_object
+        else:
+            sing_my_angel_of_music("[CRAM]I am sorry. I seem to not have found the requested item.")
+            return None
 
 
-
-def placing(param_json):
+def placing(param_json): # works testing
+    global object_in_hand
+    destination_link = None
+    if not object_in_hand:
+        rospy.logerr("[CRAM] I have no object in my hand so I cannot place :(")
+        return None
     sing_my_angel_of_music("in placing plan")
-    rospy.loginfo("Place: " + str(param_json))
+    # move to playing destination
+    result = moving_to(param_json)
+    if result is None:
+        rospy.logerr("[CRAM] Navigation failed to Destination location.")
+        return None
+    obj_type = object_in_hand.type
+    # match with knowrob
+    # PLACE WHERE HUMAN TOLD U
+    if param_json.get('Destination'):
+        destination_link = utils.remove_prefix(result.get('Item').get('link'), 'iai_kitchen/')
+
+    # PLACE at PREDEFINED LOCATION FROM KNOWROB
+    if obj_type in perc_to_know.keys():
+        knowrob_iri = perc_to_know.get('type')
+        item_location = knowrob.get_predefined_destination_item_location(knowrob_iri)
+        destination_link = utils.remove_prefix(item_location.get('Item').get('link'), 'iai_kitchen/')
+
+    plans.place(object=object_in_hand, grasp='front', link=destination_link, giskard=sd.giskard, talk=nlp.tts,
+                robot_description=sd.robot_description, lt=sd.lt, environment_raw=sd.environment_raw,
+                environment_desig=sd.environment_desig,
+                gripper=sd.gripper, world=sd.world, robot_desig=sd.robot_desig)
+
 
 
 def fetching(param_json):
@@ -237,8 +316,8 @@ def cleaning(param_json):
 
 def transporting(param_json):
     sing_my_angel_of_music("in transporting plan")
-    rospy.loginfo("transporting: " + str(param_json))
-    # from BeneficiaryRole
+    pick_up(param_json)
+    placing(param_json)
 
 
 def arranging(param_json):
@@ -301,7 +380,7 @@ def follow(param_json):
     rospy.loginfo("follow: " + str(param_json))
 
 
-# WIP --- telling plans -------------------------------------------------------------------------------------
+# DONE --- telling plans -------------------------------------------------------------------------------------
 def tell_time(param_json):  # DONE
     sing_my_angel_of_music(llp_tell_stuff.say_time())
     rospy.loginfo("[TELL] time: " + str(param_json))
@@ -366,3 +445,4 @@ def prepare_for_commands():
     # TODO this should be looped for multiple tasks
     # go to initial point
     move.query_pose_nav(instruction_point)
+

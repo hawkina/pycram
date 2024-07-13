@@ -17,8 +17,8 @@ confirm = {}
 todo_plans = []
 currentSpeech = ""
 stoppedSpeaking = Condition()
-canSpeak = False
-canListen = False
+canSpeak = True
+canListen = True
 canDisplay = False
 
 # might be deprecated?
@@ -42,6 +42,7 @@ def what_am_i_saying(msg):
 
 
 def sing_my_angel_of_music(text):
+    global tts, canSpeak, stoppedSpeaking
     rospy.loginfo("SPEAKING: " + text)
     #tts.pub_now(text)
     # handled on other side now

@@ -6,11 +6,7 @@ import tf
 import json
 from typing import Callable
 
-
-import pycram.utilities.gpsr_utils as plans
-
 tf_l = tf.listener.TransformListener()
-rospy.logerr(f" INITIAL tf listener in utils {tf_l}")
 colors = mcolors.cnames
 objects_path = '/home/hawkin/ros/pycram_ws/src/pycram/demos/pycram_gpsr_demo/objects.py'
 
@@ -233,6 +229,11 @@ def remap_source_to_destination(json_data):
         rospy.loginfo(PC.GREY + '[UTILS] no SourceRoom found')
     return json_data
 
+
+def remove_prefix(text, prefix):
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
 
 # autogenerate a dict from all defined objects in the objects.py file
 obj_dict = autogenerate_dict_from_file(objects_path)
