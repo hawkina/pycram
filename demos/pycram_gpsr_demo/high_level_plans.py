@@ -181,23 +181,6 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
         return None
 
 
-# also finding + searching
-def looking_for(param_json):  # WIP
-    sing_my_angel_of_music("in looking for plan")
-    rospy.loginfo("Looking For: " + str(param_json))
-    physical_place, physical_artifact = None, None
-    # step 0: go to the requested room - if it was mentioned explicitly OR
-    if param_json.get('Location') and param_json.get('Location').get('entity') == 'PhysicalPlace':
-        physical_place = snakecase(param_json.get('Location').get('value'))
-    if param_json.get('Destination') and param_json.get('Destination').get('entity') == 'PhysicalArtifact':
-        physical_artifact = param_json.get('Destination').get('value')
-    # make msg for perception
-    rk_msg = perception_interface.make_robokudo_obj_msg(param_json.get('Item'))
-    # get navigation pose from knowrob depending on what info is known
-
-    # step 1: go to the furniture/surface item that got mentioned and look on it for the specified obj
-
-
 # subplan of fetching and transporting
 def pick_up(param_json):  # works testing
     # TODO add obj to knowrob?
@@ -212,11 +195,11 @@ def pick_up(param_json):  # works testing
     source_params = utils.remap_source_to_destination(source_params)
     result = moving_to(source_params)
     rospy.loginfo(utils.PC.BLUE + "[CRAM] Navigation done. result: " + str(result))
-    #get values
+    # get values
     # get position of where robot should look at
     if param_json.get('Item') is not None:
         item = param_json.get('Item').get('value')
-        #item = 'cup_small' # CHANGE add fancy filtering
+        # item = 'cup_small' # CHANGE add fancy filtering
     if param_json.get('Source') is not None:
         source = param_json.get('Source').get('value')
     if param_json.get('SourceRoom') is not None:
@@ -295,43 +278,52 @@ def placing(param_json):  # works testing
         item_location = knowrob.get_predefined_destination_item_location(knowrob_iri)
         destination_link = utils.remove_prefix(item_location.get('Item').get('link'), 'iai_kitchen/')
 
-    plans.place(object=object_in_hand, grasp='front', link=destination_link, giskard=sd.giskard, talk=nlp.tts,
-                robot_description=sd.robot_description, lt=sd.lt, environment_raw=sd.environment_raw,
-                environment_desig=sd.environment_desig,
-                gripper=sd.gripper, world=sd.world, robot_desig=sd.robot_desig)
+    result = plans.place(object=object_in_hand, grasp='front', link=destination_link, giskard=sd.giskard, talk=nlp.tts,
+                         robot_description=sd.robot_description, lt=sd.lt, environment_raw=sd.environment_raw,
+                         environment_desig=sd.environment_desig,
+                         gripper=sd.gripper, world=sd.world, robot_desig=sd.robot_desig)
+
+    if result:
+        sing_my_angel_of_music("done with placing")
+        object_in_hand = None
+        return True
 
 
-# deprecated -> transporting
-def fetching(param_json):
-    global me_pose
-    # go to a target location, pick up object, bring it back
-    sing_my_angel_of_music("in fetching plan")
-    rospy.loginfo("fetching: " + str(param_json))
-    # BeneficiaryRole: target
-    if param_json.get('BeneficiaryRole').get('entity') == 'NaturalPerson':
-        # Goal is natural pearson. Means we need to HRI
-        # if person is 'me', save current pose and person name
-        if param_json.get('BeneficiaryRole').get('value') == 'me':  # or part of a list of names?
-            # save current pose
-            me_pose = utils.tf_l.lookupTransform(target_frame='map', source_frame='base_link',
-                                                 time=rospy.get_time())
-            # alternatively, try to memorize the human person from perception? ... uff
-            person = 'you'
-    # go to the destination to pick the obj
-    # --- Step 1 ---
-    # get the pose of 'PhysicalPlace' = 'Room' (if available) CHANGE (Potentially)
-    pick_up(param_json)
-    navi.go_to_pose(me_pose)
-    sing_my_angel_of_music("Here is your object. Please take it from me in 3.. 2.. 1.")
-    sd.gripper('open')
+# also finding + searching
+# Source
+def looking_for(param_json):  # WIP TODO
+    sing_my_angel_of_music("in looking for plan")
+    rospy.loginfo("Looking For: " + str(param_json))
+    # get vars
+    item, person, furniture, room = None, None, None, None
+    if param_json.get('Source') is not None:
+        # ensure furniture obj exists
+        furniture = param_json.get('Source').get('value').lower()
+        if knowrob.check_existence_of_instance(snakecase(furniture)):
+            rospy.loginfo(f"[CRAM] found instance of furniture item " + furniture)
+            furniture = snakecase(furniture)
+        # if instance does not exist,check if class does ?
+        elif knowrob.check_existence_of_class(furniture):
+            rospy.loginfo("[CRAM] found class of furniture item " + furniture)
+            furniture_class = knowrob.check_existence_of_class(furniture)[0].get('Class')
+            furniture = False
+        elif utils.obj_dict.get(furniture) is not None:
+            furniture = utils.obj_dict.get(furniture)
+            rospy.loginfo("[CRAM] Fallback: of furniture item found in list. item : " + furniture)
+        else:
+            rospy.loginfo("[CRAM] could not find furniture item " + furniture)
+            sing_my_angel_of_music(f"I am sorry. I don't know where {furniture} is.")
+            return None
 
-    # perceive obj
-    # TODO WIP
+    if param_json.get('SourceRoom') is not None:
+        # ensure room exists
+        if knowrob.rooms.get(snakecase(param_json.get('SourceRoom').get('value').lower())) is not None:
+            room = param_json.get('SourceRoom').get('value').lower()
+        else:
+            room = 'arena'
 
-
-def cleaning(param_json):
-    sing_my_angel_of_music("in cleaning plan")
-    rospy.loginfo("cleaning: " + str(param_json))
+    if param_json.get('Item') is not None:
+        item = param_json.get('Item').get('value')
 
 
 def transporting(param_json):
@@ -341,7 +333,7 @@ def transporting(param_json):
     if param_json.get('BeneficiaryRole').get('value') == 'me':  # TODO handle other people too
         # save current pose
         rospy.loginfo("[CRAM] tf lookup: ")
-        # TODO wrap this to avoid extraplotation errors
+
         me_pose = utils.lookup_transform(target_frame='map', source_frame='base_link', tf_listener=utils.tf_l)
         me_pose = PoseStamped(me_pose[0], me_pose[1])
         rospy.loginfo("[CRAM] me pose: " + str(me_pose))
@@ -369,6 +361,11 @@ def arranging(param_json):
 def count(param_json):
     sing_my_angel_of_music("in counting plan")
     rospy.loginfo("count: " + str(param_json))
+
+
+def cleaning(param_json):
+    sing_my_angel_of_music("in cleaning plan")
+    rospy.loginfo("cleaning: " + str(param_json))
 
 
 def guide(param_json):
@@ -485,3 +482,30 @@ def prepare_for_commands():
     # TODO this should be looped for multiple tasks
     # go to initial point
     move.query_pose_nav(instruction_point)
+
+# DEPRECTAED ---------------------------------------------------------------------------------------
+# deprecated -> transporting
+# def fetching(param_json):
+#     global me_pose
+#     # go to a target location, pick up object, bring it back
+#     sing_my_angel_of_music("in fetching plan")
+#     rospy.loginfo("fetching: " + str(param_json))
+#     # BeneficiaryRole: target
+#     if param_json.get('BeneficiaryRole').get('entity') == 'NaturalPerson':
+#         # Goal is natural pearson. Means we need to HRI
+#         # if person is 'me', save current pose and person name
+#         if param_json.get('BeneficiaryRole').get('value') == 'me':  # or part of a list of names?
+#             # save current pose
+#             me_pose = utils.tf_l.lookupTransform(target_frame='map', source_frame='base_link',
+#                                                  time=rospy.get_time())
+#             # alternatively, try to memorize the human person from perception? ... uff
+#             person = 'you'
+#     # go to the destination to pick the obj
+#     # --- Step 1 ---
+#     # get the pose of 'PhysicalPlace' = 'Room' (if available) CHANGE (Potentially)
+#     pick_up(param_json)
+#     navi.go_to_pose(me_pose)
+#     sing_my_angel_of_music("Here is your object. Please take it from me in 3.. 2.. 1.")
+#     sd.gripper('open')
+#
+#     # perceive obj

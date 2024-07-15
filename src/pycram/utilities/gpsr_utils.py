@@ -166,6 +166,7 @@ def place(object, grasp, link, giskard, talk, robot_description, lt, environment
 
     giskardpy.avoid_all_collisions()
     park = pakerino()
+
     while not park:
         print("waiting for park")
         rospy.sleep(0.1)
