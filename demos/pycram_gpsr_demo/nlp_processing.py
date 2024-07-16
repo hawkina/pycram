@@ -17,8 +17,8 @@ confirm = {}
 todo_plans = []
 currentSpeech = ""
 stoppedSpeaking = Condition()
-canSpeak = True
-canListen = False
+canSpeak = False  # CHANGE set to TRUE for real robot
+canListen = False # CHANGE set to TRUE when NLP and Whisper enabled
 canDisplay = False
 
 

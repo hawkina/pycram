@@ -15,7 +15,7 @@ import tf
 import pycram.utilities.gpsr_utils as plans
 from demos.pycram_gpsr_demo import tf_l
 
-with_real_robot = True
+with_real_robot = False # CHANGE set to TRUE for real robot
 # initialize interfaces
 instruction_point = PoseStamped([1.45, 4.5, 0], [0, 0, 1, 0])
 world = None
@@ -26,7 +26,6 @@ rviz = None
 move = None
 image_switch = None
 sound_pub = None
-#tf_listener = None
 grasp_listener = None
 start_signal_waiter = None
 lt = None
@@ -55,7 +54,6 @@ def setup():
     move = PoseNavigator()
     image_switch = ImageSwitchPublisher()
     sound_pub = SoundRequestPublisher()
-    # tf_listener = tf.listener.TransformListener()
     grasp_listener = GraspListener()
     start_signal_waiter = StartSignalWaiter()
     lt = LocalTransformer()

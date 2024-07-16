@@ -117,7 +117,7 @@ def demo_plan(data):
         return
 
 
-setup()
+#setup()
 #gpsr()
-demo_plan(data2)
+#demo_plan(data2)
 #setup_demo.gripper.pub_now('open')

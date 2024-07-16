@@ -199,7 +199,7 @@ def autogenerate_dict_from_file(file_path):
     return ontology_dict
 
 
-def write_json_to_file(json_data, file_path='home/hawkin/ros_out_files'):
+def write_json_to_file(json_data, file_path='result.json'):
     # Call the function to get the result
 
     # Convert the result to a JSON string
