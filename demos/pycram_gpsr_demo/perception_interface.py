@@ -5,10 +5,7 @@ from pycram.designators.action_designator import LookAtAction, DetectAction
 from pycram.process_module import real_robot
 from robokudo_msgs.msg import QueryAction, QueryGoal, QueryResult, QueryActionResult
 
-
-
 rk = actionlib.SimpleActionClient('robokudo/query', QueryAction)
-
 
 
 def init_robokudo():
@@ -42,7 +39,8 @@ def ask_robokudo_for_all_objects():
     rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
     result = rk.get_result()
     rospy.loginfo("[RK] result received")
-    return result # list of all perceived items or an empty list
+    return result  # list of all perceived items or an empty list
+
 
 # todo test from here ----
 def ask_robokudo_for_object(obj_type):
@@ -55,7 +53,7 @@ def ask_robokudo_for_object(obj_type):
     rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
     result = rk.get_result()
     rospy.loginfo("[RK] result received")
-    return result # list of all perceived items or an empty list
+    return result  # list of all perceived items or an empty list
 
 
 def send_robokudo_goal(goal_msg):
@@ -67,6 +65,7 @@ def send_robokudo_goal(goal_msg):
     rospy.loginfo("[RK] result received")
     return result
 
+
 # todo test end here------
 
 ### --- REPL testing ---
@@ -77,8 +76,8 @@ def test_pc():
     rk.wait_for_server()
     rospy.loginfo("You can start your demo now")
     goal_msg = QueryGoal()
-    goal_msg.obj.type = 'Crackerbox' # human doesn't work somehow? 'mueslibox'
-    goal_msg.type='all'
+    goal_msg.obj.type = 'Crackerbox'  # human doesn't work somehow? 'mueslibox'
+    goal_msg.type = 'all'
     rk.send_goal(goal_msg)
     result = rk.get_result()
     print(result.res[0].type)
@@ -99,4 +98,3 @@ def test_lookat(pose):
 #            print(object_desig)
 #        return object_desig
 ### to get the result I would need to do this: object_desig[1].get('Metalmug_1719825441.1798751')
-

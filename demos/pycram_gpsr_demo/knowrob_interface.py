@@ -1,6 +1,7 @@
 from stringcase import snakecase
 from pycram.knowledge.knowrob_knowledge import KnowrobKnowledge
 import rospy
+from demos.pycram_gpsr_demo.perception_to_knowrob import perc_to_know
 import demos.pycram_gpsr_demo.utils as utils
 
 # available rooms iri types
@@ -172,7 +173,9 @@ def check_existence_of_class(nlp_name):
 
 # get iri from objects.py mapping
 def get_predefined_source_item_location(items_iri):
-    knowrob_poses_list = kb.prolog_client.all_solutions(f"predefined_origin_location('{items_iri}', Furniture), "
+    if "'" not in items_iri:
+        items_iri = "'" + items_iri + "'"
+    knowrob_poses_list = kb.prolog_client.all_solutions(f"predefined_origin_location({items_iri}, Furniture), "
                                                         f"furniture_rel_pose(Furniture, 'perceive', Pose).")
     poses_list = []
     if knowrob_poses_list:
@@ -183,7 +186,9 @@ def get_predefined_source_item_location(items_iri):
 
 
 def get_predefined_destination_item_location(items_iri):
-    knowrob_poses_list = kb.prolog_client.all_solutions(f"predefined_destination_location('{items_iri}', Furniture), "
+    if "'" not in items_iri:
+        items_iri = "'" + items_iri + "'"
+    knowrob_poses_list = kb.prolog_client.all_solutions(f"predefined_destination_location({items_iri}, Furniture), "
                                                         f"furniture_rel_pose(Furniture, 'perceive', Pose).")
     poses_list = []
     if knowrob_poses_list:
@@ -193,6 +198,20 @@ def get_predefined_destination_item_location(items_iri):
     return poses_list
 
 
+def check_existence_based_on_class(class_iri):
+    # check if an instance of the object exists
+    # returns the instance name
+    # nlp_name = 'table'
+    tmp = kb.prolog_client.all_solutions(f"what_object_transitive(Name, {class_iri}).")
+    if tmp is None or tmp == []:
+        rospy.logwarn(f"[KnowRob] no object class with name {class_iri} found.")
+        return None
+    else:
+        rospy.loginfo(f"[KnowRob] object class {tmp} of type {class_iri} found")
+        return tmp
+
+
+# Test -----------------------------------------------------------------------------------------
 def test_predefined_locations():
     source_list = []
     destination_list = []
@@ -207,7 +226,6 @@ def test_predefined_locations():
     return {'source': source_list, 'destination': destination_list}
 
 
-# Test -----------------------------------------------------------------------------------------
 perception_list = [
     "Fork", "Pitcher", "Bleachcleanserbottle", "Crackerbox", "Minisoccerball",
     "Baseball", "Mustardbottle", "Jellochocolatepuddingbox", "Wineglass",
@@ -224,6 +242,21 @@ perception_list = [
 furniture_list = ['hallway cabinet', 'entrance', 'desk', 'shelf', 'coathanger',
                   'exit', 'TV table', 'lounge chair', 'lamp', 'couch', 'coffee table',
                   'trashcan', 'kitchen cabinet', 'dinner table', 'dishwasher', 'kitchen counter']
+
+
+def check_existence_of_perception():
+    results = []
+    items_iri = None
+    for item in perc_to_know:
+        items_iri = perc_to_know.get(item)
+        if "'" not in items_iri:
+            items_iri = "'" + items_iri + "'"
+        tmp = check_existence_based_on_class(items_iri)
+        if tmp:
+            results.append([item, tmp])
+        else:
+            results.append([item, None])
+    return results
 
 
 # check_existence_of_furniture(furniture_list)
