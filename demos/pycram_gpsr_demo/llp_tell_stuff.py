@@ -85,8 +85,53 @@ def say_something():
         "What do you call a pirate robot? - Arrrr2-D2",
         "Hey human, you wouldn't happen to know the exact whereabouts of John Connor, would you? Just asking for a friend...",
         "Meow - I really like cats!",
-        "The first robot was created in the 5th century BC and was a mechanical bird.",
         "Robots are exploring Mars and sending back information to Earth.",
         "There's a robot that can solve a Rubik's cube in less than a second."
     ]
     return random.choice(facts)
+
+
+# WIP Eindhoven specifc questions ---------------------------------------
+def say_eindhoven_mountain():
+    response = f"The Vaalserberg is the highest mountain in the Netherlands, although parts of the mountain belong to Belgium and Germany."
+    return response
+
+
+def say_eindhoven_painter():
+    response = f"It was created by the dutch painter Rembrandt."
+    return response
+
+
+def say_eindhoven_lake():
+    response = f"The largest lake in the Netherlands is the Ijsselmeer."
+    return response
+
+
+def say_eindhoven_baron():
+    response = f"King Willem-Alexander of the Netherlands."
+    return response
+
+
+def say_eindhoven_created():
+    response = f"In 1232, by the duke of Brabant, Henry I."
+    return response
+
+
+def say_eindhoven_people():
+    response = f"More than 200.000 people currently live in Eindhoven."
+    return response
+
+
+def say_eindhoven_mascot():
+    response = f"The official mascot for this year's RoboCup is called Robin."
+    return response
+
+
+def say_eindhoven_lowest_point():
+    response = f"The lowest point of the Netherlands is -6.67m below sea level. It is located close to the A20."
+    return response
+
+
+def say_eindhoven_currency():
+    response = f"The guilder was the currency of the Netherlands before the euro was introduced in 2002."
+    return response

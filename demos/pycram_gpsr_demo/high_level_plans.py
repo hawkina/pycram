@@ -325,6 +325,8 @@ def looking_for(param_json):  # WIP TODO
     if param_json.get('Item') is not None:
         item = param_json.get('Item').get('value')
 
+    # go to location which human said to look for items
+
 
 def transporting(param_json):
     sing_my_angel_of_music("in transporting plan")
@@ -468,7 +470,55 @@ def tell_something(param_json):  # CHANGE adapt tp cute toya stuff
     rospy.loginfo("tell something: " + str(param_json))
 
 
-# WIP --- END telling plans -------------------------------------------------------------------------------------
+# DONE --- END telling plans -------------------------------------------------------------------------------------
+# WIP ---- Eindhoven Specific Questions ------------------------------
+def eindhoven_mountain(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_eindhoven_mountain())
+    rospy.loginfo("say eindhoven mountain: " + str(param_json))
+
+
+def eindhoven_painter(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_eindhoven_painter())
+    rospy.loginfo("say eindhoven painter: " + str(param_json))
+
+
+def eindhoven_lake(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_eindhoven_lake())
+    rospy.loginfo("say eindhoven lake: " + str(param_json))
+
+
+def eindhoven_baron(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_eindhoven_baron())
+    rospy.loginfo("say eindhoven baron: " + str(param_json))
+
+
+def eindhoven_created(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_eindhoven_created())
+    rospy.loginfo("say eindhoven mountain: " + str(param_json))
+
+
+def eindhoven_people(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_eindhoven_people())
+    rospy.loginfo("say eindhoven people: " + str(param_json))
+
+
+def eindhoven_mascot(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_eindhoven_mascot())
+    rospy.loginfo("say eindhoven mascot: " + str(param_json))
+
+
+def eindhoven_lowest_point(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_eindhoven_lowest_point())
+    rospy.loginfo("say eindhoven lowest point: " + str(param_json))
+
+
+def eindhoven_currency(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_eindhoven_currency())
+    rospy.loginfo("say eindhoven currency: " + str(param_json))
+
+
+# WIP ---- END Eindhoven Specific Questions ------------------------------
+
 def prepare_for_commands():
     global move, instruction_point
     # wait for start signal (laser scan)
