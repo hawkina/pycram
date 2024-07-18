@@ -14,50 +14,6 @@ from pycram.process_module import real_robot
 from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, StartSignalWaiter, \
     HSRBMoveGripperReal, pakerino, GraspListener
 
-# world = None  # BulletWorld()
-# environment_raw = None  # Object("kitchen", ObjectType.ENVIRONMENT, "pre_robocup_sg.urdf")
-# environment_desig = None  #ObjectDesignatorDescription(names=["kitchen"])
-#
-# grasp_listener = None  # GraspListener()
-# talk = None  # TextToSpeechPublisher()
-# img_swap = None  # ImageSwitchPublisher()
-# start_signal_waiter = None  # StartSignalWaiter()
-# move = None  # PoseNavigator()
-# lt = None  # LocalTransformer()
-# gripper = None  # HSRBMoveGripperReal()
-# robot = None  # Object("hsrb", "robot", "../../resources/" + "hsrb" + ".urdf")
-# #robot.set_color([0.5, 0.5, 0.9, 1])
-# robot_desig = None  #  ObjectDesignatorDescription(names=["hsrb"])
-# giskard_obj = None
-# # giskardpy.init_giskard_interface()
-# # giskardpy.clear()
-# # giskardpy.sync_worlds()
-#
-# previous_value = None
-
-
-# TODO find a better way of doing this
-# def handover_all_variables(other_world, other_environment_raw, other_environment_desig, other_grasp_listener,
-#                            other_talk, other_img_swap, other_start_signal_waiter, other_move, other_lt, other_gripper,
-#                            other_robot, other_robot_desig, other_giskard):
-#     global world, environment_raw, environment_desig, grasp_listener, talk, img_swap, start_signal_waiter, move, lt
-#     global gripper, robot, robot_desig, giskard_obj
-#     rospy.loginfo("[PLAN-CRAM] remapping...")
-#     world = other_world
-#     environment_raw = other_environment_raw
-#     environment_desig = other_environment_desig
-#     grasp_listener = other_grasp_listener
-#     talk = other_talk
-#     img_swap = other_img_swap
-#     start_signal_waiter = other_start_signal_waiter
-#     move = other_move
-#     lt = other_lt
-#     gripper = other_gripper
-#     robot = other_robot
-#     robot_desig = other_robot_desig
-#     giskard_obj = other_giskard
-#     rospy.loginfo('\033[92m' + "[PLAN-CRAM] done remapping")  # green
-
 previous_value = None
 
 
@@ -84,7 +40,8 @@ def get_place_poses_for_surface(object_to_place, link, environment_desig, enviro
         return NoPlacePoseFoundCondition
 
 
-def place(object, grasp, link, giskard, talk, robot_description, lt, environment_raw, environment_desig, gripper, world, robot_desig):
+def place(object, grasp, link, giskard, talk, robot_description, lt, environment_raw, environment_desig, gripper, world,
+          robot_desig):
     def monitor_func_place():
         global previous_value
         der = fts.get_last_value()
@@ -127,7 +84,8 @@ def place(object, grasp, link, giskard, talk, robot_description, lt, environment
         talk.pub_now("I was not able to perceive any objects")
 
     #todo ifno target_location  then do handover
-    target_location = get_place_poses_for_surface(object_to_place=object, link=link, environment_desig=environment_desig,
+    target_location = get_place_poses_for_surface(object_to_place=object, link=link,
+                                                  environment_desig=environment_desig,
                                                   environment_raw=environment_raw, robot_desig=robot_desig, world=world,
                                                   lt=lt)
 
@@ -363,4 +321,45 @@ def pick_place_demo(move):
         move.pub_now(shelf_pose)
         place(found_object, "front", 'shelf:shelf:shelf_floor_2')
 
-#pick_place_demo()
+
+# ----- PERCEIVE -----------
+# def perceive(obj_type, link, look_pose_given, environment_raw, giskardpy, gripper, talk):
+#     try:
+#         look_pose = environment_raw.get_link_pose(link)
+#     except KeyError as e:
+#         rospy.logerr(f"[CRAM] cool not find link {link} in environment_urdf of BulletWorld. Fallback to given pose")
+#         look_pose = look_pose_given
+#     # park
+#     gripper.pub_now('close')
+#     perceive_conf = {'arm_lift_joint': 0.20, 'wrist_flex_joint': 1.8, 'arm_roll_joint': -1, }
+#     pakerino(config=perceive_conf)
+#     # look
+#     giskardpy.move_head_to_pose(look_pose)
+#
+#     talk.pub_now("perceiving", True)
+#     # noteme detect on table
+#     try:
+#         table_obj = DetectAction(technique='all').resolve().perform()
+#         found_object = None
+#         first, *remaining = table_obj
+#         print(first)
+#         for dictionary in remaining:
+#             for value in dictionary.values():
+#                 # check if type matches exactly
+#                 if value.type == obj_type:
+#                     found_object = value
+#
+#         if found_object is None:
+#             for dictionary in remaining:
+#                 for value in dictionary.values():
+#                     # check if substring matches
+#                     if obj_type in value.type:  # CHANGE todo ensure
+#                         found_object = value
+#                         found_object_name = found_object.bullet_world_object.name.replace('_', ' ')
+#                         found_object_name = re.sub(r'\d+', '', found_object_name)
+#                         talk.pub_now(f"I haven't seen {obj_type}, but found {found_object_name}")
+#
+#         giskardpy.sync_worlds()
+#     except PerceptionObjectNotFound:
+#         talk.pub_now("I was not able to perceive any objects")
+#         return

@@ -30,7 +30,7 @@ def make_robokudo_obj_msg(item_json):
     return goal_msg
 
 
-def ask_robokudo_for_all_objects():
+def ask_robokudo_for_all_objects(): # works
     global rk
     goal_msg = QueryGoal()
     goal_msg.type = 'all'
@@ -56,6 +56,23 @@ def ask_robokudo_for_object(obj_type):
     return result  # list of all perceived items or an empty list
 
 
+# person = attributes of person, lying, standing etc.
+# faces = face detection
+def ask_robokudo_for_humans():
+    global rk
+    goal_msg = QueryGoal()
+    goal_msg.obj.type = 'person'
+    goal_msg.type = 'person'
+    rk.send_goal(goal_msg)
+    rospy.loginfo("[RK] goal sent... waiting for result")
+    rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
+    result = rk.get_result()
+    rospy.loginfo("[RK] result received")
+    return result  # list of all perceived items or an empty list
+
+
+# DetectHumanAction ohne face.
+
 def send_robokudo_goal(goal_msg):
     global rk
     rk.send_goal(goal_msg)
@@ -64,6 +81,23 @@ def send_robokudo_goal(goal_msg):
     result = rk.get_result()
     rospy.loginfo("[RK] result received")
     return result
+
+
+# all poses are returned in map frame
+def process_robokudo_obj_result(result):
+    result_dict = {}
+    for msg in result.res:
+        entry = {}
+        entry = {
+            'type': msg.type,
+            'color': msg.color,
+            'attribute': msg.attribute,
+            'pose': msg.pose,
+            'pose_source': msg.pose_source,
+            'description': msg.description
+        }
+        result_dict[msg.type] = entry
+    return result_dict
 
 
 # todo test end here------

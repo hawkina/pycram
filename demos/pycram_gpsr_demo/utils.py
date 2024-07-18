@@ -267,5 +267,6 @@ def remove_prefix(text, prefix):
         return text[len(prefix):]
     return text
 
+
 # autogenerate a dict from all defined objects in the objects.py file
 obj_dict = autogenerate_dict_from_file(objects_path)

@@ -17,7 +17,7 @@ from demos.pycram_gpsr_demo import tf_l
 
 with_real_robot = False # CHANGE set to TRUE for real robot
 # initialize interfaces
-instruction_point = PoseStamped([1.45, 4.5, 0], [0, 0, 1, 0])
+#instruction_point = PoseStamped([1.45, 4.5, 0], [0, 0, 1, 0])
 world = None
 robot = None
 environment_raw = None

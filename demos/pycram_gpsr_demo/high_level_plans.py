@@ -3,6 +3,7 @@ import rospy
 from pycram.designators.action_designator import *
 from pycram.utilities.robocup_utils import StartSignalWaiter, pakerino
 from demos.pycram_gpsr_demo import perception_interface, llp_tell_stuff
+import demos.pycram_gpsr_demo.perception_interface as robokudo
 from demos.pycram_gpsr_demo import knowrob_interface as knowrob
 from demos.pycram_gpsr_demo import llp_navigation as navi
 import demos.pycram_gpsr_demo.utils as utils
@@ -16,6 +17,7 @@ from pycram.pose import Pose as PoseStamped
 
 object_in_hand = None
 me_pose = None
+found_obj = None
 
 
 # these are all the high level plans, to which we map the NLP output.
@@ -68,7 +70,27 @@ def moving_to(param_json):  # WIP Can also be funriture, or a person
     if room and furniture and person:
         rospy.loginfo(utils.PC.BLUE + "[CRAM] moving to person at furniture item in room")
         sing_my_angel_of_music(f"I will go to the {furniture} in {room} to look for a person.")
-        # TODO
+        #rospy.loginfo(utils.PC.BLUE + "[CRAM] moving to furniture item in room")
+        #sing_my_angel_of_music(f"I will go to the {furniture} in {room}.")
+        if furniture:
+            rospy.loginfo(f"[CRAM] found instance of furniture item " + str(furniture))
+            nav_poses = knowrob.get_nav_poses_for_furniture_item(room=room, furniture_name=furniture)
+        # if instance does not exist,check class?
+        elif furniture_class:  # maybeh make this an and?
+            if furniture == furniture_class:
+                #  matched knowledge and nlp
+                nav_poses = knowrob.get_nav_poses_for_furniture_item(room=room,
+                                                                     furniture_name=furniture)  # change might get removed
+            else:
+                nav_poses = knowrob.get_nav_poses_for_furniture_item(room=room, furniture_iri=furniture_class)
+        # go to furniture item in room
+        if nav_poses is not None and nav_poses != []:
+            # go to furniture item
+            rospy.loginfo(
+                utils.PC.BLUE + f"[CRAM] going to furniture item in Room pose {nav_poses[0].get('Item').get('pose')}")
+            result = navi.go_to_pose(nav_poses[0].get('Item').get('pose'))
+            rospy.loginfo(utils.PC.BLUE + "[CRAM] result: " + str(result))
+            return nav_poses[0]
         # go to person at furniture item in room
     # Room + Person WIP---------------------------------------------------
     elif room and person:  # DONE one value
@@ -260,7 +282,7 @@ def placing(param_json):  # works testing
     if not object_in_hand:
         rospy.logerr("[CRAM] I have no object in my hand so I cannot place :(")
         return None
-    sing_my_angel_of_music("in placing plan")
+    sing_my_angel_of_music("I'm going to do a placing action")
     # move to playing destination
     result = moving_to(param_json)
     if result is None:
@@ -275,7 +297,7 @@ def placing(param_json):  # works testing
     # PLACE at PREDEFINED LOCATION FROM KNOWROB
     if obj_type in perc_to_know.keys():
         knowrob_iri = perc_to_know.get('type')
-        item_location = knowrob.get_predefined_destination_item_location(knowrob_iri)
+        item_location = knowrob.get_predefined_destination_item_location(knowrob_iri)  # CHANGE check if this works
         destination_link = utils.remove_prefix(item_location.get('Item').get('link'), 'iai_kitchen/')
 
     result = plans.place(object=object_in_hand, grasp='front', link=destination_link, giskard=sd.giskard, talk=nlp.tts,
@@ -292,10 +314,11 @@ def placing(param_json):  # works testing
 # also finding + searching
 # Source
 def looking_for(param_json):  # WIP TODO
-    sing_my_angel_of_music("in looking for plan")
+    #sing_my_angel_of_music("in looking for plan")
+    #robokudo.init_robokudo()
     rospy.loginfo("Looking For: " + str(param_json))
     # get vars
-    item, person, furniture, room = None, None, None, None
+    item, person, furniture, room, result = None, None, None, None, None
     if param_json.get('Source') is not None:
         # ensure furniture obj exists
         furniture = param_json.get('Source').get('value').lower()
@@ -324,12 +347,71 @@ def looking_for(param_json):  # WIP TODO
 
     if param_json.get('Item') is not None:
         item = param_json.get('Item').get('value')
+        rospy.loginfo("[CRAM] looking for item: " + item)
 
+    sing_my_angel_of_music("I'm going look for the " + str(item))
     # go to location which human said to look for items
+    if furniture and room:
+        rospy.loginfo("[CRAM] going to furniture in room")
+        source_params = {'Source': param_json.get('Source'), 'SourceRoom': param_json.get('SourceRoom')}
+        source_params = utils.remap_source_to_destination(source_params)
+        result = moving_to(source_params)
+    elif room:
+        rospy.loginfo("[CRAM] going to room")
+        source_params = {'SourceRoom': param_json.get('SourceRoom')}
+        source_params = utils.remap_source_to_destination(source_params)
+        result = moving_to(source_params)
+    elif furniture:
+        rospy.loginfo("[CRAM] going to furniture")
+        source_params = {'Source': param_json.get('Source')}
+        source_params = utils.remap_source_to_destination(source_params)
+        result = moving_to(source_params)
+    elif item:
+        rospy.loginfo("[CRAM] going to item")
+        # try anyway? get default location of the item
+        # check if item is known
+        if " " in item:  # ensure snake case if a space is present
+            item = snakecase(item)
+
+        if item:
+            # ensure item exists
+            rospy.loginfo("[CRAM] looking for item: " + item)
+            result = knowrob.get_predefined_source_item_location_iri(utils.obj_dict.get(item))  #FIX THIS
+            if result is None:
+                result = knowrob.get_predefined_source_item_location_name(item)
+            rospy.loginfo("[CRAM] result: " + str(result))
+            if result:
+                navi.go_to_pose(result[0].get('Item').get('pose'))
+            else:
+                rospy.logerr("[CRAM] Could not find predefined location for item.")
+                return None
+
+    # assume navigation was successful, and robot is in a perceiving pose...
+    # point head at correct location
+    if result:
+        perceive_conf = {'arm_lift_joint': 0.20, 'wrist_flex_joint': 1.8, 'arm_roll_joint': -1, }
+        if sd.with_real_robot:
+            plans.pakerino(config=perceive_conf)
+        look_at_link = result.get('Item').get('link')
+        look_at_pose = utils.tf_l.lookupTransform(target_frame='map',
+                                                  source_frame=look_at_link,
+                                                  time=rospy.get_rostime())
+        if sd.with_real_robot:
+            sd.giskard.move_head_to_pose(look_at_pose)
+    # perceive
+    objects = robokudo.ask_robokudo_for_all_objects()
+
+    for obj in objects:
+        if obj.type == item:
+            rospy.loginfo("[CRAM] found object of type " + item)
+            found_obj = obj
+            return found_obj
+    # TODO return to person?
 
 
 def transporting(param_json):
-    sing_my_angel_of_music("in transporting plan")
+    # TODO add Saying what the robot does
+    sing_my_angel_of_music("I'm going to do a transporting action")
     global me_pose
     person = None
     if param_json.get('BeneficiaryRole').get('value') == 'me':  # TODO handle other people too
@@ -353,30 +435,38 @@ def transporting(param_json):
     else:
         placing(param_json)
 
+# TODO add this to plan.
+#    DetectAction(technique='human').resolve().perform()
+#    giskardpy.move_head_to_human()
+#    giskardpy.cancel_all_goals() OR giskardpy.cancel_all_called_goals() to stop
+
+
 
 def arranging(param_json):
-    sing_my_angel_of_music("in arranging plan")
+    sing_my_angel_of_music("I am sorry. I do not know how to arrange things yet.")
     rospy.loginfo("arranging: " + str(param_json))
 
 
 # count obj or person
 def count(param_json):
-    sing_my_angel_of_music("in counting plan")
+    sing_my_angel_of_music("I am sorry, I do not know how to count items yet.")
     rospy.loginfo("count: " + str(param_json))
 
 
 def cleaning(param_json):
-    sing_my_angel_of_music("in cleaning plan")
+    sing_my_angel_of_music("I am sorry, I fo not know how to clean up yet. ")
     rospy.loginfo("cleaning: " + str(param_json))
 
 
 def guide(param_json):
-    sing_my_angel_of_music("in guiding plan")
+    sing_my_angel_of_music("please follow me")
+    moving_to(param_json)
+    sing_my_angel_of_music("I have arrived. thank you for following me. ")
     rospy.loginfo("guide: " + str(param_json))
 
 
 def accompany(param_json):
-    sing_my_angel_of_music("in accompany plan")
+    sing_my_angel_of_music("I am sorry. I do now know how to accompany yet.")
     rospy.loginfo("accompany: " + str(param_json))
 
 
@@ -400,22 +490,25 @@ def assert_preferece(param_json):  # todo
 
 
 def greet(param_json):
-    sing_my_angel_of_music("in greeting plan")
+    sing_my_angel_of_music("I'm going to greet a person")
+    moving_to(param_json)
+    # TODO add looking for human
+    sing_my_angel_of_music("Hello and welcome to the RoboCup 2024 in Eindhoven. I wish you a great day and lots of fun.")
     rospy.loginfo("greeting")
 
 
 def describe(param_json):
-    sing_my_angel_of_music("in describe plan")
+    sing_my_angel_of_music("I am sorry. I do not know how to describe someone yet.")
     rospy.loginfo("describe: " + str(param_json))
 
 
 def offer(param_json):
-    sing_my_angel_of_music("in offer plan")
+    sing_my_angel_of_music("I am sorry. I do not know how to offer something yet.")
     rospy.loginfo("offer: " + str(param_json))
 
 
 def follow(param_json):
-    sing_my_angel_of_music("in follow plan")
+    sing_my_angel_of_music("Sorry. I am unsure how to follow you. ")
     rospy.loginfo("follow: " + str(param_json))
 
 

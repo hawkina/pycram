@@ -6,7 +6,7 @@ import demos.pycram_gpsr_demo.utils as utils
 
 
 # these are all the low level plans  which are used by the high level plans
-
+# e.g. 'living_room' and 'entry'
 def go_to_room_entry_or_exit(room_name, entry_exit):  # test
     # go to the room entry point
     pose = knowrob.get_room_pose(room=room_name, entry_or_exit=entry_exit)
@@ -28,7 +28,7 @@ def go_to_room_middle(room_name):  # test
     pose = knowrob.get_room_middle_pose(room=room_name)
     rospy.loginfo(utils.PC.GREEN + f"[Go-To-Pose] Going to: {pose}.")
     if pose is None:
-        rospy.loginfo(utils.PC.GREEN +"[CRAM] KnowRob result was empty.")
+        rospy.loginfo(utils.PC.GREEN + "[CRAM] KnowRob result was empty.")
         sing_my_angel_of_music("I am sorry. I don't know where " + room_name + "is.")
         return None  # abort mission
     else:

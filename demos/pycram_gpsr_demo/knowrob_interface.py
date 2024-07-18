@@ -172,16 +172,33 @@ def check_existence_of_class(nlp_name):
 
 
 # get iri from objects.py mapping
-def get_predefined_source_item_location(items_iri):
-    if "'" not in items_iri:
-        items_iri = "'" + items_iri + "'"
-    knowrob_poses_list = kb.prolog_client.all_solutions(f"predefined_origin_location({items_iri}, Furniture), "
+def get_predefined_source_item_location_name(item_name):
+    if " " in item_name:  # ensure snake case if a space is present
+        item_name = snakecase(item_name)
+    knowrob_poses_list = kb.prolog_client.all_solutions(f"what_object_transitive('{item_name}', Obj),"
+                                                        f"predefined_origin_location(Obj, Furniture), "
                                                         f"furniture_rel_pose(Furniture, 'perceive', Pose).")
     poses_list = []
     if knowrob_poses_list:
         poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
     else:
         rospy.logerr("[KnowRob] query returned empty :(")
+    return poses_list
+
+
+def get_predefined_source_item_location_iri(item_iri):
+    # TODO ensure the pose is from water and not just liquid but it is a nice fallback?
+    if "'" not in item_iri:
+        item_iri = "'" + item_iri + "'"
+    knowrob_poses_list = kb.prolog_client.all_solutions(f"what_object_transitive(Name, {item_iri}),"
+                                                        f"predefined_origin_location({item_iri}, Furniture), "
+                                                        f"furniture_rel_pose(Furniture, 'perceive', Pose).")
+    poses_list = []
+    if knowrob_poses_list:
+        poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
+    else:
+        rospy.logerr("[KnowRob] query returned empty :(")
+        return None
     return poses_list
 
 
@@ -195,6 +212,7 @@ def get_predefined_destination_item_location(items_iri):
         poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
     else:
         rospy.logerr("[KnowRob] query returned empty :(")
+        return None
     return poses_list
 
 
