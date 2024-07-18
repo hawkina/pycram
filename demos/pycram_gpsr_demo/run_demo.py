@@ -3,7 +3,7 @@ from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
 from geometry_msgs.msg import Twist
 
 from demos.pycram_gpsr_demo.setup_demo import *
-from demos.pycram_gpsr_demo import utils, setup_demo
+from demos.pycram_gpsr_demo import utils, setup_demo, perception_interface
 import demos.pycram_gpsr_demo.nlp_processing as nlp
 from stringcase import snakecase
 import demos.pycram_gpsr_demo.llp_navigation as navi
@@ -147,8 +147,11 @@ def gpsr():
             #    giskardpy.move_head_to_human()
             #    giskardpy.cancel_all_goals() OR giskardpy.cancel_all_called_goals() to stop
             # listen to instructions
+            perception_interface.looking_for_human()
+            giskard.move_head_to_human()
             instruction_list = nlp.listen_to_commands()
             rospy.logwarn("[CRAM] instruction list: " + str(instruction_list))
+            giskard.cancel_all_called_goals()
 
             # execute instructions
             # TODO iterate over list of instructions and do stuff

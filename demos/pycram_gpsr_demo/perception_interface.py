@@ -1,5 +1,7 @@
 import rospy
 import actionlib
+from rospy import ROSException
+
 from demos.pycram_gpsr_demo.utils import find_color
 from pycram.designators.action_designator import LookAtAction, DetectAction
 from pycram.process_module import real_robot
@@ -116,6 +118,24 @@ def test_pc():
     result = rk.get_result()
     print(result.res[0].type)
 
+
+
+def looking_for_human():
+    # loop until a human is seen
+    check_human = False
+    while not check_human:
+        try:
+            rospy.loginfo("[CRAM] Looking for human...")
+            result = ask_robokudo_for_humans()
+            if result is not None:
+                check_human = True
+                rospy.loginfo("[CRAM] Human found")
+            else:
+                rospy.loginfo("[CRAM] No human found")
+            rospy.sleep(3)
+        except ROSException:
+            rospy.loginfo("[CRAM] No human found and robokudo timed out")
+    return check_human
 
 def test_lookat(pose):
     with real_robot:
