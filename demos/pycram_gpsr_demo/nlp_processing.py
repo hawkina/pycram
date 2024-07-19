@@ -17,7 +17,7 @@ confirm = {}
 todo_plans = []
 currentSpeech = ""
 stoppedSpeaking = Condition()
-canSpeak = False  # CHANGE set to TRUE for real robot
+canSpeak = True  # CHANGE set to TRUE for real robot
 canListen = True  # CHANGE set to TRUE when NLP and Whisper enabled
 canDisplay = False
 
@@ -32,7 +32,7 @@ def what_am_i_saying(msg):
 
 def sing_my_angel_of_music(text):
     global tts, canSpeak, stoppedSpeaking
-    rospy.loginfo("SPEAKING: " + text)
+    rospy.loginfo("[SPEAKING:] " + text)
     #tts.pub_now(text)
     # handled on other side now
     if canSpeak:

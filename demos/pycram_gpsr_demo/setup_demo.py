@@ -14,8 +14,9 @@ import pycram.external_interfaces.giskard_new as giskard
 import tf
 import pycram.utilities.gpsr_utils as plans
 from demos.pycram_gpsr_demo import tf_l
+import demos.pycram_gpsr_demo.perception_interface as perception_interface
 
-with_real_robot = False # CHANGE set to TRUE for real robot
+with_real_robot = True # CHANGE set to TRUE for real robot
 # initialize interfaces
 #instruction_point = PoseStamped([1.45, 4.5, 0], [0, 0, 1, 0])
 world = None
@@ -64,6 +65,8 @@ def setup():
     robot = Object("hsrb", "robot", "../../resources/" + "hsrb" + ".urdf")
     robot.set_color([0.5, 0.0, 0.2, 1])
     robot_desig = ObjectDesignatorDescription(names=["hsrb"])
+
+    perception_interface.init_robokudo()
 
     # sync to kitchen and robot
     RobotStateUpdater("/tf", "/hsrb/robot_state/joint_states")

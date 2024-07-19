@@ -1,6 +1,6 @@
 from dynamic_reconfigure.msg import DoubleParameter, IntParameter, BoolParameter, StrParameter, GroupState, Config
 from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, PoseWithCovariance, PoseWithCovarianceStamped
 
 from demos.pycram_gpsr_demo.setup_demo import *
 from demos.pycram_gpsr_demo import utils, setup_demo, perception_interface
@@ -11,9 +11,12 @@ from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
 import src.pycram.utilities.gpsr_utils as gpsr_utils
 from pycram.enums import ObjectType, ImageEnum
 from pycram.language import Code, Monitor
+#from demos.pycram_gpsr_demo.setup_demo import image_switch
 
-instruction_point = PoseStamped([6.28, 1.0, 0], [0, 0, 0, 1])
-
+instruction_point = PoseStamped([6.12, 1.8, 0], [0, 0, 0, 1])
+#instruction_point = PoseStamped([4.4, -0.5, 0], [0, 0, 0, 1])
+#image_switch = ImageSwitchPublisher()
+start_signal_waiter = StartSignalWaiter()
 
 def move_vel(speed, distance, isForward, angle=0):
     # Starts a new node
@@ -82,20 +85,32 @@ def set_parameters(new_parameters):
         rospy.logerr("Service call failed: %s" % e)
 
 
+def pub_fake_pose(fake_pose: PoseStamped):
+    toya_pose_pub = rospy.Publisher("/initialpose", PoseWithCovarianceStamped, queue_size=100)
+    msg = PoseWithCovarianceStamped()
+    msg.pose.pose.position = fake_pose.pose.position
+    msg.pose.pose.orientation = fake_pose.pose.orientation
+    msg.pose.covariance = [0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                           0.06853892326654787]
+    toya_pose_pub.publish(msg)
+
+
 def yeet_into_arena():
+    global image_switch
     try:
 
-        image_switch.pub_now(ImageEnum.HI.value)  # hi im toya
+        #image_switch.pub_now(ImageEnum.HI.value)  # hi im toya
         sing_my_angel_of_music("Push down my Hand, when you are Ready.")
-        image_switch.pub_now(ImageEnum.PUSHBUTTONS.value)
+        #image_switch.pub_now(ImageEnum.PUSHBUTTONS.value)
         plan = Code(lambda: rospy.sleep(1)) * 999999 >> Monitor(monitor_func)
         plan.perform()
     except SensorMonitoringCondition:
-        sing_my_angel_of_music("Starting Storing Grocery.")
+        sing_my_angel_of_music("Starting GPSR.")
         # load everything world giskard robokudo....
         # Wait for the start signal
 
-        image_switch.pub_now(ImageEnum.HI.value)
+        #image_switch.pub_now(ImageEnum.HI.value)
         start_signal_waiter.wait_for_startsignal()
 
         # Once the start signal is received, continue with the rest of the script
@@ -103,45 +118,44 @@ def yeet_into_arena():
         move_vel(speed=2, distance=4, isForward=True)
         rospy.sleep(2)
         new_parameters = {
-            'forbid_radius': 0.2,
-            'obstacle_occupancy': 5,
-            'obstacle_radius': 0.2
+            'forbid_radius': 0.35,
+            'obstacle_occupancy': 10,
+            'obstacle_radius': 0.35
         }
 
         set_parameters(new_parameters)  # Once the start signal is received, continue with the rest of the script
 
         rospy.sleep(1)
 
-        fake_pose_2 = Pose([3, 0.3, 0])
-        move.pub_fake_pose(fake_pose_2)
-        move_vel(0.2, 2, False, 0.06)
+        fake_pose_2 = Pose([2.88, 0.3, 0])
+        pub_fake_pose(fake_pose_2)
+        move_vel(0.2, 2, False, 0.02)
         sing_my_angel_of_music("Driving.")
-        move_123 = Pose([4, -0.2, 0], [0, 0, 0.7, 0.7])
-        move.pub_now(move_123)
-        move_145 = Pose([4.8, 0.8, 0], [0, 0, 0.7, 0.7])
-        move.pub_now(move_145)
+        move_123 = Pose([4, -0.4, 0], [0, 0, 0, 1])
+        navi.go_to_pose(move_123)
+        #move_145 = Pose([4.8, 0.8, 0], [0, 0, 0.7, 0.7])
+        #navi.go_to_pose(move_145)
+
 
 
 # --- main control ---
 # TODO: test on real robot
 def gpsr():
     with real_robot:
-        yeet_into_arena()
         plan_list = utils.get_plans(high_level_plans)
-        # plan_list = utils.get_plans(high_level_plans) # get list of all available plans
-        # init params
-        # go to instruction point, look at human, etc.
-        # TODO add Vanessa's run into arena part
+        yeet_into_arena()
+        #sound_pub = SoundRequestPublisher()
+        #sound_pub.publish_sound_request()
 
         sing_my_angel_of_music("Going to the instruction point")
-        navi.go_to_pose(PoseStamped([3.0, 0.5, 0.0], [0, 0, 0, 1]))  # in door
-        navi.go_to_room_entry_or_exit('living_room', 'entry')
+        navi.go_to_pose(PoseStamped([5.44, 0.2, 0.0], [0, 0, 0, 1]))  # in door
+        #navi.go_to_room_entry_or_exit('office', 'exit')
         navi.go_to_pose(instruction_point)
         # look at a person when listening to command
 
         # high_level_plans.prepare_for_commands()
         instruction_list = []
-        for i in range(5):  # test
+        for i in range(10):  # test
             # TODO add this to plan.
             #    DetectAction(technique='human').resolve().perform()
             #    giskardpy.move_head_to_human()
@@ -163,109 +177,10 @@ def gpsr():
                 # match instruction to plan
                 utils.call_plan_by_name(plan_list, snakecase(instruction['intent']), instruction)
                 # if plan was successful, remove it from the list
+                instruction_list.remove(instruction)
             instruction_list = []
             sing_my_angel_of_music("navigating to the instruction point")
             navi.go_to_pose(instruction_point)
-
-
-data = {
-    "sentence": "Please bring the red cup from the kitchen table to the living room table",
-    "intent": "Transporting",
-    "Item": {
-        "value": "cup",
-        "entity": "Transportable",
-        "propertyAttribute": [],
-        "actionAttribute": [],
-        "numberAttribute": []
-    },
-    "Source": {
-        "value": "couch table",
-        "entity": "DesignedFurniture",
-        "propertyAttribute": [],
-        "actionAttribute": [],
-        "numberAttribute": []
-    },
-    "SourceRoom": {
-        "value": "living room",
-        "entity": "Room",
-        "propertyAttribute": [],
-        "actionAttribute": [],
-        "numberAttribute": []
-    },
-    "DestinationRoom": {
-        "value": "dining room",
-        "entity": "Room",
-        "propertyAttribute": [],
-        "actionAttribute": [],
-        "numberAttribute": []
-    },
-    "Destination": {
-        "value": "shelf",
-        "entity": "DesignedFurniture",
-        "propertyAttribute": [],
-        "actionAttribute": [],
-        "numberAttribute": []
-    }
-}
-
-data2 = {
-    "sentence": "  Bring me the cup from the living room table .",
-    "intent": "Transporting",
-    "BeneficiaryRole": {
-        "value": "me",
-        "entity": "NaturalPerson",
-        "propertyAttribute": [],
-        "actionAttribute": [],
-        "numberAttribute": []
-    },
-    "Item": {
-        "value": "cup",
-        "entity": "Transportable",
-        "propertyAttribute": [],
-        "actionAttribute": [],
-        "numberAttribute": []
-    },
-    "SourceRoom": {
-        "value": "living room",
-        "entity": "Room",
-        "propertyAttribute": [],
-        "actionAttribute": [],
-        "numberAttribute": []
-    },
-    "Source": {
-        "value": "couch table",
-        "entity": "DesignedFurniture",
-        "propertyAttribute": [],
-        "actionAttribute": [],
-        "numberAttribute": []
-    }
-}
-
-data3 = {
-    "sentence": "Please bring the red cup from the kitchen table to the living room table",
-    "intent": "LookingFor",
-    "Item": {
-        "value": "cup",
-        "entity": "Transportable",
-        "propertyAttribute": [],
-        "actionAttribute": [],
-        "numberAttribute": []
-    }  #,
-    # "Source": {
-    #     "value": "coffee table",
-    #     "entity": "DesignedFurniture",
-    #     "propertyAttribute": [],
-    #     "actionAttribute": [],
-    #     "numberAttribute": []
-    # },
-    # "SourceRoom": {
-    #     "value": "living room",
-    #     "entity": "Room",
-    #     "propertyAttribute": [],
-    #     "actionAttribute": [],
-    #     "numberAttribute": []
-    # }
-}
 
 
 # CHANGE CARE THIS STUFF GETS ACTUALLY EXECUTED
@@ -275,7 +190,9 @@ def demo_plan(data):
         print('--------------stahp----------------')
         return
 
-#setup()
-#gpsr()
+setup()
+#fake_pose_2 = Pose([2.88, 0.3, 0])
+#pub_fake_pose(fake_pose_2)
+gpsr()
 #demo_plan(data2)
 #setup_demo.gripper.pub_now('open')

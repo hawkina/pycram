@@ -2,6 +2,7 @@ import rospy
 import actionlib
 from rospy import ROSException
 
+from demos.pycram_gpsr_demo import sing_my_angel_of_music
 from demos.pycram_gpsr_demo.utils import find_color
 from pycram.designators.action_designator import LookAtAction, DetectAction
 from pycram.process_module import real_robot
@@ -123,6 +124,7 @@ def test_pc():
 def looking_for_human():
     # loop until a human is seen
     check_human = False
+    sing_my_angel_of_music("Please step infront of me.")
     while not check_human:
         try:
             rospy.loginfo("[CRAM] Looking for human...")
@@ -137,9 +139,9 @@ def looking_for_human():
             rospy.loginfo("[CRAM] No human found and robokudo timed out")
     return check_human
 
-def test_lookat(pose):
-    with real_robot:
-        LookAtAction(targets=[pose]).resolve().perform()
+# def test_lookat(pose):
+#     with real_robot:
+#         LookAtAction(targets=[pose]).resolve().perform()
 
 # this would be the designator way, which we are currently not using since it is slow
 #def test_perception():
