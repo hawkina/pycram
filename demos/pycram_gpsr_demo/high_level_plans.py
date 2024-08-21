@@ -392,7 +392,7 @@ def looking_for(param_json):  # WIP TODO
         perceive_conf = {'arm_lift_joint': 0.20, 'wrist_flex_joint': 1.8, 'arm_roll_joint': -1, }
         if sd.with_real_robot:
             plans.pakerino(config=perceive_conf)
-        look_at_link = result.get('Item').get('link')
+        look_at_link = result.get('Item').get('link')  # this failed  at RoboCup CHANGE
         look_at_pose = utils.tf_l.lookupTransform(target_frame='map',
                                                   source_frame=look_at_link,
                                                   time=rospy.get_rostime())
