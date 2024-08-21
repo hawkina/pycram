@@ -113,6 +113,38 @@ def transform_pose(tf_listener, target_frame, pose_stamped, max_attempts=10, att
     return None
 
 
+def lookup_transform(tf_listener, target_frame, source_frame, max_attempts=10, attempt_delay=1):
+    """
+    Attempts to transform a pose to the specified target frame with retry logic.
+
+    Args:
+        tf_listener (tf.TransformListener): The TransformListener object.
+        target_frame (str): The target frame to transform the pose into.
+        pose_stamped (PoseStamped): The pose to transform.
+        max_attempts (int): Maximum number of attempts to transform the pose.
+        attempt_delay (int or float): Delay between attempts in seconds.
+
+    Returns:
+        PoseStamped or None: The transformed pose if successful, None otherwise.
+    """
+    attempt_count = 0
+    while attempt_count < max_attempts:
+        try:
+            if not tf_listener.canTransform(target_frame, source_frame, rospy.Time(0)):
+                rospy.logwarn("[TF]Transform not available. Attempt {} of {}".format(attempt_count + 1, max_attempts))
+                rospy.sleep(attempt_delay)
+            else:
+                rospy.loginfo(f"[TF]Transform available. Attempting transformation to {target_frame}.")
+                transformed_pose = tf_listener.lookupTransform(target_frame, source_frame, rospy.Time(0))
+                return transformed_pose
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
+            rospy.logerr("[TF]An error occurred during transformation attempt {}: {}".format(attempt_count + 1, e))
+            rospy.sleep(attempt_delay)
+        attempt_count += 1
+    rospy.logerr("Failed to transform pose after {} attempts.".format(max_attempts))
+    return None
+
+
 def knowrob_poses_result_to_list_dict(knowrob_output, nav_or_perc='nav'):  # works
     global tf_l
     poses_list = []
@@ -167,7 +199,7 @@ def autogenerate_dict_from_file(file_path):
     return ontology_dict
 
 
-def write_json_to_file(json_data, file_path='home/hawkin/ros_out_files'):
+def write_json_to_file(json_data, file_path='result.json'):
     # Call the function to get the result
 
     # Convert the result to a JSON string
@@ -234,6 +266,7 @@ def remove_prefix(text, prefix):
     if text.startswith(prefix):
         return text[len(prefix):]
     return text
+
 
 # autogenerate a dict from all defined objects in the objects.py file
 obj_dict = autogenerate_dict_from_file(objects_path)

@@ -17,20 +17,9 @@ confirm = {}
 todo_plans = []
 currentSpeech = ""
 stoppedSpeaking = Condition()
-canSpeak = True
-canListen = True
+canSpeak = True  # CHANGE set to TRUE for real robot
+canListen = True  # CHANGE set to TRUE when NLP and Whisper enabled
 canDisplay = False
-
-# might be deprecated?
-def data_cb(data):
-    global response
-    global callback
-    global doorbell
-
-    rospy.loginfo("in NLP callback")
-    response = data.data.split(",")
-    response.append("None")
-    callback = True
 
 
 def what_am_i_saying(msg):
@@ -38,12 +27,12 @@ def what_am_i_saying(msg):
     if ("" != currentSpeech) and ("" == msg.data):
         with stoppedSpeaking:
             stoppedSpeaking.notify_all()
-    currentSpeech=msg.data
+    currentSpeech = msg.data
 
 
 def sing_my_angel_of_music(text):
     global tts, canSpeak, stoppedSpeaking
-    rospy.loginfo("SPEAKING: " + text)
+    rospy.loginfo("[SPEAKING:] " + text)
     #tts.pub_now(text)
     # handled on other side now
     if canSpeak:
@@ -74,6 +63,7 @@ def intent_processing(msg):
         haveNLPOutput.notifyAll()
     #if response["intent"] in ["Agreement", "Disagreement"]:
     #    return confirm
+
 
 # create a subscriber to the /nlp_out topic on which the result from NLP is published
 def nlp_subscribe():
@@ -114,7 +104,7 @@ def nlp_listening():
     #rospy.wait_for_message('nlp_out', String, timeout=20)
     with haveNLPOutput:
         haveNLPOutput.wait(30)
-    rospy.loginfo("NLP data notification received.")
+    rospy.loginfo("[NLP] data notification received.")
     # process output from NLP
     rospy.loginfo("message received. todo_plans: " + str(todo_plans))
     return todo_plans
@@ -123,6 +113,7 @@ def nlp_listening():
 # todo: are there special functions for confirmation?
 def confirm_nlp_output(received_output):
     global confirm, todo_plans
+    rospy.loginfo("[NLP] Please confirm yes/no")
     # concatenate output into a whole sentence again
     whole_sentence = ''
     for sentence in received_output:
@@ -146,7 +137,7 @@ def confirm_nlp_output(received_output):
 
 # --- THIS IS THE MAIN FUNCTION FOR NLP ---
 def listen_to_commands():
-    nlp_subscribe()
+    nlp_subscribe()  # CHANGE  !!! done during setup !!! ENABLE FOR TESTING ONLY. DISABLE FOR REAL ROBOT
     global response, todo_plans
     while True:
         if canDisplay:
@@ -161,4 +152,3 @@ def listen_to_commands():
     rospy.loginfo("[CRAM] do stuff")
     nlp_unsubscribe()
     return todo_plans
-

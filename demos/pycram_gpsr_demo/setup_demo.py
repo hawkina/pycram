@@ -14,10 +14,11 @@ import pycram.external_interfaces.giskard_new as giskard
 import tf
 import pycram.utilities.gpsr_utils as plans
 from demos.pycram_gpsr_demo import tf_l
+import demos.pycram_gpsr_demo.perception_interface as perception_interface
 
-with_real_robot = True
+with_real_robot = True # CHANGE set to TRUE for real robot
 # initialize interfaces
-instruction_point = PoseStamped([1.45, 4.5, 0], [0, 0, 1, 0])
+#instruction_point = PoseStamped([1.45, 4.5, 0], [0, 0, 1, 0])
 world = None
 robot = None
 environment_raw = None
@@ -26,7 +27,6 @@ rviz = None
 move = None
 image_switch = None
 sound_pub = None
-#tf_listener = None
 grasp_listener = None
 start_signal_waiter = None
 lt = None
@@ -55,7 +55,6 @@ def setup():
     move = PoseNavigator()
     image_switch = ImageSwitchPublisher()
     sound_pub = SoundRequestPublisher()
-    # tf_listener = tf.listener.TransformListener()
     grasp_listener = GraspListener()
     start_signal_waiter = StartSignalWaiter()
     lt = LocalTransformer()
@@ -67,6 +66,8 @@ def setup():
     robot.set_color([0.5, 0.0, 0.2, 1])
     robot_desig = ObjectDesignatorDescription(names=["hsrb"])
 
+    perception_interface.init_robokudo()
+
     # sync to kitchen and robot
     RobotStateUpdater("/tf", "/hsrb/robot_state/joint_states")
     rospy.sleep(2)
@@ -76,8 +77,9 @@ def setup():
     giskard.clear()
     giskard.sync_worlds()
 
+    # this is already done in listen to commands
     if nlp_processing.canSpeak:
-        nlp_processing.nlp_subscribe()
+         nlp_processing.nlp_subscribe()
 
     rospy.loginfo(utils.PC.GREEN + "[CRAM] done with setup")
     print("###################################################################")

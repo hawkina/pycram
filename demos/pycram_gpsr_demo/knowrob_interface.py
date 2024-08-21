@@ -1,6 +1,7 @@
 from stringcase import snakecase
 from pycram.knowledge.knowrob_knowledge import KnowrobKnowledge
 import rospy
+from demos.pycram_gpsr_demo.perception_to_knowrob import perc_to_know
 import demos.pycram_gpsr_demo.utils as utils
 
 # available rooms iri types
@@ -8,13 +9,20 @@ kitchen = 'http://www.ease-crc.org/ont/SOMA.owl#Kitchen'
 living_room = 'http://www.ease-crc.org/ont/SUTURO.owl#LivingRoom'
 arena = 'http://www.ease-crc.org/ont/SUTURO.owl#Arena'
 dining_room = 'http://www.ease-crc.org/ont/SUTURO.owl#DiningRoom'
-rooms = {'kitchen': kitchen, 'living_room': living_room, 'arena': arena, 'dining_room': dining_room}
+hallway = 'http://www.ease-crc.org/ont/SUTURO.owl#Hallway'
+office = 'http://www.ease-crc.org/ont/SUTURO.owl#Office'
+rooms = {'kitchen': kitchen, 'living_room': living_room, 'arena': arena, 'dining_room': dining_room,
+         'hallway': hallway, 'office': office}
 kb = KnowrobKnowledge()
 
 #hopefully tmp
 dishes = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupDishes'
 snacks = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupSnacks'
 fruits = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupFruits'
+food = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupFood'
+cleaning_supplies = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupCleaningSupplies'
+toys = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupToys'
+decorations = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupDecorations'
 
 
 def init_knowrob():  # works
@@ -104,7 +112,7 @@ def get_nav_poses_for_furniture_item(room='arena', furniture_iri=None, furniture
             pass
         else:
             rospy.logwarn(f"[KnowRob] unknown furniture class with name {furniture_iri}. "
-                         f"looking for DesignedFurniture instead")
+                          f"looking for DesignedFurniture instead")
             furniture_iri = f"soma:'DesignedFurniture'"
     else:
         furniture_iri = f"soma:'DesignedFurniture'"
@@ -135,8 +143,6 @@ def get_nav_poses_for_furniture_item(room='arena', furniture_iri=None, furniture
     return poses_list
 
 
-
-
 # mostly used to check if a furniture object exists based on name from nlp
 def check_existence_of_instance(nlp_name):
     # check if an instance of the object exists
@@ -165,30 +171,65 @@ def check_existence_of_class(nlp_name):
         return tmp
 
 
-def get_predefined_source_item_location(items_iri):
-    knowrob_poses_list = kb.prolog_client.all_solutions(f"subclass_of(Obj, {items_iri}), "
-                                                        f""f"predefined_origin_location(Obj, Furniture), "
+# get iri from objects.py mapping
+def get_predefined_source_item_location_name(item_name):
+    if " " in item_name:  # ensure snake case if a space is present
+        item_name = snakecase(item_name)
+    knowrob_poses_list = kb.prolog_client.all_solutions(f"what_object_transitive('{item_name}', Obj),"
+                                                        f"predefined_origin_location(Obj, Furniture), "
                                                         f"furniture_rel_pose(Furniture, 'perceive', Pose).")
     poses_list = []
     if knowrob_poses_list:
         poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
     else:
         rospy.logerr("[KnowRob] query returned empty :(")
+    return poses_list
+
+
+def get_predefined_source_item_location_iri(item_iri):
+    # TODO ensure the pose is from water and not just liquid but it is a nice fallback?
+    if "'" not in item_iri:
+        item_iri = "'" + item_iri + "'"
+    knowrob_poses_list = kb.prolog_client.all_solutions(f"what_object_transitive(Name, {item_iri}),"
+                                                        f"predefined_origin_location({item_iri}, Furniture), "
+                                                        f"furniture_rel_pose(Furniture, 'perceive', Pose).")
+    poses_list = []
+    if knowrob_poses_list:
+        poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
+    else:
+        rospy.logerr("[KnowRob] query returned empty :(")
+        return None
     return poses_list
 
 
 def get_predefined_destination_item_location(items_iri):
-    knowrob_poses_list = kb.prolog_client.all_solutions(f"subclass_of(Obj, {items_iri}), "
-                                                        f""f"predefined_destination_location(Obj, Furniture), "
+    if "'" not in items_iri:
+        items_iri = "'" + items_iri + "'"
+    knowrob_poses_list = kb.prolog_client.all_solutions(f"predefined_destination_location({items_iri}, Furniture), "
                                                         f"furniture_rel_pose(Furniture, 'perceive', Pose).")
     poses_list = []
     if knowrob_poses_list:
         poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
     else:
         rospy.logerr("[KnowRob] query returned empty :(")
+        return None
     return poses_list
 
 
+def check_existence_based_on_class(class_iri):
+    # check if an instance of the object exists
+    # returns the instance name
+    # nlp_name = 'table'
+    tmp = kb.prolog_client.all_solutions(f"what_object_transitive(Name, {class_iri}).")
+    if tmp is None or tmp == []:
+        rospy.logwarn(f"[KnowRob] no object class with name {class_iri} found.")
+        return None
+    else:
+        rospy.loginfo(f"[KnowRob] object class {tmp} of type {class_iri} found")
+        return tmp
+
+
+# Test -----------------------------------------------------------------------------------------
 def test_predefined_locations():
     source_list = []
     destination_list = []
@@ -201,6 +242,53 @@ def test_predefined_locations():
         if get_source:
             source_list.append(get_source)
     return {'source': source_list, 'destination': destination_list}
+
+
+perception_list = [
+    "Fork", "Pitcher", "Bleachcleanserbottle", "Crackerbox", "Minisoccerball",
+    "Baseball", "Mustardbottle", "Jellochocolatepuddingbox", "Wineglass",
+    "Orange", "Coffeepack", "Softball", "Metalplate", "Pringleschipscan",
+    "Strawberry", "Glasscleanerspraybottle", "Tennisball", "Spoon", "Metalmug",
+    "Abrasivesponge", "Jellobox", "Dishwashertab", "Knife", "Cerealbox",
+    "Metalbowl", "Sugarbox", "Coffeecan", "Milkpackja", "Apple", "Tomatosoupcan",
+    "Tunafishcan", "Gelatinebox", "Pear", "Lemon", "Banana", "Pottedmeatcan",
+    "Peach", "Plum", "Rubikscube", "Mueslibox", "Cupblue", "Cupgreen",
+    "Largemarker", "Masterchefcan", "Scissors", "Scrubcleaner", "Grapes",
+    "Cup_small", "screwdriver", "clamp", "hammer", "wooden_block", "Cornybox"
+]
+
+furniture_list = ['hallway cabinet', 'entrance', 'desk', 'shelf', 'coathanger',
+                  'exit', 'TV table', 'lounge chair', 'lamp', 'couch', 'coffee table',
+                  'trashcan', 'kitchen cabinet', 'dinner table', 'dishwasher', 'kitchen counter']
+
+
+def check_existence_of_perception():
+    results = []
+    items_iri = None
+    for item in perc_to_know:
+        items_iri = perc_to_know.get(item)
+        if "'" not in items_iri:
+            items_iri = "'" + items_iri + "'"
+        tmp = check_existence_based_on_class(items_iri)
+        if tmp:
+            results.append([item, tmp])
+        else:
+            results.append([item, None])
+    return results
+
+
+# check_existence_of_furniture(furniture_list)
+def check_existence_of_furniture(tmp_list):
+    results = []
+    tmp = None
+    for item in tmp_list:
+        tmp = check_existence_of_instance(snakecase(item))
+        if tmp:
+            results.append([item, tmp])
+        else:
+            results.append([item, None])
+        tmp = None
+    return results
 
 
 def test_queries():
@@ -255,9 +343,7 @@ def test_queries():
                                    f"what_object_transitive('living room', Room), instance_of(RoomInst, Room), "
                                    f"is_inside_of(Inst, RoomInst), furniture_rel_pose(Inst, 'perceive', Pose).")
 
-
     # triple(Object, soma:isOntopOf, Furniture) # check if obj is on top of shelf layer
-
 
     # drop databases
     # kb.prolog_client.all_solutions("drop_graph(user), tf_mem_clear, mng_drop(roslog, tf).")
