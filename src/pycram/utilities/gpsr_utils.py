@@ -10,7 +10,7 @@ import pycram.external_interfaces.giskard_new as giskardpy
 
 from pycram.external_interfaces.navigate import PoseNavigator
 from pycram.designators.object_designator import *
-from pycram.bullet_world import BulletWorld, Object
+from pycram.worlds.bullet_world import BulletWorld, Object
 from pycram.utilities.robocup_utils import TextToSpeechPublisher, ImageSwitchPublisher, StartSignalWaiter, \
     HSRBMoveGripperReal, pakerino, GraspListener
 
