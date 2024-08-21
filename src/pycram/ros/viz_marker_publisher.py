@@ -87,7 +87,7 @@ class VizMarkerPublisher:
                 color = [1, 1, 1, 1]
                 if obj.name == "board":
                     color = [0.4, 0.2, 0.06, 1]
-                elif obj.type == "object_to_be_cut":
+                elif obj.obj_type == "object_to_be_cut":
                     colors = {
                         "orange": (1, 0.75, 0, 1),
                         "cucumber": (0, 1, 0, 1),
