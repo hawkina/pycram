@@ -1,9 +1,8 @@
+from .designator import DesignatorDescription
+from .plan_failures import PlanFailure
 from threading import Lock
 from typing import Union
-
-from .designator import DesignatorDescription
 from .language import Language, Monitor
-from .plan_failures import PlanFailure
 
 
 class FailureHandling(Language):
@@ -13,21 +12,13 @@ class FailureHandling(Language):
     This class provides a structure for implementing different strategies to handle
     failures that may occur during the execution of a plan or process. It is designed
     to be extended by subclasses that implement specific failure handling behaviors.
-
-    Attributes:
-        designator_description (DesignatorDescription): An instance of DesignatorDescription.
-
-    Methods:
-        perform(): Abstract method
     """
 
     def __init__(self, designator_description: Union[DesignatorDescription, Monitor]):
         """
         Initializes a new instance of the FailureHandling class.
 
-        Args:
-            designator_description (DesignatorDescription): The description or context
-            of the task or process for which the failure handling is being set up.
+        :param designator_description: The description or context of the task or process for which the failure handling is being set up.
         """
         self.designator_description = designator_description
 
@@ -38,8 +29,7 @@ class FailureHandling(Language):
         This method should be overridden in subclasses to implement the specific
         behavior for handling failures.
 
-        Raises:
-            NotImplementedError: If the method is not implemented in a subclass.
+        :raises NotImplementedError: If the method is not implemented in a subclass.
         """
         raise NotImplementedError()
 
@@ -65,10 +55,8 @@ class Retry(FailureHandling):
         """
         Initializes a new instance of the Retry class.
 
-        Args:
-            designator_description (DesignatorDescription): The description or context
-            of the task or process for which the retry mechanism is being set up.
-            max_tries (int, optional): The maximum number of attempts to retry. Defaults to 3.
+        :param designator_description: The description or context of the task or process for which the retry mechanism is being set up.
+        :param max_tries: The maximum number of attempts to retry. Defaults to 3.
         """
         super().__init__(designator_description)
         self.max_tries = max_tries
@@ -81,8 +69,7 @@ class Retry(FailureHandling):
         If the action fails, it is retried up to max_tries times. If all attempts fail,
         the last exception is raised.
 
-        Raises:
-            PlanFailure: If all retry attempts fail.
+        :raises PlanFailure: If all retry attempts fail.
         """
         tries = 0
         for action in iter(self.designator_description):
@@ -104,6 +91,7 @@ class RetryMonitor(FailureHandling):
 
     Attributes:
         max_tries (int): The maximum number of attempts to retry the action.
+        recovery (dict): A dictionary that maps exception types to recovery actions
 
     Inherits:
         All attributes and methods from the FailureHandling class.
@@ -112,7 +100,7 @@ class RetryMonitor(FailureHandling):
         perform(): Implements the retry logic.
     """
 
-    def __init__(self, designator_description: Monitor, max_tries: int = 3):
+    def __init__(self, designator_description: Monitor, max_tries: int = 3, recovery: dict = None):
         """
         Initializes a new instance of the Retry class.
 
@@ -120,10 +108,23 @@ class RetryMonitor(FailureHandling):
             designator_description (DesignatorDescription): The description or context
             of the task or process for which the retry mechanism is being set up.
             max_tries (int, optional): The maximum number of attempts to retry. Defaults to 3.
+            recovery (dict, optional): A dictionary that maps exception types to recovery actions. Defaults to None.
         """
         super().__init__(designator_description)
         self.max_tries = max_tries
         self.lock = Lock()
+        if recovery is None:
+            self.recovery = {}
+        else:
+            if not isinstance(recovery, dict):
+                raise ValueError(
+                    "Recovery must be a dictionary with exception types as keys and Language instances as values.")
+            for key, value in recovery.items():
+                if not issubclass(key, BaseException):
+                    raise TypeError("Keys in the recovery dictionary must be exception types.")
+                if not isinstance(value, Language):
+                    raise TypeError("Values in the recovery dictionary must be instances of the Language class.")
+            self.recovery = recovery
 
     def perform(self):
         """
@@ -153,8 +154,6 @@ class RetryMonitor(FailureHandling):
             for item in result:
                 if isinstance(item, list):
                     flattened_list.extend(item)
-                elif isinstance(item, tuple):
-                    flattened_list.append(item)
                 else:
                     flattened_list.append(item)
             return flattened_list
@@ -174,4 +173,7 @@ class RetryMonitor(FailureHandling):
                     tries += 1
                     if tries >= self.max_tries:
                         raise e
+                    exception_type = type(e)
+                    if exception_type in self.recovery:
+                        self.recovery[exception_type].perform()
         return status, flatten(res)

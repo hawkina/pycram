@@ -2,13 +2,11 @@
 from __future__ import annotations
 
 import queue
-import time
-from typing import Iterable, Optional, Callable, Dict, Any, List, Union, Tuple
-
 import rospy
-from anytree import NodeMixin, Node, PreOrderIter, RenderTree
+from typing_extensions import Iterable, Optional, Callable, Dict, Any, List, Union, Tuple
+from anytree import NodeMixin, Node, PreOrderIter
 
-from .enums import State
+from pycram.datastructures.enums import State
 import threading
 
 from .fluent import Fluent
@@ -21,7 +19,8 @@ class Language(NodeMixin):
     Parent class for language expressions. Implements the operators as well as methods to reduce the resulting language
     tree.
     """
-    parallel_blocklist = []
+    parallel_blocklist = ["PickUpAction", "PlaceAction", "OpenAction", "CloseAction", "TransportAction",
+                          "GraspingAction"]
     do_not_use_giskard = ["SetGripperAction", "MoveGripperMotion", "DetectAction", "DetectingMotion"]
     block_list: List[int] = []
     """List of thread ids which should be blocked from execution."""
@@ -160,14 +159,13 @@ class Language(NodeMixin):
         """
         Simplifies the language tree by merging which have a parent-child relation and are of the same type.
 
-        .. code-block:: python
+        .. code-block::
 
             <pycram.new_language.Parallel>
             ├── <pycram.new_language.Parallel>
             │   ├── <pycram.designators.action_designator.NavigateAction>
             │   └── <pycram.designators.action_designator.MoveTorsoAction>
             └── <pycram.designators.action_designator.DetectAction>
-
 
             would be simplified to:
 
@@ -267,7 +265,6 @@ class Monitor(Language):
         super().__init__(None, None)
         self.kill_event = threading.Event()
         self.exception_queue = queue.Queue()
-
         if callable(condition):
             self.condition = Fluent(condition)
         elif isinstance(condition, Fluent):
@@ -278,7 +275,7 @@ class Monitor(Language):
     def perform(self) -> Tuple[State, Any]:
         """
         Behavior of the Monitor, starts a new Thread which checks the condition and then performs the attached language
-        expression.
+        expression
 
         :return: The state of the attached language expression, as well as a list of the results of the children
         """
@@ -304,10 +301,7 @@ class Monitor(Language):
         t = threading.Thread(target=check_condition)
         t.start()
         try:
-            try:
-                state, result = self.children[0].perform()
-            except NotImplementedError:
-                state, result = self.children[0].resolve().perform()
+            state, result = self.children[0].perform()
             if not self.exception_queue.empty():
                 print("Raising PlanFailure")
                 raise self.exception_queue.get()
@@ -333,7 +327,6 @@ class Sequential(Language):
         Returns a tuple containing the final state of execution (SUCCEEDED, FAILED) and a list of results from each
         child's perform() method. The state is :py:attr:`~State.SUCCEEDED` *iff* all children are executed without
         exception. In any other case the State :py:attr:`~State.FAILED` will be returned.
-
     """
 
     def perform(self) -> Tuple[State, List[Any]]:
@@ -429,9 +422,10 @@ class Parallel(Language):
     Executes all children in parallel by creating a thread per children and executing them in the respective thread. All
     exceptions during execution will be caught, saved to a list and returned upon end.
 
-    Behaviour: Returns a tuple containing the final state of execution (SUCCEEDED, FAILED) and a list of results from
-    each child's perform() method. The state is :py:attr:`~State.SUCCEEDED` *iff* all children could be executed without
-    an exception. In any other case the State :py:attr:`~State.FAILED` will be returned.
+    Behaviour:
+        Returns a tuple containing the final state of execution (SUCCEEDED, FAILED) and a list of results from
+        each child's perform() method. The state is :py:attr:`~State.SUCCEEDED` *iff* all children could be executed without
+        an exception. In any other case the State :py:attr:`~State.FAILED` will be returned.
 
     """
 
@@ -619,3 +613,4 @@ class Code(Language):
 
     def interrupt(self) -> None:
         raise NotImplementedError
+
