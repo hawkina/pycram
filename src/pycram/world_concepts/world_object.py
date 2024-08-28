@@ -347,6 +347,14 @@ class Object(WorldEntity):
         """
         return self.links[link_name].origin_transform
 
+    def get_object_dimensions(self, link_name: Optional[str] = None) -> Tuple[float, float, float]:
+        """
+        Return the dimensions of the object.
+        :param link_name: The Optional name of a link of this object.
+        :return: The dimensions of the object, as a Tuple with float values.
+        """
+        return self.world.get_object_dimensions(obj_id=self.id, link_name=link_name)
+
     @property
     def base_origin_shift(self) -> np.ndarray:
         """
@@ -384,6 +392,7 @@ class Object(WorldEntity):
         self.set_pose(self.original_pose)
         if remove_saved_states:
             self.remove_saved_states()
+
 
     def attach(self,
                child_object: Object,
