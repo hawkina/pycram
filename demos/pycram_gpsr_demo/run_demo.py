@@ -8,7 +8,9 @@ from stringcase import snakecase
 import demos.pycram_gpsr_demo.llp_navigation as navi
 from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
 from pycram.datastructures.pose import PoseStamped
-from pycram.process_module import real_robot
+from pycram.external_interfaces import giskard
+from pycram.process_module import real_robot, semi_real_robot
+from pycram.designators.action_designator import *
 
 instruction_point = PoseStamped([6.12, 1.8, 0], [0, 0, 0, 1])
 #instruction_point = PoseStamped([4.4, -0.5, 0], [0, 0, 0, 1])
@@ -187,9 +189,25 @@ def demo_plan(data):
         print('--------------stahp----------------')
         return
 
-#setup()
-#fake_pose_2 = Pose([2.88, 0.3, 0])
-#pub_fake_pose(fake_pose_2)
-#gpsr()
-#demo_plan(data2)
-#setup_demo.gripper.pub_now('open')
+# --- TESTING FUNCTIONS ---
+@giskard.init_giskard_interface
+def test_move():
+    print("in test move")
+    pose1 = Pose([1, 1, 0])
+    giskard.teleport_robot(pose1)
+    with semi_real_robot:
+        NavigateAction([Pose([2, 2, 0])]).resolve().perform()
+        giskard.teleport_robot(pose1)
+
+
+@giskard.init_giskard_interface
+def test_move_pose(x, y):
+    print("in test move")
+    pose1 = Pose([1, 1, 0])
+    giskard.teleport_robot(pose1)
+    with semi_real_robot:
+        NavigateAction([Pose([x, y, 0])]).resolve().perform()
+        print("done with navigation")
+        #giskard.teleport_robot(pose1)
+    print("done?")
+

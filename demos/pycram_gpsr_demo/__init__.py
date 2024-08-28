@@ -9,4 +9,5 @@ from .llp_navigation import *
 from .llp_tell_stuff import *
 from .setup_demo import *
 from .high_level_plans import *
+from .neem_interface import *
 from .run_demo import *

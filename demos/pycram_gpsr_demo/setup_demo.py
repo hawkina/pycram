@@ -1,4 +1,7 @@
 # setup the environment
+from sympy.utilities.iterables import kbins
+
+from pycram.object_descriptors.urdf import ObjectDescription
 from pycram.designators.action_designator import *
 from pycram.external_interfaces.navigate import PoseNavigator
 from pycram.datastructures.enums import ObjectType
@@ -28,11 +31,74 @@ lt = None
 gripper = None
 previous_value = None
 robot_desig = None
+extension = None # what is this for?
 
 
 # maybe move this into the setup function so that it doesn't get auto-executed?
 # init demo in repl:  import demos.pycram_gpsr_demo as gpsr
+def setup_bullet():
+    global world, robot, environment_raw, rviz, plan_list, move, tts, image_switch, sound_pub
+    global tf_listener, with_real_robot, grasp_listener, start_signal_waiter, lt, gripper, previous_value
+    global robot_desig, environment_desig, tf_l, extension
 
+    extension = ObjectDescription.get_file_extension()
+    world = BulletWorld(WorldMode.DIRECT)
+
+    rviz = VizMarkerPublisher()
+
+    # init environment
+    environment = Object("arena", ObjectType.ENVIRONMENT, "robocup_vanessa.urdf")
+    environment_desig = ObjectDesignatorDescription(names=["arena"])
+    extension = ObjectDescription.get_file_extension()
+
+    # init robot
+    robot = Object("hsrb", ObjectType.ROBOT, f"hsrb{extension}", pose=Pose([1, 2, 0]))
+    # robot.set_color(rgba_color=[0.5, 0.5, 0.9, 1])
+    robot_desig = ObjectDesignatorDescription(names=["hsrb"])
+
+    lt = LocalTransformer()
+
+    # TODO add objects to the world
+    # milk = Object("milk", ObjectType.MILK, "milk.stl", pose=Pose([2.5, 2, 1.02]), color=[1, 0, 0, 1])
+    # cereal = Object("cereal", ObjectType.BREAKFAST_CEREAL, "breakfast_cereal.stl", pose=Pose([2.5, 2.3, 1.05]),
+    #                 color=[0, 1, 0, 1])
+    # spoon = Object("spoon", ObjectType.SPOON, "spoon.stl", pose=Pose([2.4, 2.2, 0.85]), color=[0, 0, 1, 1])
+    # bowl = Object("bowl", ObjectType.BOWL, "bowl.stl", pose=Pose([2.5, 2.2, 1.02]), color=[1, 1, 0, 1])
+    # human_female = Object("human_female", ObjectType.HUMAN, "female_standing.stl", pose=Pose([3, 3, 0]),
+    #                       color=[1, 1, 0, 1])
+
+    world.simulate(seconds=1, real_time=True)
+
+    # init knowrob
+    knowrob_interface.init_knowrob()
+
+    # No longer needed? at least not for simulation?
+    # move = PoseNavigator()
+    # image_switch = ImageSwitchPublisher()
+    # sound_pub = SoundRequestPublisher()
+    # grasp_listener = GraspListener()
+    # start_signal_waiter = StartSignalWaiter()
+    #
+    # gripper = HSRBMoveGripperReal()
+    # TODO add KnowRob back in
+    # knowrob_interface.init_knowrob()
+    # perception_interface.init_robokudo()
+    #
+    # # sync to kitchen and robot
+    # RobotStateUpdater("/tf", "/hsrb/robot_state/joint_states")
+    # rospy.sleep(2)
+    # KitchenStateUpdater("/tf", "/iai_kitchen/joint_states")
+    #
+    # giskard.init_giskard_interface()
+    # giskard.clear()
+    # giskard.sync_worlds()
+    #
+    # # this is already done in listen to commands
+    # if nlp_processing.canSpeak:
+    #      nlp_processing.nlp_subscribe()
+
+    rospy.loginfo(utils.PC.GREEN + "[CRAM] done with setup")
+    print("###################################################################")
 
 def setup():
     rospy.loginfo("[CRAM] initialize everything")
