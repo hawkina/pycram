@@ -2,7 +2,7 @@ from dynamic_reconfigure.msg import DoubleParameter, IntParameter, BoolParameter
 from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
 from geometry_msgs.msg import Twist, PoseWithCovariance, PoseWithCovarianceStamped
 from demos.pycram_gpsr_demo.setup_demo import *
-from demos.pycram_gpsr_demo import utils, setup_demo, perception_interface
+from demos.pycram_gpsr_demo import utils, setup_demo, perception_interface, ActionDesignator
 import demos.pycram_gpsr_demo.nlp_processing as nlp
 from stringcase import snakecase
 import demos.pycram_gpsr_demo.llp_navigation as navi
@@ -191,13 +191,13 @@ def demo_plan(data):
 
 # --- TESTING FUNCTIONS ---
 @giskard.init_giskard_interface
-def test_move():
+def test_move(pose = [Pose([1, 1, 0])]):
     print("in test move")
-    pose1 = Pose([1, 1, 0])
-    giskard.teleport_robot(pose1)
+    #pose1 = Pose([1, 1, 0])
+    #giskard.teleport_robot(pose1)
     with semi_real_robot:
-        NavigateAction([Pose([2, 2, 0])]).resolve().perform()
-        giskard.teleport_robot(pose1)
+        NavigateAction(pose).resolve().perform()
+        #giskard.teleport_robot(pose1)
 
 
 @giskard.init_giskard_interface
@@ -211,3 +211,14 @@ def test_move_pose(x, y):
         #giskard.teleport_robot(pose1)
     print("done?")
 
+# --- test ActionDesignator ---
+@giskard.init_giskard_interface
+def test_desig():
+    with semi_real_robot:
+        NavigateAction([Pose([0, 0, 0])]).resolve().perform()
+        print("--- done with navigation ---")
+        rospy.sleep(2)
+        # Test ActionDesignator
+        action = ActionDesignator(type='navigate', target_locations=[Pose([2, 1, 0])])
+        action.print_parameters()
+        action.perform()
