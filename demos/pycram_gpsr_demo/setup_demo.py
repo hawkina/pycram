@@ -1,6 +1,7 @@
 # setup the environment
 from sympy.utilities.iterables import kbins
 
+from pycram.datastructures.dataclasses import Color
 from pycram.object_descriptors.urdf import ObjectDescription
 from pycram.designators.action_designator import *
 from pycram.external_interfaces.navigate import PoseNavigator
@@ -53,13 +54,18 @@ def setup_bullet():
 
     # init robot
     robot = Object("hsrb", ObjectType.ROBOT, f"hsrb{extension}", pose=Pose([1, 2, 0]))
-    # robot.set_color(rgba_color=[0.5, 0.5, 0.9, 1])
+    robot.set_color(rgba_color=Color().from_list([0.5, 0.5, 0.9, 1]))
     robot_desig = ObjectDesignatorDescription(names=["hsrb"])
 
     lt = LocalTransformer()
 
     # TODO add objects to the world
-    # milk = Object("milk", ObjectType.MILK, "milk.stl", pose=Pose([2.5, 2, 1.02]), color=[1, 0, 0, 1])
+    # on top of dinner table
+    milk = Object("milk", ObjectType.MILK, "milk.stl", pose=Pose([8.1, 4.2, 0.86]), color=[1, 0, 0, 1])
+    # on top of dishwasher (predefined location)
+    cup = Object("cup", ObjectType.JEROEN_CUP, "../../resources/jeroen_cup.stl", pose=Pose([10.3, 5.29, 0.9]),
+                 color=[0, 0, 1, 0])
+
     # cereal = Object("cereal", ObjectType.BREAKFAST_CEREAL, "breakfast_cereal.stl", pose=Pose([2.5, 2.3, 1.05]),
     #                 color=[0, 1, 0, 1])
     # spoon = Object("spoon", ObjectType.SPOON, "spoon.stl", pose=Pose([2.4, 2.2, 0.85]), color=[0, 0, 1, 1])

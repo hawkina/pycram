@@ -222,3 +222,4 @@ def test_desig():
         action = ActionDesignator(type='navigate', target_locations=[Pose([2, 1, 0])])
         action.print_parameters()
         action.perform()
+
