@@ -96,6 +96,7 @@ def get_room_middle_pose(room):  # Works
 # for testing: gpsr.move.pub_now(pose_list[0])
 # furniture name = robocup name
 # works: but might need more test-ing
+# TODO maybe remove furniture_iri. It might not be needed anymore
 def get_nav_poses_for_furniture_item(room='arena', furniture_iri=None, furniture_name=f"Name"):  # works
     rospy.logwarn(f"tf listener in knowrob{utils.tf_l}")
     # unless another class/iri is specified, ensure soma:'DesignedFurniture' is the default
@@ -130,9 +131,10 @@ def get_nav_poses_for_furniture_item(room='arena', furniture_iri=None, furniture
     knowrob_poses_list = kb.prolog_client.all_solutions(f"has_type(Room, '{room_iri}'), "
                                                         f"(what_object_transitive({furniture_name}, Obj); "
                                                         f"has_robocup_name(Obj, {furniture_name})),"
-                                                        f"has_type(Obj, {furniture_iri}), "
-                                                        # f"instance_of(Inst, Obj),"
-                                                        f"Inst = Obj,"
+                                                        #f"has_type(Obj, {furniture_iri}), "
+                                                        f"subclass_of(Obj, {furniture_iri}),"
+                                                        f"instance_of(Inst, Obj),"
+                                                        #f"Inst = Obj,"
                                                         f"is_inside_of(Inst, Room),"
                                                         f"furniture_rel_pose(Inst, 'perceive', Pose).")  # CHANGE find a prettier way?
     poses_list = []
