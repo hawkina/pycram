@@ -2,7 +2,7 @@ from dynamic_reconfigure.msg import DoubleParameter, IntParameter, BoolParameter
 from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
 from geometry_msgs.msg import Twist, PoseWithCovariance, PoseWithCovarianceStamped
 from demos.pycram_gpsr_demo.setup_demo import *
-from demos.pycram_gpsr_demo import utils, setup_demo, perception_interface, ActionDesignator
+from demos.pycram_gpsr_demo import utils, setup_demo, perception_interface, ActionDesignator, Location
 import demos.pycram_gpsr_demo.nlp_processing as nlp
 from stringcase import snakecase
 import demos.pycram_gpsr_demo.llp_navigation as navi
@@ -223,3 +223,17 @@ def test_desig():
         action.print_parameters()
         action.perform()
 
+@giskard.init_giskard_interface
+def test_nav_action(furniture_item=None, room=None):
+    with semi_real_robot:
+        action = ActionDesignator(type ='navigate',
+                                  target_locations = Location(furniture_item=furniture_item,
+                                                              room=room))
+        action.resolve().perform()
+
+@giskard.init_giskard_interface
+def test_perception():
+    with semi_real_robot:
+        perceived_obj = DetectAction(technique=PerceptionTechniques.ALL).resolve().perform()
+        for obj_desig in perceived_obj.values():
+            print(obj_desig)

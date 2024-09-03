@@ -268,5 +268,15 @@ def remove_prefix(text, prefix):
     return text
 
 
+# converts the result of knowrob which is a list of dict items, into list of poses
+def knowrob_dict_list_to_poses_list(knowrob_dict_list):
+    result = []
+    for item in knowrob_dict_list:
+        pose = item.get('Item').get('pose')
+        pose = PoseStamped.from_pose_stamped(pose)
+        #pose = PoseStamped(frame=pose.frame('frame'), position=pose.get('position'), orientation=pose.get('orientation'))
+        result.append(pose)
+    return result
+
 # autogenerate a dict from all defined objects in the objects.py file
 obj_dict = autogenerate_dict_from_file(objects_path)

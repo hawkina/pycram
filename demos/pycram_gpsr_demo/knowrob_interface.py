@@ -84,7 +84,7 @@ def get_room_middle_pose(room):  # Works
     if rooms.get(room):
         result = kb.prolog_client.once(f"middle('{room}', PoseStamped).")
         if result is None or result == []:
-            rospy.logerr(f"[KnowRob] No entry pose for {room} found. :(")
+            rospy.logerr(f"[KnowRob] No navigation pose for {room} found. :(")
             return None
         pose = utils.lpose_to_pose_stamped(result.get('PoseStamped'))
         return pose

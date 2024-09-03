@@ -1,5 +1,9 @@
 import inspect
+
+import rospy
+
 import pycram.designators.action_designator as action_designators
+from demos.pycram_gpsr_demo import Location
 
 
 # utility function for mapping of action designators
@@ -69,14 +73,30 @@ class ActionDesignator:
         # Dynamically create an instance of the class
         class_obj = getattr(action_designators, class_name)
         self.action_instance = class_obj(**kwargs)
+        self.print_parameters()
 
-    def print_parameters(self):
+    def print_all_parameters(self):
         # Print all parameters of the action instance
         for key, value in self.action_instance.__dict__.items():
             print(f"{key}: {value}")
 
+
+    def print_parameters(self):
+        # Print all parameters of the action instance
+        blacklist = ['exceptions', 'executing_thread', 'threads', 'interrupted']
+        for key, value in self.action_instance.__dict__.items():
+            if key not in blacklist:
+                print(f"{key}: {value}")
+
     def resolve(self):
         # Call the resolve method of the action instance
+        for attr_name, attr_value in self.action_instance.__dict__.items():
+            if isinstance(attr_value, Location):
+                tmp = attr_value.ground()
+                attr_value = tmp.poses
+                # write target_locations to be the ones from the resolved location designator
+                self.action_instance.__dict__[attr_name] = attr_value
+        print("done grounding desig")
         self.action_instance.resolve()
         return self
 
