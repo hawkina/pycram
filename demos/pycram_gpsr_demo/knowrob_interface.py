@@ -80,6 +80,7 @@ def get_room_pose(room, entry_or_exit='entry'):  # Works
 
 
 def get_room_middle_pose(room):  # Works
+    room = snakecase(room)
     if rooms.get(room):
         result = kb.prolog_client.once(f"middle('{room}', PoseStamped).")
         if result is None or result == []:
