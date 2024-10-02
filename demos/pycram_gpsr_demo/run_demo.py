@@ -1,8 +1,10 @@
 from dynamic_reconfigure.msg import DoubleParameter, IntParameter, BoolParameter, StrParameter, GroupState, Config
 from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
-from geometry_msgs.msg import Twist, PoseWithCovariance, PoseWithCovarianceStamped
+from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
 from demos.pycram_gpsr_demo.setup_demo import *
-from demos.pycram_gpsr_demo import utils, setup_demo, perception_interface, ActionDesignator, Location
+from pycram.designators.action_designator import *
+from demos.pycram_gpsr_demo import utils, setup_demo, perception_interface, ActionDesignator, Location, neem_interface, \
+    generate_neem, apply_decorators_to_action_designator
 import demos.pycram_gpsr_demo.nlp_processing as nlp
 from stringcase import snakecase
 import demos.pycram_gpsr_demo.llp_navigation as navi
@@ -10,12 +12,13 @@ from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
 from pycram.datastructures.pose import PoseStamped
 from pycram.external_interfaces import giskard
 from pycram.process_module import real_robot, semi_real_robot
-from pycram.designators.action_designator import *
+
 
 instruction_point = PoseStamped([6.12, 1.8, 0], [0, 0, 0, 1])
 #instruction_point = PoseStamped([4.4, -0.5, 0], [0, 0, 0, 1])
 #image_switch = ImageSwitchPublisher()
 start_signal_waiter = StartSignalWaiter()
+
 
 def move_vel(speed, distance, isForward, angle=0):
     # Starts a new node
@@ -93,6 +96,7 @@ def pub_fake_pose(fake_pose: PoseStamped):
                            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                            0.06853892326654787]
     toya_pose_pub.publish(msg)
+
 
 # DEPRECTAED / RoboCup Only
 # def yeet_into_arena():
@@ -189,9 +193,10 @@ def demo_plan(data):
         print('--------------stahp----------------')
         return
 
+
 # --- TESTING FUNCTIONS ---
 @giskard.init_giskard_interface
-def test_move(pose = [Pose([1, 1, 0])]):
+def test_move(pose=[Pose([1, 1, 0])]):
     print("in test move")
     #pose1 = Pose([1, 1, 0])
     #giskard.teleport_robot(pose1)
@@ -211,6 +216,7 @@ def test_move_pose(x, y):
         #giskard.teleport_robot(pose1)
     print("done?")
 
+
 # --- test ActionDesignator ---
 @giskard.init_giskard_interface
 def test_desig():
@@ -223,17 +229,115 @@ def test_desig():
         action.print_parameters()
         action.perform()
 
+
 @giskard.init_giskard_interface
 def test_nav_action(furniture_item=None, room=None):
     with semi_real_robot:
-        action = ActionDesignator(type ='navigate',
-                                  target_locations = Location(furniture_item=furniture_item,
-                                                              room=room))
+        action = ActionDesignator(type='navigate',
+                                  target_locations=Location(furniture_item=furniture_item,
+                                                            room=room))
         action.resolve().perform()
+
+
+@giskard.init_giskard_interface
+def test_perception_ref():
+    with semi_real_robot:
+        action = DetectAction(technique=PerceptionTechniques.ALL,
+                              object_designator=ObjectDesignatorDescription(types=[ObjectType.JEROEN_CUP]))
+        action = action.resolve().perform()
+        for obj_desig in action.values():
+            print(obj_desig)
+
 
 @giskard.init_giskard_interface
 def test_perception():
     with semi_real_robot:
-        perceived_obj = DetectAction(technique=PerceptionTechniques.ALL).resolve().perform()
-        for obj_desig in perceived_obj.values():
-            print(obj_desig)
+        #perceived_obj = DetectAction(technique=PerceptionTechniques.ALL).resolve().perform()
+        action = ActionDesignator(type='detect',
+                                  technique=PerceptionTechniques.ALL,
+                                  object_designator=ObjectDesignatorDescription(types=[ObjectType.JEROEN_CUP]))
+        action = action.resolve().perform()
+        print("----------------")
+        print(action)
+        result = None
+        # for obj_desig in action.values():
+        # print("-----------------")
+        # print(obj_desig)
+        # if obj_desig.obj_type == ObjectType.JEROEN_CUP:
+        #     result = obj_desig
+        print("##########################################################################")
+        #print(action.values().get(ObjectType.JEROEN_CUP))
+        return action
+
+
+@giskard.init_giskard_interface
+def test_pick_up():
+    with semi_real_robot:
+        #Perceive
+        action = ActionDesignator(type='detect',
+                                  technique=PerceptionTechniques.ALL,
+                                  object_designator=ObjectDesignatorDescription(types=[ObjectType.JEROEN_CUP]))
+        action = action.resolve().perform()
+        # pick up
+        cup_desig = action.values().get('cup')
+        surface_loc = Location(furniture_item='kitchen counter', room='kitchen').ground()
+        PickUpAction(object_designator_description=cup_desig,
+                     arms=[Arms.LEFT],
+                     grasps=[Grasp.FRONT],
+                     source_location=surface_loc).resolve().perform()
+        rospy.sleep(2)
+        PlaceAction(cup_desig, target_locations=[Pose([10.3, 5.29, 0.9])], arms=[Arms.LEFT]).resolve().perform()
+
+
+#@generate_neem
+@giskard.init_giskard_interface
+def test_plan(furniture_item='kitchen counter', room='kitchen', object_type='cup'):
+    with semi_real_robot:
+        ActionDesignator = apply_decorators_to_action_designator()
+        # look for jeroen_cup
+        nav_location = Location(furniture_item=furniture_item, room=room)
+        nav_action = ActionDesignator(type='navigate', target_locations=nav_location)
+
+        nav_action.resolve().perform()
+
+        object_desig = ObjectDesignatorDescription(types=[utils.match_string_to_enum(object_type, ObjectType)])
+
+        detect_action = ActionDesignator(type='detect',
+                                         technique=PerceptionTechniques.ALL,
+                                         object_designator=object_desig)
+        detect_action = detect_action.resolve().perform()
+        detect_result = detect_action.get(object_type) # wip this dies?
+
+        rospy.sleep(2)
+        # look for milk
+        # nav_location2 = Location(furniture_item='table', room='kitchen')
+        # nav_action2 = ActionDesignator(type='navigate', target_locations=nav_location2)
+        # nav_action2.resolve().perform()
+        # object_desig2 = ObjectDesignatorDescription(types = [utils.match_string_to_enum('milk', ObjectType)])
+        # detect_action2 = ActionDesignator(type='detect',
+        #                           technique=PerceptionTechniques.ALL,
+        #                           object_designator = object_desig2)
+        # detect_action2 = detect_action2.resolve().perform()
+        # detect_result2 = detect_action2.get('milk')
+        return detect_result
+
+
+#@generate_neem
+def test_neem():
+    ActionDesignator =  apply_decorators_to_action_designator()
+    nav_action = ActionDesignator(type='navigate',
+                                  target_locations=Location(furniture_item='kitchen counter', room='kitchen'))
+
+    detect_action = ActionDesignator(type='detect', technique=PerceptionTechniques.ALL,
+                                     object_designator=ObjectDesignatorDescription(types=[ObjectType.JEROEN_CUP]))
+    nav_action.resolve()
+    detect_action.resolve()
+    print("--- done with execution ---")
+    return [nav_action, detect_action]
+
+
+def test_neem_generation():
+    neem_interface.init_neem_interface()
+    neem_interface.start_episode()
+
+    #neem_interface.stop_episode()

@@ -251,14 +251,14 @@ def pose_stamped_to_json(pose_stamped):
 def remap_source_to_destination(json_data):
     if json_data.get('Source'):
         json_data['Destination'] = json_data.pop('Source')
-        rospy.loginfo(PC.GREY + '[UTILS] remapped Source to Destination')
+        rospy.loginfo(PC.PINK + '[UTILS] remapped Source to Destination')
     else:
-        rospy.loginfo(PC.GREY + '[UTILS] no Source found')
+        rospy.loginfo(PC.PINK + '[UTILS] no Source found')
     if json_data.get('SourceRoom'):
         json_data['DestinationRoom'] = json_data.pop('SourceRoom')
-        rospy.loginfo(PC.GREY + '[UTILS] remapped SourceRoom to DestinationRoom')
+        rospy.loginfo(PC.PINK + '[UTILS] remapped SourceRoom to DestinationRoom')
     else:
-        rospy.loginfo(PC.GREY + '[UTILS] no SourceRoom found')
+        rospy.loginfo(PC.PINK + '[UTILS] no SourceRoom found')
     return json_data
 
 
@@ -280,3 +280,10 @@ def knowrob_dict_list_to_poses_list(knowrob_dict_list):
 
 # autogenerate a dict from all defined objects in the objects.py file
 obj_dict = autogenerate_dict_from_file(objects_path)
+
+def match_string_to_enum(string, enum_class):
+    try:
+        return enum_class[string.upper()]
+    except KeyError:
+        return None
+

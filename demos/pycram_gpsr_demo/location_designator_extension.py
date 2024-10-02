@@ -22,6 +22,7 @@ class Location(LocationDesignatorDescription.Location):
         self.poses = []
         self.pose = None
         self.kwargs = kwargs
+        self.urdf_link = None # urdf link of target item
         self.print()
         #self.ground() # commented out so we can differenceate between description + resolved designator
 
@@ -71,12 +72,15 @@ class Location(LocationDesignatorDescription.Location):
         # pose contains the first pose of the list
         # poses contain the entire list result of knowrob
         if self.semantic_poses is not []:
+            # case of only one pose returned for ROOM only
             if len(self.semantic_poses) == 1 and room:
                 self.pose = Pose.from_pose_stamped(self.semantic_poses[0]) # room pose is returned differently
                 self.poses = [self.pose]
                 return self
             else:
+                # case of multiple poses returned for FI, FI+R
                 self.pose = self.semantic_poses[0].get('Item').get('pose')
+                self.urdf_link = self.semantic_poses[0].get('Item').get('link')
                 self.poses = utils.knowrob_dict_list_to_poses_list(self.semantic_poses)
                 return self
         else:

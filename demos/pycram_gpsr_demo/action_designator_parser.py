@@ -60,6 +60,7 @@ def process_action_list_to_dict(action_list):
 # >>> when called like this gpsr.process_action_list_to_dict(gpsr.get_classes_from_file(actions))
 # >>> it returns us a dict shaped like 'transport': 'TransportAction', 'navigate': 'NavigateAction', etc
 
+
 class ActionDesignator:
     def __init__(self, type=None, **kwargs):
         # Mapping of action types to class names
@@ -73,7 +74,7 @@ class ActionDesignator:
         # Dynamically create an instance of the class
         class_obj = getattr(action_designators, class_name)
         self.action_instance = class_obj(**kwargs)
-        self.print_parameters()
+        #self.print_parameters()
 
     def print_all_parameters(self):
         # Print all parameters of the action instance
@@ -91,14 +92,16 @@ class ActionDesignator:
     def resolve(self):
         # Call the resolve method of the action instance
         for attr_name, attr_value in self.action_instance.__dict__.items():
+            # this is location designator specific todo test if only for my locdesig or generally for all of them
             if isinstance(attr_value, Location):
                 tmp = attr_value.ground()
                 attr_value = tmp.poses
                 # write target_locations to be the ones from the resolved location designator
                 self.action_instance.__dict__[attr_name] = attr_value
-        print("done grounding desig")
-        self.action_instance.resolve()
-        return self
+                print("done grounding location designator")
+
+        #self.action_instance.resolve()
+        return self.action_instance.resolve()
 
     def perform(self):
         # Call the perform method of the action instance

@@ -54,7 +54,7 @@ def setup_bullet():
 
     # init robot
     robot = Object("hsrb", ObjectType.ROBOT, f"hsrb{extension}", pose=Pose([1, 2, 0]))
-    robot.set_color(rgba_color=Color().from_list([0.5, 0.5, 0.9, 1]))
+    #robot.set_color(rgba_color=Color().from_list([0.5, 0.5, 0.9, 1]))
     robot_desig = ObjectDesignatorDescription(names=["hsrb"])
 
     lt = LocalTransformer()
