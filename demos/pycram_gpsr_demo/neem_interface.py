@@ -104,6 +104,11 @@ def add_location_designator_description(dict_of_object_desig_descriptions):
     global nio
     res = neem_interface.NEEMInterface.add_location_designator_description(nio, dict_of_object_desig_descriptions)
     return res
+
+def add_resolved_location_designator(resolved_loc_desig, location_designator_description_iri):
+    global nio
+    res = neem_interface.NEEMInterface.add_resolved_location_designator(nio, resolved_loc_desig, location_designator_description_iri)
+    return res
 # ---------------- Automation of calling the NEEM interface ----------------
 # Flag to track initialization state
 initialized = False
@@ -146,15 +151,16 @@ def neem_class_decorator(cls):
 
 
 # Method decorator to log function calls
+# WIP this generates logging when an Action Designator is created
 def generate_neem(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         global parent_action, current_action, ont  # ont is an IRI
         rospy.loginfo(utils.PC.PINK + f"[NEEM] Function {func.__name__} called" + utils.PC.GREY)
-        # WIP: put pre-resovle code here
 
-        if isinstance(self, ObjectDesignatorDescription):
-            rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Processing ObjectDesignatorDescription:" + utils.PC.GREY)
+        # deprecated?
+        # if isinstance(self, ObjectDesignatorDescription):
+        #    rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Processing ObjectDesignatorDescription:" + utils.PC.GREY)
 
 
         if isinstance(self, ActionDesignator):
@@ -172,6 +178,7 @@ def generate_neem(func):
                 # connect location instance to action as goal
                 triple(current_action, ont.soma.hasGoal.iri, loc_inst)  # add a pose
 
+                # --- DESCRIPTION START ---
                 # process location designator within the action designator
                 for attr_name, attr_value in self.action_instance.__dict__.items():
                     # this is location designator specific todo test if only for my locdesig or generally for all of them
@@ -193,22 +200,22 @@ def generate_neem(func):
                                 rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Not an instance of ObjectDesignatorDescription: {item}. Moving On." + utils.PC.GREY)
                         # add all the parameters to the location designator description instance
                         rospy.loginfo(utils.PC.GREEN + f"[NEEM] Adding all parameters to LocationDesignatorDescription instance: {param_list}" + utils.PC.GREY)
-                        tmp = add_location_designator_description(param_list)
-                        rospy.loginfo(utils.PC.RED + f"[NEEM] Done Processing LocationDesignatorDescription Parameter within LocationDesignatorDescription: {tmp}" + utils.PC.GREY)
-
+                        loc_desig_desc_instance = add_location_designator_description(param_list)
+                        rospy.loginfo(utils.PC.GREEN + f"[NEEM] Done Processing LocationDesignatorDescription Parameter within LocationDesignatorDescription: {loc_desig_desc_instance}" + utils.PC.GREY)
+                # --- DESCRIPTION END ---
+                # --- RESOLVE START ---
                         # grounding of values, e.g. resolution of location designator
-                        tmp = attr_value.ground()
-                        attr_value = tmp.poses
-                        pose_array = [attr_value[0].frame , attr_value[0].position_as_list(), attr_value[0].orientation_as_list()]
-                        add_pose_to_instance(loc_inst, pose_array)
-                        rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Done processing LocationDesignator: {pose_array}" + utils.PC.GREY)
+                        resolved_location_designator = attr_value.ground() #Location.ground()
+                        resolved_desig = add_resolved_location_designator(resolved_location_designator, loc_desig_desc_instance)
+                        rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Done processing LocationDesignator: {resolved_desig}" + utils.PC.GREY)
+                # --- RESOLVE END ---
 
             # process object designator within the action designator
             if isinstance(self, Object):
                 rospy.loginfo(
                     utils.PC.PINK + f"[NEEM] Processing ObjectDesignator:" + utils.PC.GREY)
             else:
-                rospy.logerr(utils.PC.PINK + f"[NEEM] Invalid designator type: {self}" + utils.PC.GREY)
+                rospy.logerr(utils.PC.PINK + f"[NEEM] Invalid designator type: {self.__dict__}" + utils.PC.GREY)
 
             # Wrap resolve and perform methods of ActionDesignator to log them
             self.resolve = log_method(self.resolve, self, 'resolve')
