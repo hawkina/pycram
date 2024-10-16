@@ -37,12 +37,25 @@ class Location(LocationDesignatorDescription.Location):
                 and knowrob.check_existence_of_instance(snakecase(self.kwargs['furniture_item']))):
             rospy.loginfo(utils.PC.BLUE + f"[LOC] instance of furniture item {self.kwargs['furniture_item']} found")
             furniture_item = self.kwargs['furniture_item']
+            # TODO make the following more error proof
+            # GOAL the following should take into account that the furniture_item can be described as an Object Designator
+        elif ('furniture_item' in self.kwargs and isinstance(self.kwargs['furniture_item'], ObjectDesignatorDescription)
+                and knowrob.check_existence_of_instance(snakecase(self.kwargs['furniture_item'].names[0]))):
+            rospy.loginfo(utils.PC.BLUE + f"[LOC] Object Designator instance of furniture item {self.kwargs['furniture_item']} found")
+            furniture_item = self.kwargs['furniture_item'].names[0]
+
         else:
             rospy.logerr(f"[LOC] no instance of furniture item found.")
 
         if ('room' in self.kwargs and isinstance(self.kwargs['room'], str)
                 and knowrob.check_existence_of_instance(self.kwargs['room'])):
             room = self.kwargs['room']
+            rospy.loginfo(utils.PC.BLUE + f"[LOC] instance of room {room} found")
+        elif('room' in self.kwargs and isinstance(self.kwargs['room'], ObjectDesignatorDescription)
+                and knowrob.check_existence_of_instance(self.kwargs['room'].names[0])):
+            room = self.kwargs['room'].names[0]
+            rospy.loginfo(utils.PC.BLUE + f"[LOC] Object Designator instance of room {room} found")
+
         else:
             rospy.logerr(f"[LOC] no instance of room found.")
 

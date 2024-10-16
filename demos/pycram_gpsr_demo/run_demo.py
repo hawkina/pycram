@@ -4,7 +4,7 @@ from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
 from demos.pycram_gpsr_demo.setup_demo import *
 from pycram.designators.action_designator import *
 from demos.pycram_gpsr_demo import utils, setup_demo, perception_interface, ActionDesignator, Location, neem_interface, \
-    generate_neem, apply_decorators_to_action_designator
+    generate_neem, enable_neem_generation
 import demos.pycram_gpsr_demo.nlp_processing as nlp
 from stringcase import snakecase
 import demos.pycram_gpsr_demo.llp_navigation as navi
@@ -293,7 +293,7 @@ def test_pick_up():
 @giskard.init_giskard_interface
 def test_plan(furniture_item='kitchen counter', room='kitchen', object_type='cup'):
     with semi_real_robot:
-        ActionDesignator = apply_decorators_to_action_designator()
+        ActionDesignator = enable_neem_generation()
         # look for jeroen_cup
         nav_location = Location(furniture_item=furniture_item, room=room)
         nav_action = ActionDesignator(type='navigate', target_locations=nav_location)
@@ -324,9 +324,16 @@ def test_plan(furniture_item='kitchen counter', room='kitchen', object_type='cup
 
 #@generate_neem
 def test_neem():
-    ActionDesignator =  apply_decorators_to_action_designator()
+    ActionDesignator =  enable_neem_generation()
+    #nav_action = ActionDesignator(type='navigate',
+    #                              target_locations=Location(furniture_item='kitchen counter', room='kitchen'))
+    furniture_designator = ObjectDesignatorDescription(names=["kitchen counter"])
+    room_designator = ObjectDesignatorDescription(names=["kitchen"])
+
     nav_action = ActionDesignator(type='navigate',
-                                  target_locations=Location(furniture_item='kitchen counter', room='kitchen'))
+                                  target_locations=Location(
+                                      furniture_item=furniture_designator,
+                                      room=room_designator))
 
     detect_action = ActionDesignator(type='detect', technique=PerceptionTechniques.ALL,
                                      object_designator=ObjectDesignatorDescription(types=[ObjectType.JEROEN_CUP]))
@@ -336,6 +343,7 @@ def test_neem():
     return [nav_action, detect_action]
 
 
+# deprecated
 def test_neem_generation():
     neem_interface.init_neem_interface()
     neem_interface.start_episode()
