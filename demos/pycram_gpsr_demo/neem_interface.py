@@ -99,6 +99,11 @@ def add_object_designator_description(obj_desig):
     global nio
     res = neem_interface.NEEMInterface.add_object_designator_description(nio, obj_desig)
     return res
+
+def add_location_designator_description(dict_of_object_desig_descriptions):
+    global nio
+    res = neem_interface.NEEMInterface.add_location_designator_description(nio, dict_of_object_desig_descriptions)
+    return res
 # ---------------- Automation of calling the NEEM interface ----------------
 # Flag to track initialization state
 initialized = False
@@ -172,18 +177,26 @@ def generate_neem(func):
                     # this is location designator specific todo test if only for my locdesig or generally for all of them
                     if isinstance(attr_value, Location):
                         rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Found location designator: {attr_name} + {attr_value} " + utils.PC.GREY)
-                        # grounding of values, e.g. resolution of location designator
+
                         # take care of ObjectDesignatorDescriptions within the LocationDesignatorDescription
+                        param_list = {}
                         for item_name in attr_value.kwargs:
                             item = attr_value.kwargs.get(item_name)
                             rospy.loginfo(utils.PC.GREEN + f"[NEEM] Processing: {item_name} value: {item}" + utils.PC.GREY)
                             if isinstance(item, ObjectDesignatorDescription):
                                 rospy.loginfo(utils.PC.GREEN + f"[NEEM] Processing ObjectDesignatorDescription Parameter within LocationDesignatorDescription" + utils.PC.GREY)
                                 # add object designator to NEEM
-                                add_object_designator_description(item)
-                                rospy.loginfo(utils.PC.GREEN + f"[NEEM] Done Processing ObjectDesignatorDescription Parameter within LocationDesignatorDescription" + utils.PC.GREY)
+                                obj_desig_design = add_object_designator_description(item)
+                                param_list[item_name] = obj_desig_design
+                                rospy.loginfo(utils.PC.GREEN + f"[NEEM] Done Processing ObjectDesignatorDescription Parameter within LocationDesignatorDescription: {obj_desig_design}" + utils.PC.GREY)
+                            else:
+                                rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Not an instance of ObjectDesignatorDescription: {item}. Moving On." + utils.PC.GREY)
+                        # add all the parameters to the location designator description instance
+                        rospy.loginfo(utils.PC.GREEN + f"[NEEM] Adding all parameters to LocationDesignatorDescription instance: {param_list}" + utils.PC.GREY)
+                        tmp = add_location_designator_description(param_list)
+                        rospy.loginfo(utils.PC.RED + f"[NEEM] Done Processing LocationDesignatorDescription Parameter within LocationDesignatorDescription: {tmp}" + utils.PC.GREY)
 
-
+                        # grounding of values, e.g. resolution of location designator
                         tmp = attr_value.ground()
                         attr_value = tmp.poses
                         pose_array = [attr_value[0].frame , attr_value[0].position_as_list(), attr_value[0].orientation_as_list()]
