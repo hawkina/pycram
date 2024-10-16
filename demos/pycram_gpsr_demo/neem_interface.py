@@ -95,6 +95,10 @@ def add_pose_to_instance(instance, pose):
     res = neem_interface.NEEMInterface.add_pose_to_instance(nio, instance, pose)
     return res
 
+def add_object_designator_description(obj_desig):
+    global nio
+    res = neem_interface.NEEMInterface.add_object_designator_description(nio, obj_desig)
+    return res
 # ---------------- Automation of calling the NEEM interface ----------------
 # Flag to track initialization state
 initialized = False
@@ -168,6 +172,18 @@ def generate_neem(func):
                     # this is location designator specific todo test if only for my locdesig or generally for all of them
                     if isinstance(attr_value, Location):
                         rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Found location designator: {attr_name} + {attr_value} " + utils.PC.GREY)
+                        # grounding of values, e.g. resolution of location designator
+                        # take care of ObjectDesignatorDescriptions within the LocationDesignatorDescription
+                        for item_name in attr_value.kwargs:
+                            item = attr_value.kwargs.get(item_name)
+                            rospy.loginfo(utils.PC.GREEN + f"[NEEM] Processing: {item_name} value: {item}" + utils.PC.GREY)
+                            if isinstance(item, ObjectDesignatorDescription):
+                                rospy.loginfo(utils.PC.GREEN + f"[NEEM] Processing ObjectDesignatorDescription Parameter within LocationDesignatorDescription" + utils.PC.GREY)
+                                # add object designator to NEEM
+                                add_object_designator_description(item)
+                                rospy.loginfo(utils.PC.GREEN + f"[NEEM] Done Processing ObjectDesignatorDescription Parameter within LocationDesignatorDescription" + utils.PC.GREY)
+
+
                         tmp = attr_value.ground()
                         attr_value = tmp.poses
                         pose_array = [attr_value[0].frame , attr_value[0].position_as_list(), attr_value[0].orientation_as_list()]
@@ -230,7 +246,7 @@ def log_method(method, action_designator, method_name):
     return wrapper
 
 # Function to dynamically apply decorators to your ActionDesignator class
-def apply_decorators_to_action_designator():
+def enable_neem_generation():
     class NeemClass:
         def __init__(self, type, **kwargs):
             self.type = type
