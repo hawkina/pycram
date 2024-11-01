@@ -12,7 +12,7 @@ from ....datastructures.world import World
 from ....datastructures.pose import Pose, Transform
 from ....datastructures.enums import Arms, Grasp
 from ....robot_description import RobotDescription, KinematicChainDescription
-from ....designator import ObjectDesignatorDescription
+from ....designator import ObjectDesignatorDescription, LocationDesignatorDescription
 
 
 class DualArmPickupAction(PickUpAction):
@@ -23,7 +23,8 @@ class DualArmPickupAction(PickUpAction):
     def __init__(self,
                  object_designator_description: Union[ObjectDesignatorDescription, ObjectDesignatorDescription.Object],
                  grasps: List[Grasp], resolver=None,
-                 ontology_concept_holders: Optional[List[Thing]] = None):
+                 ontology_concept_holders: Optional[List[Thing]] = None,
+                 source_location: Optional[LocationDesignatorDescription] = None):
         """
         Specialized version of the PickUpAction designator which uses heuristics to solve for a dual pickup problem. The
         designator will choose the arm which is closest to the object that is to be picked up.
@@ -46,7 +47,7 @@ class DualArmPickupAction(PickUpAction):
         left_gripper = RobotDescription.current_robot_description.get_arm_chain(Arms.LEFT)
         right_gripper = RobotDescription.current_robot_description.get_arm_chain(Arms.RIGHT)
         self.gripper_list: List[KinematicChainDescription] = [left_gripper, right_gripper]
-
+        self.source_location = source_location
 
     def ground(self) -> PickUpActionPerformable:
         if isinstance(self.object_designator_description, ObjectDesignatorDescription.Object):
@@ -75,4 +76,4 @@ class DualArmPickupAction(PickUpAction):
         winner = self.gripper_list[min_index]
         rospy.loginfo(f"Winner is {winner.arm_type.name} with distance {min(distances):.2f}")
 
-        return PickUpActionPerformable(object_designator=obj_desig, arm=winner.arm_type, grasp=self.grasps[0])
+        return PickUpActionPerformable(object_designator=obj_desig, arm=winner.arm_type, grasp=self.grasps[0], source_location=self.source_location)

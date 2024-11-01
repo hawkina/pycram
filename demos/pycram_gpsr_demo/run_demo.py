@@ -2,17 +2,17 @@ from dynamic_reconfigure.msg import DoubleParameter, IntParameter, BoolParameter
 from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
 from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
 from demos.pycram_gpsr_demo.setup_demo import *
+from neem_interface_python import NEEMInterface
 from pycram.designators.action_designator import *
-from demos.pycram_gpsr_demo import utils, setup_demo, perception_interface, ActionDesignator, Location, neem_interface, \
-    generate_neem, enable_neem_generation
+from demos.pycram_gpsr_demo import utils, setup_demo, perception_interface, ActionDesignator, Location, enable_neem_generation
+from demos.pycram_gpsr_demo import neem_interface
 import demos.pycram_gpsr_demo.nlp_processing as nlp
 from stringcase import snakecase
 import demos.pycram_gpsr_demo.llp_navigation as navi
 from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
 from pycram.datastructures.pose import PoseStamped
 from pycram.external_interfaces import giskard
-from pycram.process_module import real_robot, semi_real_robot
-
+from pycram.process_module import real_robot, semi_real_robot, simulated_robot
 
 instruction_point = PoseStamped([6.12, 1.8, 0], [0, 0, 0, 1])
 #instruction_point = PoseStamped([4.4, -0.5, 0], [0, 0, 0, 1])
@@ -323,29 +323,61 @@ def test_plan(furniture_item='kitchen counter', room='kitchen', object_type='cup
 
 
 #@generate_neem
+@giskard.init_giskard_interface
 def test_neem():
-    ActionDesignator =  enable_neem_generation()
-    #nav_action = ActionDesignator(type='navigate',
-    #                              target_locations=Location(furniture_item='kitchen counter', room='kitchen'))
-    furniture_designator = ObjectDesignatorDescription(names=["kitchen counter"])
-    room_designator = ObjectDesignatorDescription(names=["kitchen"])
+    with semi_real_robot:
+        neem_interface.start_episode()
+        ActionDesignator =  enable_neem_generation()
 
-    nav_action = ActionDesignator(type='navigate',
-                                  target_locations=Location(
-                                      furniture_item=furniture_designator,
-                                      room=room_designator))
+        furniture_designator = ObjectDesignatorDescription(names = ["kitchen counter"])
+        room_designator = ObjectDesignatorDescription(names = ["kitchen"])
 
-    detect_action = ActionDesignator(type='detect', technique=PerceptionTechniques.ALL,
-                                     object_designator=ObjectDesignatorDescription(types=[ObjectType.JEROEN_CUP]))
-    nav_action.resolve()
-    detect_action.resolve()
+        nav_action = ActionDesignator(type = 'navigate',
+                                      target_locations = Location( furniture_item = furniture_designator,
+                                                                   room = room_designator))
+
+        #detect_action = ActionDesignator(type='detect', technique=PerceptionTechniques.ALL,
+        #                                 object_designator=ObjectDesignatorDescription(types=[ObjectType.JEROEN_CUP]))
+        nav_action.resolve()
+        nav_action.perform()
+        # --- nav 2 ---
+        furniture = ObjectDesignatorDescription(names=["dishwasher"])
+        room = ObjectDesignatorDescription(names=["kitchen"])
+        nav_action2 = ActionDesignator(type='navigate',
+                                       target_locations=Location(furniture_item=furniture, room=room))
+        nav_action2.resolve()
+        nav_action2.perform()
+
+
+        #detect_action.resolve()
+
+    neem_interface.stop_and_dump_episode()  # drop neem to database
     print("--- done with execution ---")
-    return [nav_action, detect_action]
+    return nav_action
 
+def run_pr2():
+    with simulated_robot:
+        #setup
 
+        milk_desig = BelieveObject(names=["milk"], types=[ObjectType.MILK])
+        cup_desig = BelieveObject(names=["cup"], types=[ObjectType.JEROEN_CUP])
+        robot_desig = BelieveObject(names=["pr2"])
+        apartment_desig = BelieveObject(names=["apartment"])
+        neem_interface.start_episode()
+        ActionDesignator =  enable_neem_generation()
+        #setup done
+        ParkArmsAction(arms=[Arms.BOTH]).resolve().perform()
+        NavigateAction(target_locations=[Pose([1.8, 2.5, 0])]).resolve().perform()
+        LookAtAction(targets=[cup_desig.resolve().pose]).resolve().perform()
+        #obj_desig = DetectAction(milk_desig).resolve().perform()
+        obj_desig = DetectAction(technique=PerceptionTechniques.ALL, object_designator=cup_desig).resolve().perform()
+        PickUpAction(object_designator_description=cup_desig, arms=[Arms.RIGHT], grasps=[Grasp.FRONT]).resolve().perform()
+
+        neem_interface.stop_and_dump_episode()
+        rospy.loginfo("Done")
 # deprecated
-def test_neem_generation():
-    neem_interface.init_neem_interface()
-    neem_interface.start_episode()
+# def test_neem_generation():
+#     neem.init_neem_interface()
+#     neem.start_episode()
 
     #neem_interface.stop_episode()

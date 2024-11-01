@@ -52,7 +52,7 @@ class Location(LocationDesignatorDescription.Location):
             room = self.kwargs['room']
             rospy.loginfo(utils.PC.BLUE + f"[LOC] instance of room {room} found")
         elif('room' in self.kwargs and isinstance(self.kwargs['room'], ObjectDesignatorDescription)
-                and knowrob.check_existence_of_instance(self.kwargs['room'].names[0])):
+                and knowrob.check_existence_of_instance(snakecase(self.kwargs['room'].names[0]))):
             room = self.kwargs['room'].names[0]
             rospy.loginfo(utils.PC.BLUE + f"[LOC] Object Designator instance of room {room} found")
 

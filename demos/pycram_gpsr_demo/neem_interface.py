@@ -3,12 +3,12 @@ import inspect
 
 import rospy
 
-import neem_interface_python.neem_interface as neem_interface
+import neem_interface_python.neem_interface as neem_interface_external
 from demos.pycram_gpsr_demo import utils
 from pycram.designators.action_designator import NavigateAction, NavigateActionPerformable, DetectAction, \
     DetectActionPerformable
 from demos.pycram_gpsr_demo.action_designator_parser import ActionDesignator, Location
-from pycram.designator import ObjectDesignatorDescription
+from pycram.designator import ObjectDesignatorDescription, ActionDesignatorDescription
 from pycram.designators.object_designator import ObjectDesignatorDescription as Object
 from pycram.ontology.ontology import OntologyManager
 from demos.pycram_gpsr_demo import knowrob_interface as kb
@@ -21,41 +21,47 @@ env_owl = "package://iai_apartment/owl/iai-apartment.owl"
 env_owl_ind_name = "http://knowrob.org/kb/iai-apartment.owl#apartment_root"  # ind = individual
 env_urdf = "package://iai_apartment/urdf/apartment.urdf"
 env_urdf_prefix = "iai_apartment/"
-agent_owl = "package://knowrob/owl/robots/hsrb.owl"
-agent_owl_ind_name = "http://knowrob.org/kb/hsrb.owl#hsrb_robot1"
-agent_urdf = "package://knowrob/urdf/hsrb.urdf"
+#agent_owl = "package://knowrob/owl/robots/hsrb.owl"
+agent_owl = "package://knowrob/owl/robots/PR2.owl"
+#agent_owl_ind_name = "http://knowrob.org/kb/hsrb.owl#hsrb_robot1"
+agent_owl_ind_name = "http://knowrob.org/kb/PR2.owl#PR2_0"
+#agent_urdf = "package://knowrob/urdf/hsrb.urdf"
+agent_urdf = "package://knowrob/urdf/pr2.urdf"
 neem_output_path = "/home/hawkin/ros_ws/neems_library/GPSR_neems/"
 start_time = None
 root_action = "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Action_ZBRTKSFH"  # remove later
 
 #### temp. remove later ####
 transporting = "http://www.ease-crc.org/ont/SOMA.owl#Transporting"
-toya = "http://www.ease-crc.org/ont/SUTURO.owl#ToyotaHSR_IAMTOYA"
+#toya = "http://www.ease-crc.org/ont/SUTURO.owl#ToyotaHSR_IAMTOYA"
+toya = "http://www.ease-crc.org/ont/SUTURO.owl#PR2_0"
 
 
 def init_neem_interface():
     global nio
-    nio = neem_interface.NEEMInterface()
+    nio = neem_interface_external.NEEMInterface()
 
 
 def start_episode():
     global nio, root_action
 
-    res = neem_interface.NEEMInterface.start_episode(nio, task_type, env_owl, env_owl_ind_name, env_urdf,
+    res = neem_interface_external.NEEMInterface.start_episode(nio, task_type, env_owl, env_owl_ind_name, env_urdf,
                                                      env_urdf_prefix, agent_owl,
                                                      agent_owl_ind_name, agent_urdf)
     root_action = res
     return root_action
 
 
-def stop_episode():
+def stop_and_dump_episode():
     global nio
-    neem_interface.NEEMInterface.stop_episode(nio, neem_output_path)
+    rospy.loginfo(utils.PC.GREEN + f"[NEEM] Stopping episode... Path: {neem_output_path}" + utils.PC.GREY)
+    neem_interface_external.NEEMInterface.stop_episode(nio, neem_output_path)
+    return neem_output_path
 
 
 def add_subaction_with_task(parent_action=root_action, action_type=transporting):  # TODO remnove transporting
     global nio
-    res = neem_interface.NEEMInterface.add_subaction_with_task(nio, parent_action, action_type)
+    res = neem_interface_external.NEEMInterface.add_subaction_with_task(nio, parent_action, action_type)
     return res
 
 
@@ -71,43 +77,48 @@ def belief_perceived_at(obj_type, mesh, position, rotation):
 # WIP needs testing
 def add_participant_with_role(action, participant, role):
     global nio
-    neem_interface.NEEMInterface.add_participant_with_role(nio, action, participant, role)
+    neem_interface_external.NEEMInterface.add_participant_with_role(nio, action, participant, role)
 
 def action_begin(current_action):
     global nio
-    neem_interface.NEEMInterface.action_begin(nio, current_action)
+    neem_interface_external.NEEMInterface.action_begin(nio, current_action)
 
 def action_end(current_action):
     global nio
-    neem_interface.NEEMInterface.action_end(nio, current_action)
+    neem_interface_external.NEEMInterface.action_end(nio, current_action)
 
 def triple(subj, pred, obj):
     global nio
-    neem_interface.NEEMInterface.triple(nio, subj, pred, obj)
+    neem_interface_external.NEEMInterface.triple(nio, subj, pred, obj)
 
 def make_instance_of(class_iri):
     global nio
-    res = neem_interface.NEEMInterface.make_instance_of(nio, class_iri)
+    res = neem_interface_external.NEEMInterface.make_instance_of(nio, class_iri)
     return res
 
 def add_pose_to_instance(instance, pose):
     global nio
-    res = neem_interface.NEEMInterface.add_pose_to_instance(nio, instance, pose)
+    res = neem_interface_external.NEEMInterface.add_pose_to_instance(nio, instance, pose)
     return res
 
 def add_object_designator_description(obj_desig):
     global nio
-    res = neem_interface.NEEMInterface.add_object_designator_description(nio, obj_desig)
+    res = neem_interface_external.NEEMInterface.add_object_designator_description(nio, obj_desig)
     return res
 
 def add_location_designator_description(dict_of_object_desig_descriptions):
     global nio
-    res = neem_interface.NEEMInterface.add_location_designator_description(nio, dict_of_object_desig_descriptions)
+    res = neem_interface_external.NEEMInterface.add_location_designator_description(nio, dict_of_object_desig_descriptions)
     return res
 
 def add_resolved_location_designator(resolved_loc_desig, location_designator_description_iri):
     global nio
-    res = neem_interface.NEEMInterface.add_resolved_location_designator(nio, resolved_loc_desig, location_designator_description_iri)
+    res = neem_interface_external.NEEMInterface.add_resolved_location_designator(nio, resolved_loc_desig, location_designator_description_iri)
+    return res
+
+def create_action_id():
+    global nio
+    res = neem_interface_external.NEEMInterface.create_action_id(nio)
     return res
 # ---------------- Automation of calling the NEEM interface ----------------
 # Flag to track initialization state
@@ -131,48 +142,27 @@ def initialize_neem(): # done
 # Class-level decorator to handle object initialization
 def neem_class_decorator(cls):
     original_init = cls.__init__
-
+# --- CREATES NEEM AT ACTION CREATION TIME ---
     @functools.wraps(original_init)
     def new_init(self, *args, **kwargs):
+        global parent_action, current_action, ont  # ont is an IRI
         # Ensures initialization is done once when an object is created
         initialize_neem()
-
+        original_init(self, *args, **kwargs)  # Call the original __init__
         rospy.loginfo(utils.PC.PINK + f"[NEEM] Initializing object of class {cls.__name__}" + utils.PC.GREY)
-
-        # wip todo: log object at generation time. Access obj here
-        rospy.loginfo(utils.PC.PINK + f"[NEEM] ActionDesig at creation time self: {self}" + utils.PC.GREY)
-        rospy.loginfo(utils.PC.RED + f"[NEEM] TODO log object at generation time." + utils.PC.GREY)
-        # wip at this point it is the action designator description which needs to be logged
-        # go back to original init after the created object has been logged?
-        original_init(self, *args, **kwargs)  # Call the original __init__ method
-
-    cls.__init__ = new_init
-    return cls
-
-
-# Method decorator to log function calls
-# WIP this generates logging when an Action Designator is created
-def generate_neem(func):
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        global parent_action, current_action, ont  # ont is an IRI
-        rospy.loginfo(utils.PC.PINK + f"[NEEM] Function {func.__name__} called" + utils.PC.GREY)
-
-        # deprecated?
-        # if isinstance(self, ObjectDesignatorDescription):
-        #    rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Processing ObjectDesignatorDescription:" + utils.PC.GREY)
-
+        if isinstance(self, NavigateActionPerformable):
+            rospy.loginfo(utils.PC.RED + f"[NEEM] NavigateActionPerformable: {self.__dict__}" + utils.PC.GREY)
 
         if isinstance(self, ActionDesignator):
-            rospy.loginfo(utils.PC.PINK + f"[NEEM] Created ActionDesignator: {self}" + utils.PC.GREY)
+            rospy.loginfo(utils.PC.PINK + f"[NEEM] Created ActionDesignator: {self.__dict__}" + utils.PC.GREY)
 
             if isinstance(self.action_instance, NavigateAction) or isinstance(self, NavigateAction):
                 rospy.loginfo(utils.PC.GREEN + "[NEEM] NavigateAction detected" + utils.PC.GREY)
-                current_action = add_subaction_with_task(parent_action=parent_action,
-                                                         action_type=ont.soma.Navigating.iri)
+                current_action, current_action_design_instance = add_subaction_with_task(parent_action=parent_action,
+                                                                                         action_type=ont.soma.Navigating.iri)
                 add_participant_with_role(current_action, toya, ont.soma.AgentRole.iri)
                 # todo add goal which is the location designator
-                #self.target_locations
+                # self.target_locations
                 # create an instance of a location
                 loc_inst = make_instance_of(ont.soma.Location.iri)
                 # connect location instance to action as goal
@@ -183,58 +173,56 @@ def generate_neem(func):
                 for attr_name, attr_value in self.action_instance.__dict__.items():
                     # this is location designator specific todo test if only for my locdesig or generally for all of them
                     if isinstance(attr_value, Location):
-                        rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Found location designator: {attr_name} + {attr_value} " + utils.PC.GREY)
+                        rospy.loginfo(
+                            utils.PC.YELLOW + f"[NEEM] Found location designator: {attr_name} + {attr_value} " + utils.PC.GREY)
 
                         # take care of ObjectDesignatorDescriptions within the LocationDesignatorDescription
                         param_list = {}
                         for item_name in attr_value.kwargs:
                             item = attr_value.kwargs.get(item_name)
-                            rospy.loginfo(utils.PC.GREEN + f"[NEEM] Processing: {item_name} value: {item}" + utils.PC.GREY)
+                            rospy.loginfo(
+                                utils.PC.GREEN + f"[NEEM] Processing: {item_name} value: {item}" + utils.PC.GREY)
                             if isinstance(item, ObjectDesignatorDescription):
-                                rospy.loginfo(utils.PC.GREEN + f"[NEEM] Processing ObjectDesignatorDescription Parameter within LocationDesignatorDescription" + utils.PC.GREY)
+                                rospy.loginfo(
+                                    utils.PC.GREEN + f"[NEEM] Processing ObjectDesignatorDescription Parameter within LocationDesignatorDescription" + utils.PC.GREY)
                                 # add object designator to NEEM
                                 obj_desig_design = add_object_designator_description(item)
                                 param_list[item_name] = obj_desig_design
-                                rospy.loginfo(utils.PC.GREEN + f"[NEEM] Done Processing ObjectDesignatorDescription Parameter within LocationDesignatorDescription: {obj_desig_design}" + utils.PC.GREY)
+                                rospy.loginfo(
+                                    utils.PC.GREEN + f"[NEEM] Done Processing ObjectDesignatorDescription Parameter within LocationDesignatorDescription: {obj_desig_design}" + utils.PC.GREY)
                             else:
-                                rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Not an instance of ObjectDesignatorDescription: {item}. Moving On." + utils.PC.GREY)
+                                rospy.loginfo(
+                                    utils.PC.YELLOW + f"[NEEM] Not an instance of ObjectDesignatorDescription: {item}. Moving On." + utils.PC.GREY)
                         # add all the parameters to the location designator description instance
-                        rospy.loginfo(utils.PC.GREEN + f"[NEEM] Adding all parameters to LocationDesignatorDescription instance: {param_list}" + utils.PC.GREY)
+                        rospy.loginfo(
+                            utils.PC.GREEN + f"[NEEM] Adding all parameters to LocationDesignatorDescription instance: {param_list}" + utils.PC.GREY)
                         loc_desig_desc_instance = add_location_designator_description(param_list)
-                        rospy.loginfo(utils.PC.GREEN + f"[NEEM] Done Processing LocationDesignatorDescription Parameter within LocationDesignatorDescription: {loc_desig_desc_instance}" + utils.PC.GREY)
-                # --- DESCRIPTION END ---
-                # --- RESOLVE START ---
+                        # add location desig description instance to the action
+                        triple(current_action_design_instance, ont.soma.hasGoal.iri, loc_desig_desc_instance)
+                        triple(current_action_design_instance, f"soma:'hasLocation'", loc_desig_desc_instance)
+                        self.action_designator_design_id = current_action_design_instance
+                        rospy.loginfo(
+                            utils.PC.GREEN + f"[NEEM] Done Processing LocationDesignatorDescription Parameter within LocationDesignatorDescription: {loc_desig_desc_instance}" + utils.PC.GREY)
+                        # --- DESCRIPTION END ---
+                        # --- RESOLVE START ---
                         # grounding of values, e.g. resolution of location designator
-                        resolved_location_designator = attr_value.ground() #Location.ground()
-                        resolved_desig = add_resolved_location_designator(resolved_location_designator, loc_desig_desc_instance)
-                        rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Done processing LocationDesignator: {resolved_desig}" + utils.PC.GREY)
+                        resolved_location_designator = attr_value.ground()  # Location.ground()
+                        resolved_desig = add_resolved_location_designator(resolved_location_designator,
+                                                                          loc_desig_desc_instance)
+                        rospy.loginfo(
+                            utils.PC.GREEN + f"[NEEM] Done processing LocationDesignator: {resolved_desig}" + utils.PC.GREY)
                 # --- RESOLVE END ---
 
-            # process object designator within the action designator
-            if isinstance(self, Object):
-                rospy.loginfo(
-                    utils.PC.PINK + f"[NEEM] Processing ObjectDesignator:" + utils.PC.GREY)
-            else:
-                rospy.logerr(utils.PC.PINK + f"[NEEM] Invalid designator type: {self.__dict__}" + utils.PC.GREY)
-
             # Wrap resolve and perform methods of ActionDesignator to log them
-            self.resolve = log_method(self.resolve, self, 'resolve')
-            self.perform = log_method(self.perform, self, 'perform')
+                self.resolve = log_method(self.resolve, self, 'resolve')
+                self.perform = log_method(self.perform, self, 'perform')
         else:
             rospy.logerr(f"[NEEM] not an instance of ActionDesignator: {self}" + utils.PC.GREY)
 
+    cls.__init__ = new_init
+    return cls
 
-        # wip resolve action desig
-        # result = func(self, *args, **kwargs)
-
-        # WIP: put past-resolve code here
-        # rospy.loginfo(utils.PC.PINK + f"[NEEM] Action {result} returned from {func.__name__}" + utils.PC.GREY)
-
-        return self # result
-
-    return wrapper
-
-
+# --- Decorator to generate NEEM entries for a method -> Resolve and Perform---
 # This decorator logs calls to the resolve and perform methods
 def log_method(method, action_designator, method_name):
     @functools.wraps(method)
@@ -242,57 +230,74 @@ def log_method(method, action_designator, method_name):
         rospy.loginfo(utils.PC.PINK + f"[NEEM] In Log_method wrapper {method_name}() on {action_designator}" + utils.PC.GREY)
 
         if method_name == 'resolve':
-            print("resolve")
+            #todo add type specific handling
+            rospy.loginfo(utils.PC.PINK + f"[NEEM] Starting {method_name} on {action_designator.__dict__}" + utils.PC.GREY)
+            # connect to parent e.g. design e.g. ActionDescription
+            action_designator_design_id = action_designator.action_designator_design_id
+            action_id = create_action_id()
+            triple(action_designator_design_id, f"dul:expresses", action_id)
+            resolved_action = method(*args, **kwargs) # actually resolve the designator
+            resolved_action.action_id = action_id
+            resolved_action.action_designator_design_id = action_designator_design_id
+            target_location = make_instance_of("soma:Location")
+            pose_array = [resolved_action.target_location.header.frame_id] + resolved_action.target_location.to_list()
+            add_pose_to_instance(target_location, pose_array)
+            # todo add robot_type (ENUM)
+            # todo add robot_torso_height
+            rospy.loginfo(utils.PC.PINK + f"[NEEM] Resolution result: {resolved_action.__dict__}" + utils.PC.GREY)
+            result = resolved_action
 
         elif method_name == 'perform':
             # Log start time for perform
-            action_begin(current_action)
+            action_begin(current_action) # double check if needed
             rospy.loginfo(utils.PC.PINK + f"[NEEM] Starting {method_name} on {action_designator}" + utils.PC.GREY)
 
             # Call the original method and log the result
             result = method(*args, **kwargs)
+            performed_desig = result
+            all_args = inspect.getcallargs(method, *args, **kwargs)
             rospy.loginfo(utils.PC.PINK + f"[NEEM] {method_name}() result: {result}" + utils.PC.GREY)
 
             # Log end time for perform
-            action_end(current_action)
+            action_end(current_action) # double check if need
             rospy.loginfo(
                 utils.PC.PINK + f"[NEEM] {method_name}() completed on {action_designator}, result: {result}" + utils.PC.GREY)
         else:
             result = method(*args, **kwargs)
             rospy.loginfo(utils.PC.PINK + f"[NEEM] Neither perform or resolve: {method_name}() result: {result}" + utils.PC.GREY)
-
         return result
 
     return wrapper
 
 # Function to dynamically apply decorators to your ActionDesignator class
+# potentionally removable
 def enable_neem_generation():
     class NeemClass:
         def __init__(self, type, **kwargs):
             self.type = type
-            rospy.loginfo(utils.PC.PINK + f"[NEEM] ActionDesignator initialized with type {self.type}" + utils.PC.GREY) #?
+            rospy.loginfo(utils.PC.YELLOW + f"[NEEM] ActionDesignator initialized with type {self.type}" + utils.PC.GREY) #?
 
         def resolve(self):
             # Logic for resolving designator
-            rospy.loginfo(utils.PC.PINK + f"[NEEM] Resolving designator: {self}" + utils.PC.GREY)
+            rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Resolving designator: {self}" + utils.PC.GREY)
             log_method(self.resolve, self, 'resolve')
             return "--- resolved_result ---"
 
         def perform(self):
             # Logic for performing action
-            rospy.loginfo(utils.PC.PINK + f"[NEEM] Performing action: {self}" + utils.PC.GREY)
+            rospy.loginfo(utils.PC.YELLOW + f"[NEEM] Performing action: {self}" + utils.PC.GREY)
             log_method(self.perform, self, 'perform')
             return "--- action_performed ---"
 
     # Apply class-level decorator
     NeemClass = neem_class_decorator(ActionDesignator)
-
     # Apply method-level decorator to specific methods
-    ActionDesignator.resolve = generate_neem(ActionDesignator.resolve)
-    ActionDesignator.perform = generate_neem(ActionDesignator.perform)
+    # Apply method-level decorator to specific methods
+    #ActionDesignator.resolve = generate_neem(ActionDesignator.resolve)
+    #ActionDesignator.perform = generate_neem(ActionDesignator.perform)
     # TODO this should be dynamic
-    NavigateActionPerformable.perform = generate_neem(NavigateActionPerformable.perform)
-    DetectActionPerformable.perform = generate_neem(DetectActionPerformable.perform)
+    #NavigateActionPerformable.perform = generate_neem(NavigateActionPerformable.perform)
+    #DetectActionPerformable.perform = generate_neem(DetectActionPerformable.perform)
 
     return NeemClass
 
