@@ -244,6 +244,19 @@ class TaskTree(metaclass=Singleton):
         return new_node
 
 
+    def find_node_by_action(self, action: Action) -> Optional[TaskTreeNode]:
+        """
+        Find a node in the task tree by its action.
+
+        :param action: The action to search for.
+        :return: The node if found, None otherwise.
+        """
+        for node in self.root.children:
+            if node.action == action:
+                return node
+        return None
+
+
 task_tree = TaskTree()
 """Current TaskTreeNode"""
 
