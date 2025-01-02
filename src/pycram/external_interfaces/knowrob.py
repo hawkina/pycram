@@ -9,7 +9,7 @@ SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(SCRIPT_DIR, os.pardir, os.pardir, "neem-interface", "src"))
 
 if 'rosprolog/query' in rosservice.get_service_list():
-    from neem_interface_python.neem_interface import NEEMInterface
+    from neem_interface_python.py_to_prolog_interface import NEEMInterface
     from neem_interface_python.rosprolog_client import Prolog, PrologException, atom
 
     neem_interface = NEEMInterface()

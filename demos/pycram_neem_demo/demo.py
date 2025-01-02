@@ -10,6 +10,8 @@ from pycram.world_concepts.world_object import Object
 from pycram.datastructures.dataclasses import Color
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
 from pycrap import Robot, Apartment, Milk, Cereal, Spoon, Bowl
+# from neem_interface_python import rosprolog_client
+# know = rosprolog_client.Prolog()
 import numpy as np
 
 world = BulletWorld(WorldMode.GUI)
