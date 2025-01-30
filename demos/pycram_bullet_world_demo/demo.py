@@ -8,7 +8,7 @@ from pycram.process_module import simulated_robot, with_simulated_robot
 from pycram.object_descriptors.urdf import ObjectDescription
 from pycram.world_concepts.world_object import Object
 from pycram.datastructures.dataclasses import Color
-from pycram.ros.viz_marker_publisher import VizMarkerPublisher
+from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycrap import Robot, Apartment, Milk, Cereal, Spoon, Bowl
 import numpy as np
 
@@ -50,7 +50,7 @@ def move_and_detect(obj_type):
 with simulated_robot:
     ParkArmsAction([Arms.BOTH]).resolve().perform()
 
-    MoveTorsoAction([0.25]).resolve().perform()
+    MoveTorsoAction([TorsoState.HIGH]).resolve().perform()
 
     milk_desig = move_and_detect(Milk)
 
@@ -89,7 +89,7 @@ with simulated_robot:
 
     ParkArmsAction([Arms.BOTH]).resolve().perform()
 
-    MoveTorsoAction([0.15]).resolve().perform()
+    MoveTorsoAction([TorsoState.MID]).resolve().perform()
 
     # Find a pose to place the spoon, move and then place it
     spoon_target_pose = Pose([4.85, 3.3, 0.8], [0, 0, 1, 1])
@@ -100,5 +100,6 @@ with simulated_robot:
     PlaceAction(spoon_desig, [spoon_target_pose], [pickup_arm]).resolve().perform()
 
     ParkArmsAction([Arms.BOTH]).resolve().perform()
+
 
 world.exit()

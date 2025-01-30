@@ -15,6 +15,7 @@ PYCRAM_LOGGER_NAME = "pycram"
 logger_level_service_caller = LoggerLevelServiceCaller()
 
 
+
 def _get_caller_method_name():
     """
     Get the name of the method that called the function from which this function is called. It is intended as a helper
@@ -75,7 +76,8 @@ def logerr(message: str):
 
 
 def logdebug(message: str):
-    rospy.logdebug(f"[{_get_caller_file_name()}:{_get_caller_method_line()}:{_get_caller_method_name()}] {message}")
+    rospy.logdebug(f"[{_get_caller_file_name()}:{_get_caller_method_line()}:{_get_caller_method_name()}] {message}",
+                   logger_name=PYCRAM_LOGGER_NAME)
 
 
 def logwarn_once(message: str):

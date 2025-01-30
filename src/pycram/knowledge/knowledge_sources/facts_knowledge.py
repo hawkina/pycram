@@ -16,6 +16,7 @@ from ...pose_generator_and_validator import PoseGenerator, reachability_validato
 from ...robot_description import RobotDescription
 from ...world_reasoning import visible
 from ...costmaps import OccupancyCostmap, GaussianCostmap
+from ...units import meter
 
 if TYPE_CHECKING:
     from ...designators.object_designator import ObjectDesignatorDescription
@@ -91,9 +92,9 @@ class FactsKnowledge(KnowledgeSource, GripperIsFreeProperty, VisibleProperty, Sp
                                      RobotDescription.current_robot_description.get_manipulator_chains()]
 
             for dist in gripper_opening_dists:
-                if dist > obj_y:
+                if dist > obj_y * meter:
                     return ReasoningResult(True, {"grasp": Grasp.FRONT})
-                elif dist > obj_x:
+                elif dist > obj_x * meter:
                     return ReasoningResult(True, {"grasp": Grasp.LEFT})
 
             return ReasoningResult(False)
@@ -124,7 +125,7 @@ class FactsKnowledge(KnowledgeSource, GripperIsFreeProperty, VisibleProperty, Sp
         :param object_designator: The object in question
         :return: Reasoning result with the visibility of the object
         """
-        cam_pose = World.robot.get_link_pose(RobotDescription.current_robot_description.get_camera_frame())
+        cam_pose = World.robot.get_link_pose(RobotDescription.current_robot_description.get_camera_link())
         return ReasoningResult(visible(object_designator.resolve().world_object, cam_pose))
 
     def empty(self) -> ReasoningResult:

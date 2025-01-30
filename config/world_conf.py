@@ -35,7 +35,7 @@ class WorldConfig:
     Whether to clear the cache directory at the start.
     """
 
-    prospection_world_prefix: str = "prospection_"
+    prospection_world_prefix: str = "prospection"
     """
     The prefix for the prospection world name.
     """
@@ -70,7 +70,7 @@ class WorldConfig:
      and the world synchronization.
     """
 
-    position_tolerance: float = 1e-2
+    position_tolerance: float = 1e-3
     orientation_tolerance: float = 10 * math.pi / 180
     prismatic_joint_position_tolerance: float = 1e-2
     revolute_joint_position_tolerance: float = 5 * math.pi / 180
@@ -82,6 +82,11 @@ class WorldConfig:
     acceptable_percentage_of_goal: float = 0.5
     """
     Whether to use a percentage of the goal as the acceptable error.
+    """
+
+    validate_goals: bool = False
+    """
+    Whether to validate the goals when executing them.
     """
 
     raise_goal_validator_error: bool = False
@@ -97,6 +102,11 @@ class WorldConfig:
     allow_gripper_collision: bool = True
     """
     Whether to allow the gripper to collide with the objects when planning for the goals.
+    """
+
+    depth_images_are_in_meter: bool = False
+    """
+    Whether the depth images produced by :meth:`datastructures.world.World.get_images_for_target` are in meters.
     """
 
     @classmethod
