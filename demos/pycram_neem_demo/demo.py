@@ -114,3 +114,6 @@ def reset():
     apartment.attach(spoon, 'cabinet10_drawer_top')
     world.get_object_by_type(Bowl)[0].set_pose(pose=Pose([2.5, 2.2, 1.02]))
 
+def mini():
+    with (simulated_robot):
+        return ParkArmsAction([Arms.BOTH]).resolve().plan()
