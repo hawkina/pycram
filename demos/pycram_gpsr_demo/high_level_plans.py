@@ -2,18 +2,18 @@ import re
 import rospy
 from pycram.designators.action_designator import *
 from pycram.utilities.robocup_utils import StartSignalWaiter, pakerino
-from demos.pycram_gpsr_demo import perception_interface, llp_tell_stuff
-import demos.pycram_gpsr_demo.perception_interface as robokudo
-from demos.pycram_gpsr_demo import knowrob_interface as knowrob
-from demos.pycram_gpsr_demo import llp_navigation as navi
-import demos.pycram_gpsr_demo.utils as utils
-from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
+from . import llp_tell_stuff
+from . import perception_interface as robokudo
+from . import knowrob_interface as knowrob
+from . import llp_navigation as navi
+import utils as utils
+from .nlp_processing import sing_my_angel_of_music
 import pycram.utilities.gpsr_utils as plans
-from demos.pycram_gpsr_demo import setup_demo as sd
-from demos.pycram_gpsr_demo import nlp_processing as nlp
+from . import setup_demo as sd
+from . import nlp_processing as nlp
 from stringcase import snakecase
-from demos.pycram_gpsr_demo import perc_to_know
-from pycram.pose import Pose as PoseStamped
+from . import perc_to_know
+from pycram.datastructures.pose import Pose as PoseStamped
 
 object_in_hand = None
 me_pose = None

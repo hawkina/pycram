@@ -1,5 +1,3 @@
-import actionlib
-import rospy
 from actionlib_msgs.msg import GoalStatusArray
 from sensor_msgs.msg import LaserScan, JointState, Image
 from sound_play.msg import SoundRequestActionGoal, SoundRequest

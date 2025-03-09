@@ -1,8 +1,8 @@
 from stringcase import snakecase
-from pycram.knowledge.knowrob_knowledge import KnowrobKnowledge
+from neem_interface_python import rosprolog_client as KnowrobKnowledge
 import rospy
-from demos.pycram_gpsr_demo.perception_to_knowrob import perc_to_know
-import demos.pycram_gpsr_demo.utils as utils
+from .perception_to_knowrob import perc_to_know
+import utils
 
 # available rooms iri types
 kitchen = 'http://www.ease-crc.org/ont/SOMA.owl#Kitchen'
@@ -238,7 +238,7 @@ def test_predefined_locations():
         if get_dest:
             destination_list.append(get_dest)
 
-        get_source = get_predefined_source_item_location(item)
+        get_source = get_predefined_source_item_location_iri(item)
         if get_source:
             source_list.append(get_source)
     return {'source': source_list, 'destination': destination_list}

@@ -1,20 +1,15 @@
 # setup the environment
 from pycram.designators.action_designator import *
 from pycram.external_interfaces.navigate import PoseNavigator
-from pycram.pose import Pose as PoseStamped
-from pycram.process_module import simulated_robot, real_robot
-from pycram.robot_descriptions import robot_description
-from pycram.enums import ObjectType
-from pycram.ros.robot_state_updater import RobotStateUpdater, KitchenStateUpdater
+from pycram.datastructures.enums import ObjectType
+from pycram.world_concepts.world_object import Object
+from pycram.ros_utils.robot_state_updater import RobotStateUpdater, KitchenStateUpdater
 from pycram.ros.viz_marker_publisher import VizMarkerPublisher
 from pycram.utilities.robocup_utils import ImageSwitchPublisher, SoundRequestPublisher, GraspListener, \
     StartSignalWaiter, HSRBMoveGripperReal
-from . import utils, high_level_plans, knowrob_interface, nlp_processing
-import pycram.external_interfaces.giskard_new as giskard
-import tf
-import pycram.utilities.gpsr_utils as plans
-from demos.pycram_gpsr_demo import tf_l
-import demos.pycram_gpsr_demo.perception_interface as perception_interface
+from pycram.worlds.bullet_world import BulletWorld
+from . import utils, high_level_plans, knowrob_interface, nlp_processing, perception_interface
+
 
 with_real_robot = True # CHANGE set to TRUE for real robot
 # initialize interfaces

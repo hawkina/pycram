@@ -2,10 +2,8 @@ import rospy
 import actionlib
 from rospy import ROSException
 
-from demos.pycram_gpsr_demo import sing_my_angel_of_music
-from demos.pycram_gpsr_demo.utils import find_color
-from pycram.designators.action_designator import LookAtAction, DetectAction
-from pycram.process_module import real_robot
+from . import sing_my_angel_of_music
+from utils import find_color
 from robokudo_msgs.msg import QueryAction, QueryGoal, QueryResult, QueryActionResult
 
 rk = actionlib.SimpleActionClient('robokudo/query', QueryAction)

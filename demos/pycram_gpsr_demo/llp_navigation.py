@@ -1,8 +1,8 @@
 from pycram.designators.action_designator import *
-import demos.pycram_gpsr_demo.setup_demo as setup_demo
-from demos.pycram_gpsr_demo import knowrob_interface as knowrob
-from demos.pycram_gpsr_demo.nlp_processing import sing_my_angel_of_music
-import demos.pycram_gpsr_demo.utils as utils
+from . import setup_demo as setup_demo
+from . import knowrob_interface as knowrob
+from .nlp_processing import sing_my_angel_of_music
+import utils as utils
 
 
 # these are all the low level plans  which are used by the high level plans

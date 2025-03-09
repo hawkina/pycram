@@ -1,6 +1,6 @@
 import inspect
 import rospy
-from pycram.pose import Pose as PoseStamped
+from pycram.datastructures.pose import Pose as PoseStamped
 import matplotlib.colors as mcolors
 import tf
 import json
