@@ -1,8 +1,8 @@
 from stringcase import snakecase
-from neem_interface_python import rosprolog_client as KnowrobKnowledge
+from neem_interface_python import Prolog as KnowrobKnowledge
 import rospy
 from .perception_to_knowrob import perc_to_know
-import utils
+from . import utils
 
 # available rooms iri types
 kitchen = 'http://www.ease-crc.org/ont/SOMA.owl#Kitchen'

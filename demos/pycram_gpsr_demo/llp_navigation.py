@@ -2,7 +2,7 @@ from pycram.designators.action_designator import *
 from . import setup_demo as setup_demo
 from . import knowrob_interface as knowrob
 from .nlp_processing import sing_my_angel_of_music
-import utils as utils
+from . import utils
 
 
 # these are all the low level plans  which are used by the high level plans

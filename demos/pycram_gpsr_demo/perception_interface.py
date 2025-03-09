@@ -3,7 +3,7 @@ import actionlib
 from rospy import ROSException
 
 from . import sing_my_angel_of_music
-from utils import find_color
+from .utils import find_color
 from robokudo_msgs.msg import QueryAction, QueryGoal, QueryResult, QueryActionResult
 
 rk = actionlib.SimpleActionClient('robokudo/query', QueryAction)

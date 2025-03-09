@@ -6,7 +6,7 @@ from . import llp_tell_stuff
 from . import perception_interface as robokudo
 from . import knowrob_interface as knowrob
 from . import llp_navigation as navi
-import utils as utils
+from . import utils as utils
 from .nlp_processing import sing_my_angel_of_music
 import pycram.utilities.gpsr_utils as plans
 from . import setup_demo as sd

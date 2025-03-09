@@ -1,13 +1,13 @@
 from dynamic_reconfigure.msg import DoubleParameter, IntParameter, BoolParameter, StrParameter, GroupState, Config
 from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
 from geometry_msgs.msg import Twist, PoseWithCovariance, PoseWithCovarianceStamped
-
-from setup_demo import *
-from . import utils, setup_demo, perception_interface
-import nlp_processing as nlp
+from pycram.datastructures.pose import Pose as PoseStamped
+from .setup_demo import *
+from . import utils, perception_interface
+from . import nlp_processing as nlp
 from stringcase import snakecase
-import llp_navigation as navi
-from nlp_processing import sing_my_angel_of_music
+from . import llp_navigation as navi
+from .nlp_processing import sing_my_angel_of_music
 import src.pycram.utilities.gpsr_utils as gpsr_utils
 from pycram.datastructures.enums import ObjectType, ImageEnum
 from pycram.language import Code, Monitor
