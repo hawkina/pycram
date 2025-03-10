@@ -9,12 +9,16 @@ from . import nlp_processing as nlp
 from stringcase import snakecase
 from . import llp_navigation as navi
 from .nlp_processing import sing_my_angel_of_music
-import src.pycram.utilities.gpsr_utils as gpsr_utils
+#import src.pycram.utilities.gpsr_utils as gpsr_utils
 from pycram.datastructures.enums import ObjectType, ImageEnum
 from pycram.language import Code, Monitor
+from .utils import monitor_func
+
+#from ..pycram_hsrb_real_test_demos.utils.giskardtt import monitor_func
+
 #from demos.pycram_gpsr_demo.setup_demo import image_switch
 
-instruction_point = PoseStamped([6.12, 1.8, 0], [0, 0, 0, 1])
+instruction_point = PoseStamped([4.02, 1.37, 0], [0, 0, 0, 1])
 #instruction_point = PoseStamped([4.4, -0.5, 0], [0, 0, 0, 1])
 #image_switch = ImageSwitchPublisher()
 start_signal_waiter = StartSignalWaiter()
@@ -145,8 +149,8 @@ def gpsr():
     with real_robot:
         plan_list = utils.get_plans(high_level_plans)
         yeet_into_arena()
-        #sound_pub = SoundRequestPublisher()
-        #sound_pub.publish_sound_request()
+        sound_pub = SoundRequestPublisher()
+        sound_pub.publish_sound_request()
 
         sing_my_angel_of_music("Going to the instruction point")
         navi.go_to_pose(PoseStamped([5.44, 0.2, 0.0], [0, 0, 0, 1]))  # in door

@@ -5,6 +5,8 @@ import matplotlib.colors as mcolors
 import tf
 import json
 from typing import Callable
+from pycram.ros_utils.force_torque_sensor import ForceTorqueSensor as fts
+from pycram.failures import SensorMonitoringCondition
 
 tf_l = tf.listener.TransformListener()
 colors = mcolors.cnames
@@ -270,3 +272,16 @@ def remove_prefix(text, prefix):
 
 # autogenerate a dict from all defined objects in the objects.py file
 obj_dict = autogenerate_dict_from_file(objects_path)
+
+
+def monitor_func():
+    """
+    monitors force torque sensor of robot and throws
+    Condition if a significant force is detected (e.g. the gripper is pushed down)
+    """
+    der = fts.get_last_value()
+    if abs(der.wrench.force.x) > 10.30:
+        rospy.logwarn("sensor exception")
+        return SensorMonitoringCondition
+
+    return False

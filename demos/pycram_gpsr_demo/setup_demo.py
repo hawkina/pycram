@@ -4,11 +4,12 @@ from pycram.external_interfaces.navigate import PoseNavigator
 from pycram.datastructures.enums import ObjectType
 from pycram.world_concepts.world_object import Object
 from pycram.ros_utils.robot_state_updater import RobotStateUpdater, KitchenStateUpdater
-from pycram.ros.viz_marker_publisher import VizMarkerPublisher
+from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 from pycram.utilities.robocup_utils import ImageSwitchPublisher, SoundRequestPublisher, GraspListener, \
     StartSignalWaiter, HSRBMoveGripperReal
 from pycram.worlds.bullet_world import BulletWorld
 from . import utils, high_level_plans, knowrob_interface, nlp_processing, perception_interface
+import pycram.external_interfaces.giskard as giskard
 
 
 with_real_robot = True # CHANGE set to TRUE for real robot
@@ -45,7 +46,7 @@ def setup():
     world = BulletWorld('DIRECT')
     rospy.sleep(2)
 
-    environment_raw = Object("kitchen", ObjectType.ENVIRONMENT, "suturo_lab_alina.urdf")
+    environment_raw = Object("kitchen", ObjectType.ENVIRONMENT, "suturo_lab_2024_1.urdf")
     environment_desig = ObjectDesignatorDescription(names=["kitchen"])
     move = PoseNavigator()
     image_switch = ImageSwitchPublisher()
@@ -57,8 +58,8 @@ def setup():
     knowrob_interface.init_knowrob()
     rviz = VizMarkerPublisher()
 
-    robot = Object("hsrb", "robot", "../../resources/" + "hsrb" + ".urdf")
-    robot.set_color([0.5, 0.0, 0.2, 1])
+    robot = Object("hsrb", ObjectType.ROBOT, "../../resources/" + "hsrb" + ".urdf")
+    #robot.set_color([0.5, 0.0, 0.2, 1])
     robot_desig = ObjectDesignatorDescription(names=["hsrb"])
 
     perception_interface.init_robokudo()
@@ -68,7 +69,7 @@ def setup():
     rospy.sleep(2)
     KitchenStateUpdater("/tf", "/iai_kitchen/joint_states")
 
-    giskard.init_giskard_interface()
+    #giskard.init_giskard_interface()
     giskard.clear()
     giskard.sync_worlds()
 

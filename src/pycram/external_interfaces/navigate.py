@@ -11,8 +11,9 @@ class PoseNavigator:
         global move_client
         self.client = actionlib.SimpleActionClient('move_base/move', MoveBaseAction)
         rospy.loginfo("Waiting for move_base ActionServer")
-        if self.client.wait_for_server():
-            rospy.loginfo("Done")
+        if self.client.wait_for_server(rospy.Duration(10)):
+            rospy.loginfo("Connected to move_base ActionServer.")
+
         # self.pub = rospy.Publisher('goal', PoseStamped, queue_size=10, latch=True)
         self.toya_pose = None
         self.goal_pose = None
