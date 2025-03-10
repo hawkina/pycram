@@ -34,16 +34,16 @@ from ..language import Monitor, Code
 from ..local_transformer import LocalTransformer
 from ..luca_helper import adjust_grasp_for_object_rotation, calculate_object_faces
 from ..ontology.ontology import OntologyConceptHolder
-from ..orm.action_designator import Action as ORMAction
-from ..orm.action_designator import (ParkArmsAction as ORMParkArmsAction, NavigateAction as ORMNavigateAction,
-                                     PickUpAction as ORMPickUpAction, PlaceAction as ORMPlaceAction,
-                                     MoveTorsoAction as ORMMoveTorsoAction, SetGripperAction as ORMSetGripperAction,
-                                     LookAtAction as ORMLookAtAction, DetectAction as ORMDetectAction,
-                                     TransportAction as ORMTransportAction, OpenAction as ORMOpenAction,
-                                     CloseAction as ORMCloseAction, GraspingAction as ORMGraspingAction, Action,
-                                     FaceAtAction as ORMFaceAtAction)
-from ..orm.base import Pose as ORMPose
-from ..orm.object_designator import Object as ORMObject
+# from ..orm.action_designator import Action as ORMAction
+# from ..orm.action_designator import (ParkArmsAction as ORMParkArmsAction, NavigateAction as ORMNavigateAction,
+#                                      PickUpAction as ORMPickUpAction, PlaceAction as ORMPlaceAction,
+#                                      MoveTorsoAction as ORMMoveTorsoAction, SetGripperAction as ORMSetGripperAction,
+#                                      LookAtAction as ORMLookAtAction, DetectAction as ORMDetectAction,
+#                                      TransportAction as ORMTransportAction, OpenAction as ORMOpenAction,
+#                                      CloseAction as ORMCloseAction, GraspingAction as ORMGraspingAction, Action,
+#                                      FaceAtAction as ORMFaceAtAction)
+# from ..orm.base import Pose as ORMPose
+# from ..orm.object_designator import Object as ORMObject
 from ..robot_description import RobotDescription
 from ..ros.logging import logwarn
 from ..ros_utils.force_torque_sensor import ForceTorqueSensor
@@ -779,7 +779,7 @@ class PlaceGivenObjectAction(ActionDesignatorDescription):
 @dataclass
 class ActionAbstract(ActionDesignatorDescription.Action, abc.ABC):
     """Base class for performable performables."""
-    orm_class: Type[ORMAction] = field(init=False, default=None)
+    #orm_class: Type[ORMAction] = field(init=False, default=None)
     """
     The ORM class that is used to insert this action into the database. Must be overwritten by every action in order to
     be able to insert the action into the database.
@@ -794,60 +794,60 @@ class ActionAbstract(ActionDesignatorDescription.Action, abc.ABC):
         """
         pass
 
-    def to_sql(self) -> Action:
-        """
-        Convert this action to its ORM equivalent.
+    # def to_sql(self) -> Action:
+    #     """
+    #     Convert this action to its ORM equivalent.
+    #
+    #     Needs to be overwritten by an action if it didn't overwrite the orm_class attribute with its ORM equivalent.
+    #
+    #     :return: An instance of the ORM equivalent of the action with the parameters set
+    #     """
+    #     # get all class parameters
+    #     class_variables = {key: value for key, value in vars(self).items()
+    #                        if key in inspect.getfullargspec(self.__init__).args}
+    #
+    #     # get all orm class parameters
+    #     orm_class_variables = inspect.getfullargspec(self.orm_class.__init__).args
+    #
+    #     # list of parameters that will be passed to the ORM class. If the name does not match the orm_class equivalent
+    #     # or if it is a type that needs to be inserted into the session manually, it will not be added to the list
+    #     parameters = [value for key, value in class_variables.items() if key in orm_class_variables
+    #                   and not isinstance(value, (ObjectDesignatorDescription.Object, Pose))]
+    #
+    #     return self.orm_class(*parameters)
 
-        Needs to be overwritten by an action if it didn't overwrite the orm_class attribute with its ORM equivalent.
-
-        :return: An instance of the ORM equivalent of the action with the parameters set
-        """
-        # get all class parameters
-        class_variables = {key: value for key, value in vars(self).items()
-                           if key in inspect.getfullargspec(self.__init__).args}
-
-        # get all orm class parameters
-        orm_class_variables = inspect.getfullargspec(self.orm_class.__init__).args
-
-        # list of parameters that will be passed to the ORM class. If the name does not match the orm_class equivalent
-        # or if it is a type that needs to be inserted into the session manually, it will not be added to the list
-        parameters = [value for key, value in class_variables.items() if key in orm_class_variables
-                      and not isinstance(value, (ObjectDesignatorDescription.Object, Pose))]
-
-        return self.orm_class(*parameters)
-
-    def insert(self, session: Session, **kwargs) -> Action:
-        """
-        Insert this action into the database.
-
-        Needs to be overwritten by an action if the action has attributes that do not exist in the orm class
-        equivalent. In that case, the attributes need to be inserted into the session manually.
-
-        :param session: Session with a database that is used to add and commit the objects
-        :param kwargs: Possible extra keyword arguments
-        :return: The completely instanced ORM action that was inserted into the database
-        """
-
-        action = super().insert(session)
-
-        # get all class parameters
-        class_variables = {key: value for key, value in vars(self).items()
-                           if key in inspect.getfullargspec(self.__init__).args}
-
-        # get all orm class parameters
-        orm_class_variables = inspect.getfullargspec(self.orm_class.__init__).args
-
-        # loop through all class parameters and insert them into the session unless they are already added by the ORM
-        for key, value in class_variables.items():
-            if key not in orm_class_variables:
-                variable = value.insert(session)
-                if isinstance(variable, ORMObject):
-                    action.object = variable
-                elif isinstance(variable, ORMPose):
-                    action.pose = variable
-        session.add(action)
-
-        return action
+    # def insert(self, session: Session, **kwargs) -> Action:
+    #     """
+    #     Insert this action into the database.
+    #
+    #     Needs to be overwritten by an action if the action has attributes that do not exist in the orm class
+    #     equivalent. In that case, the attributes need to be inserted into the session manually.
+    #
+    #     :param session: Session with a database that is used to add and commit the objects
+    #     :param kwargs: Possible extra keyword arguments
+    #     :return: The completely instanced ORM action that was inserted into the database
+    #     """
+    #
+    #     action = super().insert(session)
+    #
+    #     # get all class parameters
+    #     class_variables = {key: value for key, value in vars(self).items()
+    #                        if key in inspect.getfullargspec(self.__init__).args}
+    #
+    #     # get all orm class parameters
+    #     orm_class_variables = inspect.getfullargspec(self.orm_class.__init__).args
+    #
+    #     # loop through all class parameters and insert them into the session unless they are already added by the ORM
+    #     for key, value in class_variables.items():
+    #         if key not in orm_class_variables:
+    #             variable = value.insert(session)
+    #             if isinstance(variable, ORMObject):
+    #                 action.object = variable
+    #             elif isinstance(variable, ORMPose):
+    #                 action.pose = variable
+    #     session.add(action)
+    #
+    #     return action
 
 
 @dataclass
@@ -860,7 +860,7 @@ class MoveTorsoActionPerformable(ActionAbstract):
     """
     Target position of the torso joint
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMMoveTorsoAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMMoveTorsoAction)
 
     @with_tree
     def perform(self) -> None:
@@ -881,7 +881,7 @@ class SetGripperActionPerformable(ActionAbstract):
     """
     The motion that should be set on the gripper
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMSetGripperAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMSetGripperAction)
 
     @with_tree
     def perform(self) -> None:
@@ -931,7 +931,7 @@ class ParkArmsActionPerformable(ActionAbstract):
     """
     Entry from the enum for which arm should be parked
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMParkArmsAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMParkArmsAction)
 
     @with_tree
     def perform(self) -> None:
@@ -981,7 +981,7 @@ class PickUpActionPerformable(ActionAbstract):
     The object at the time this Action got created. It is used to be a static, information holding entity. It is
     not updated when the BulletWorld object is changed.
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMPickUpAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMPickUpAction)
 
     def __post_init__(self):
         super(ActionAbstract, self).__post_init__()
@@ -1107,15 +1107,15 @@ class PickUpActionPerformable(ActionAbstract):
         robot.attach(child_object=self.object_designator.world_object, parent_link=tool_frame)
 
     # TODO find a way to use object_at_execution instead of object_designator in the automatic orm mapping in ActionAbstract
-    def to_sql(self) -> Action:
-        return ORMPickUpAction(arm=self.arm, grasp=self.grasp)
-
-    def insert(self, session: Session, **kwargs) -> Action:
-        action = super(ActionAbstract, self).insert(session)
-        action.object = self.object_at_execution.insert(session)
-
-        session.add(action)
-        return action
+    # def to_sql(self) -> Action:
+    #     return ORMPickUpAction(arm=self.arm, grasp=self.grasp)
+    #
+    # def insert(self, session: Session, **kwargs) -> Action:
+    #     action = super(ActionAbstract, self).insert(session)
+    #     action.object = self.object_at_execution.insert(session)
+    #
+    #     session.add(action)
+    #     return action
 
 
 @dataclass
@@ -1140,7 +1140,7 @@ class PlaceActionPerformable(ActionAbstract):
     """
     Pose in the world at which the object should be placed
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMPlaceAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMPlaceAction)
 
     """
     If placing should be done with usage of force torque or not
@@ -1260,7 +1260,7 @@ class NavigateActionPerformable(ActionAbstract):
     """
     Location to which the robot should be navigated
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMNavigateAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMNavigateAction)
 
     @with_tree
     def perform(self) -> None:
@@ -1285,7 +1285,7 @@ class TransportActionPerformable(ActionAbstract):
     """
     Target Location to which the object should be transported
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMTransportAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMTransportAction)
 
     @with_tree
     def perform(self) -> None:
@@ -1327,7 +1327,7 @@ class LookAtActionPerformable(ActionAbstract):
     """
     Position at which the robot should look, given as 6D pose
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMLookAtAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMLookAtAction)
 
     @with_tree
     def perform(self) -> None:
@@ -1360,7 +1360,7 @@ class DetectActionPerformable(ActionAbstract):
     The state instructs our perception system to either start or stop the search for an object or human.
     Can also be used to describe the region or location where objects are perceived.
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMDetectAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMDetectAction)
 
     @with_tree
     def perform(self) -> None:
@@ -1434,7 +1434,7 @@ class OpenActionPerformable(ActionAbstract):
     """
     Arm that should be used for opening the container
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMOpenAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMOpenAction)
 
     @with_tree
     def perform(self) -> None:
@@ -1458,7 +1458,7 @@ class CloseActionPerformable(ActionAbstract):
     """
     Arm that should be used for closing
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMCloseAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMCloseAction)
 
     @with_tree
     def perform(self) -> None:
@@ -1481,7 +1481,7 @@ class GraspingActionPerformable(ActionAbstract):
     """
     Object Designator for the object that should be grasped
     """
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMGraspingAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMGraspingAction)
 
     @with_tree
     def perform(self) -> None:
@@ -1516,7 +1516,7 @@ class FaceAtPerformable(ActionAbstract):
     The pose to face 
     """
 
-    orm_class = ORMFaceAtAction
+    #orm_class = ORMFaceAtAction
 
     @with_tree
     def perform(self) -> None:
@@ -1615,7 +1615,7 @@ class HeadFollowActionPerformable(ActionAbstract):
     defines if the robot should start/stop looking at human
     """
 
-    orm_class: Type[ActionAbstract] = field(init=False, default=ORMLookAtAction)
+    #orm_class: Type[ActionAbstract] = field(init=False, default=ORMLookAtAction)
 
     @with_tree
     def perform(self) -> None:

@@ -7,8 +7,8 @@ from ..datastructures.enums import ObjectType
 from ..datastructures.world import World
 from ..world_concepts.world_object import Object as WorldObject
 from ..designator import ObjectDesignatorDescription
-from ..orm.base import ProcessMetaData
-from ..orm.object_designator import (BelieveObject as ORMBelieveObject, ObjectPart as ORMObjectPart)
+#from ..orm.base import ProcessMetaData
+#from ..orm.object_designator import (BelieveObject as ORMBelieveObject, ObjectPart as ORMObjectPart)
 from ..datastructures.pose import Pose
 from ..external_interfaces.robokudo import *
 from std_msgs.msg import String
@@ -29,16 +29,16 @@ class BelieveObject(ObjectDesignatorDescription):
         Concrete object that is believed in.
         """
 
-        def to_sql(self) -> ORMBelieveObject:
-            return ORMBelieveObject(name=self.name, obj_type=self.obj_type)
-
-        def insert(self, session: sqlalchemy.orm.session.Session) -> ORMBelieveObject:
-            metadata = ProcessMetaData().insert(session)
-            self_ = self.to_sql()
-            self_.process_metadata = metadata
-            session.add(self_)
-
-            return self_
+        # def to_sql(self) -> ORMBelieveObject:
+        #     return ORMBelieveObject(name=self.name, obj_type=self.obj_type)
+        #
+        # def insert(self, session: sqlalchemy.orm.session.Session) -> ORMBelieveObject:
+        #     metadata = ProcessMetaData().insert(session)
+        #     self_ = self.to_sql()
+        #     self_.process_metadata = metadata
+        #     session.add(self_)
+        #
+        #     return self_
 
 
 class ObjectPart(ObjectDesignatorDescription):
@@ -52,18 +52,18 @@ class ObjectPart(ObjectDesignatorDescription):
         # The rest of attributes is inherited
         part_pose: Pose
 
-        def to_sql(self) -> ORMObjectPart:
-            return ORMObjectPart(obj_type=self.obj_type, name=self.name)
-
-        def insert(self, session: sqlalchemy.orm.session.Session) -> ORMObjectPart:
-            metadata = ProcessMetaData().insert(session)
-            pose = self.part_pose.insert(session)
-            obj = self.to_sql()
-            obj.process_metadata = metadata
-            obj.pose = pose
-            session.add(obj)
-
-            return obj
+        # def to_sql(self) -> ORMObjectPart:
+        #     return ORMObjectPart(obj_type=self.obj_type, name=self.name)
+        #
+        # def insert(self, session: sqlalchemy.orm.session.Session) -> ORMObjectPart:
+        #     metadata = ProcessMetaData().insert(session)
+        #     pose = self.part_pose.insert(session)
+        #     obj = self.to_sql()
+        #     obj.process_metadata = metadata
+        #     obj.pose = pose
+        #     session.add(obj)
+        #
+        #     return obj
 
     def __init__(self, names: List[str],
                  part_of: ObjectDesignatorDescription.Object,

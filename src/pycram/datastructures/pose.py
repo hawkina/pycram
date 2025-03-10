@@ -4,6 +4,7 @@ from __future__ import annotations
 import math
 import datetime
 
+from betterpybullet import Quaternion
 from tf.transformations import euler_from_quaternion
 from typing_extensions import List, Union, Optional, Sized, Self
 
@@ -12,7 +13,7 @@ import sqlalchemy.orm
 from geometry_msgs.msg import PoseStamped, TransformStamped, Vector3, Point
 from geometry_msgs.msg import (Pose as GeoPose, Quaternion as GeoQuaternion)
 from tf import transformations
-from ..orm.base import Pose as ORMPose, Position, Quaternion, ProcessMetaData
+#from ..orm.base import Pose as ORMPose, Position, Quaternion, ProcessMetaData
 from ..ros.data_types import Time
 from ..validation.error_checkers import calculate_pose_error
 from ..ros.logging import logwarn, logerr
@@ -289,27 +290,27 @@ class Pose(PoseStamped):
         """
         self.orientation = new_orientation
 
-    def to_sql(self) -> ORMPose:
-        return ORMPose(datetime.datetime.utcfromtimestamp(self.header.stamp.to_sec()), self.frame)
+    #def to_sql(self) -> ORMPose:
+    #    return ORMPose(datetime.datetime.utcfromtimestamp(self.header.stamp.to_sec()), self.frame)
 
-    def insert(self, session: sqlalchemy.orm.Session) -> ORMPose:
-
-        metadata = ProcessMetaData().insert(session)
-
-        position = Position(*self.position_as_list())
-        position.process_metadata = metadata
-        orientation = Quaternion(*self.orientation_as_list())
-        orientation.process_metadata = metadata
-        session.add(position)
-        session.add(orientation)
-
-        pose = self.to_sql()
-        pose.process_metadata = metadata
-        pose.orientation = orientation
-        pose.position = position
-        session.add(pose)
-
-        return pose
+    # def insert(self, session: sqlalchemy.orm.Session) -> ORMPose:
+    #
+    #     metadata = ProcessMetaData().insert(session)
+    #
+    #     position = Position(*self.position_as_list())
+    #     position.process_metadata = metadata
+    #     orientation = Quaternion(*self.orientation_as_list())
+    #     orientation.process_metadata = metadata
+    #     session.add(position)
+    #     session.add(orientation)
+    #
+    #     pose = self.to_sql()
+    #     pose.process_metadata = metadata
+    #     pose.orientation = orientation
+    #     pose.position = position
+    #     session.add(pose)
+    #
+    #     return pose
 
     def multiply_quaternions(self, quaternion: List) -> None:
         """

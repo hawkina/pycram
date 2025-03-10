@@ -11,11 +11,11 @@ from ..orm.base import ProcessMetaData
 from ..failures import PerceptionObjectNotFound
 from ..process_module import ProcessModuleManager
 from ..robot_descriptions import robot_description
-from ..orm.motion_designator import (MoveMotion as ORMMoveMotion, AccessingMotion as ORMAccessingMotion,
-                                     MoveTCPMotion as ORMMoveTCPMotion, LookingMotion as ORMLookingMotion,
-                                     MoveGripperMotion as ORMMoveGripperMotion, DetectingMotion as ORMDetectingMotion,
-                                     OpeningMotion as ORMOpeningMotion, ClosingMotion as ORMClosingMotion,
-                                     Motion as ORMMotionDesignator)
+# from ..orm.motion_designator import (MoveMotion as ORMMoveMotion, AccessingMotion as ORMAccessingMotion,
+#                                      MoveTCPMotion as ORMMoveTCPMotion, LookingMotion as ORMLookingMotion,
+#                                      MoveGripperMotion as ORMMoveGripperMotion, DetectingMotion as ORMDetectingMotion,
+#                                      OpeningMotion as ORMOpeningMotion, ClosingMotion as ORMClosingMotion,
+#                                      Motion as ORMMotionDesignator)
 from ..datastructures.enums import ObjectType, Arms, GripperState, ExecutionType
 
 from typing_extensions import Dict, Optional, get_type_hints
@@ -41,16 +41,16 @@ class MoveMotion(BaseMotion):
         return pm_manager.navigate().execute(self)
         # return ProcessModule.perform(self)
 
-    def to_sql(self) -> ORMMoveMotion:
-        return ORMMoveMotion()
-
-    def insert(self, session, *args, **kwargs) -> ORMMoveMotion:
-        motion = super().insert(session)
-        pose = self.target.insert(session)
-        motion.pose = pose
-        session.add(motion)
-
-        return motion
+    # def to_sql(self) -> ORMMoveMotion:
+    #     return ORMMoveMotion()
+    #
+    # def insert(self, session, *args, **kwargs) -> ORMMoveMotion:
+    #     motion = super().insert(session)
+    #     pose = self.target.insert(session)
+    #     motion.pose = pose
+    #     session.add(motion)
+    #
+    #     return motion
 
 
 @dataclass
@@ -77,11 +77,11 @@ class MoveArmDownForceTorqueMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.move_arm_down().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -108,16 +108,16 @@ class MoveTCPMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.move_tcp().execute(self)
 
-    def to_sql(self) -> ORMMoveTCPMotion:
-        return ORMMoveTCPMotion(self.arm, self.allow_gripper_collision)
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMoveTCPMotion:
-        motion = super().insert(session)
-        pose = self.target.insert(session)
-        motion.pose = pose
-        session.add(motion)
-
-        return motion
+    # def to_sql(self) -> ORMMoveTCPMotion:
+    #     return ORMMoveTCPMotion(self.arm, self.allow_gripper_collision)
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMoveTCPMotion:
+    #     motion = super().insert(session)
+    #     pose = self.target.insert(session)
+    #     motion.pose = pose
+    #     session.add(motion)
+    #
+    #     return motion
 
 
 @dataclass
@@ -153,16 +153,16 @@ class MoveTCPForceTorqueMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.move_tcp_ft().execute(self)
 
-    def to_sql(self) -> ORMMoveTCPMotion:
-        return ORMMoveTCPMotion(self.target, self.arm, self.object_type, self.threshold, self.allow_gripper_collision)
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMoveTCPMotion:
-        motion = super().insert(session)
-        pose = self.target.insert(session)
-        motion.pose = pose
-        session.add(motion)
-
-        return motion
+    # def to_sql(self) -> ORMMoveTCPMotion:
+    #     return ORMMoveTCPMotion(self.target, self.arm, self.object_type, self.threshold, self.allow_gripper_collision)
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMoveTCPMotion:
+    #     motion = super().insert(session)
+    #     pose = self.target.insert(session)
+    #     motion.pose = pose
+    #     session.add(motion)
+    #
+    #     return motion
 
 
 @dataclass
@@ -189,11 +189,11 @@ class PickUpMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.pick_up().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 @dataclass
 class PlaceMotion(BaseMotion):
@@ -233,16 +233,16 @@ class LookingMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.looking().execute(self)
 
-    def to_sql(self) -> ORMLookingMotion:
-        return ORMLookingMotion()
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMLookingMotion:
-        motion = super().insert(session)
-        pose = self.target.insert(session)
-        motion.pose = pose
-        session.add(motion)
-
-        return motion
+    # def to_sql(self) -> ORMLookingMotion:
+    #     return ORMLookingMotion()
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMLookingMotion:
+    #     motion = super().insert(session)
+    #     pose = self.target.insert(session)
+    #     motion.pose = pose
+    #     session.add(motion)
+    #
+    #     return motion
 
 
 @dataclass
@@ -269,14 +269,14 @@ class MoveGripperMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.move_gripper().execute(self)
 
-    def to_sql(self) -> ORMMoveGripperMotion:
-        return ORMMoveGripperMotion(self.motion, self.gripper, self.allow_gripper_collision)
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMoveGripperMotion:
-        motion = super().insert(session)
-        session.add(motion)
-
-        return motion
+    # def to_sql(self) -> ORMMoveGripperMotion:
+    #     return ORMMoveGripperMotion(self.motion, self.gripper, self.allow_gripper_collision)
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMoveGripperMotion:
+    #     motion = super().insert(session)
+    #     session.add(motion)
+    #
+    #     return motion
 
 
 @dataclass
@@ -321,14 +321,14 @@ class DetectingMotion(BaseMotion):
         return ObjectDesignatorDescription.Object(world_object.name, world_object.obj_type,
                                                   world_object)
 
-    def to_sql(self) -> ORMDetectingMotion:
-        return ORMDetectingMotion(self.object_type)
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMDetectingMotion:
-        motion = super().insert(session)
-        session.add(motion)
-
-        return motion
+    # def to_sql(self) -> ORMDetectingMotion:
+    #     return ORMDetectingMotion(self.object_type)
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMDetectingMotion:
+    #     motion = super().insert(session)
+    #     session.add(motion)
+    #
+    #     return motion
 
 
 @dataclass
@@ -350,11 +350,11 @@ class MoveArmJointsMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.move_arm_joints().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -372,11 +372,11 @@ class WorldStateDetectingMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.world_state_detecting().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -398,11 +398,11 @@ class MoveJointsMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.move_joints().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -425,16 +425,16 @@ class OpeningMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.open().execute(self)
 
-    def to_sql(self) -> ORMOpeningMotion:
-        return ORMOpeningMotion(self.arm)
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMOpeningMotion:
-        motion = super().insert(session)
-        op = self.object_part.insert(session)
-        motion.object = op
-        session.add(motion)
-
-        return motion
+    # def to_sql(self) -> ORMOpeningMotion:
+    #     return ORMOpeningMotion(self.arm)
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMOpeningMotion:
+    #     motion = super().insert(session)
+    #     op = self.object_part.insert(session)
+    #     motion.object = op
+    #     session.add(motion)
+    #
+    #     return motion
 
 
 @dataclass
@@ -457,16 +457,16 @@ class ClosingMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.close().execute(self)
 
-    def to_sql(self) -> ORMClosingMotion:
-        return ORMClosingMotion(self.arm)
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMClosingMotion:
-        motion = super().insert(session)
-        op = self.object_part.insert(session)
-        motion.object = op
-        session.add(motion)
-
-        return motion
+    # def to_sql(self) -> ORMClosingMotion:
+    #     return ORMClosingMotion(self.arm)
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMClosingMotion:
+    #     motion = super().insert(session)
+    #     op = self.object_part.insert(session)
+    #     motion.object = op
+    #     session.add(motion)
+    #
+    #     return motion
 
 @dataclass
 class TalkingMotion(BaseMotion):
@@ -483,11 +483,11 @@ class TalkingMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.talk().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -511,11 +511,11 @@ class PouringMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.pour().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 
@@ -535,11 +535,11 @@ class HeadFollowMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.head_follow().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -557,11 +557,11 @@ class PointingMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.pointing().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -580,11 +580,11 @@ class DoorOpenMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.door_opening().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -607,11 +607,11 @@ class GraspHandleMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.grasp_door_handle().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -634,11 +634,11 @@ class GraspingDishwasherHandleMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.grasp_dishwasher_handle().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -664,11 +664,11 @@ class HalfOpeningDishwasherMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.half_open_dishwasher().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -691,11 +691,11 @@ class MoveArmAroundMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.move_arm_around_dishwasher().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
 
 
 @dataclass
@@ -726,8 +726,8 @@ class FullOpeningDishwasherMotion(BaseMotion):
         pm_manager = ProcessModuleManager.get_manager()
         return pm_manager.full_open_dishwasher().execute(self)
 
-    def to_sql(self) -> ORMMotionDesignator:
-        pass
-
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        pass
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     pass
+    #
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     pass
