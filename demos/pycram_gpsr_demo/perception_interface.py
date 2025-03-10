@@ -13,7 +13,7 @@ def init_robokudo():
     global rk
     rk = actionlib.SimpleActionClient('robokudo/query', QueryAction)
     rospy.loginfo("[RK] Waiting for action server...")
-    if rk.wait_for_server():
+    if rk.wait_for_server(timeout=rospy.Duration(5)):
         rospy.loginfo("[RK] ready")
     else:
         rospy.loginfo("[RK] something went wrong during connection")
@@ -37,8 +37,8 @@ def ask_robokudo_for_all_objects(): # works
     goal_msg.type = 'all'
     rk.send_goal(goal_msg)
     rospy.loginfo("[RK] goal sent... waiting for result")
-    rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
-    result = rk.get_result()
+    #rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
+    result = rk.wait_for_result(timeout=rospy.Duration(10.0))
     rospy.loginfo("[RK] result received")
     return result  # list of all perceived items or an empty list
 
@@ -51,23 +51,38 @@ def ask_robokudo_for_object(obj_type):
     goal_msg.type = 'all'
     rk.send_goal(goal_msg)
     rospy.loginfo("[RK] goal sent... waiting for result")
-    rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
-    result = rk.get_result()
+    #rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
+    result = rk.wait_for_result(timeout=rospy.Duration(10.0))
     rospy.loginfo("[RK] result received")
     return result  # list of all perceived items or an empty list
 
 
 # person = attributes of person, lying, standing etc.
 # faces = face detection
+def ask_robokudo_for_waving_humans():
+    global rk
+    goal_msg = QueryGoal()
+    goal_msg.obj.type = 'human'
+    goal_msg.type = 'human'
+    goal_msg.obj.attribute.append("waving")
+    rk.send_goal(goal_msg)
+    rospy.loginfo("[RK] goal sent... waiting for result")
+    #rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
+    result = rk.wait_for_result(timeout=rospy.Duration(10.0))
+    rospy.loginfo("[RK] result received")
+    return result  # list of all perceived items or an empty list
+
+
 def ask_robokudo_for_humans():
     global rk
     goal_msg = QueryGoal()
-    goal_msg.obj.type = 'person'
-    goal_msg.type = 'person'
+    goal_msg.obj.type = 'human'
+    goal_msg.type = 'human'
+    goal_msg.obj.attribute.append("")
     rk.send_goal(goal_msg)
     rospy.loginfo("[RK] goal sent... waiting for result")
-    rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
-    result = rk.get_result()
+    #rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
+    result = rk.wait_for_result(timeout=rospy.Duration(10.0))
     rospy.loginfo("[RK] result received")
     return result  # list of all perceived items or an empty list
 
@@ -79,7 +94,7 @@ def send_robokudo_goal(goal_msg):
     rk.send_goal(goal_msg)
     rospy.loginfo("[RK] goal sent... waiting for result")
     rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
-    result = rk.get_result()
+    result = rk.wait_for_result(timeout=rospy.Duration(10.0))
     rospy.loginfo("[RK] result received")
     return result
 
@@ -114,7 +129,7 @@ def test_pc():
     goal_msg.obj.type = 'Crackerbox'  # human doesn't work somehow? 'mueslibox'
     goal_msg.type = 'all'
     rk.send_goal(goal_msg)
-    result = rk.get_result()
+    result = rk.wait_for_result(timeout=rospy.Duration(10.0))
     print(result.res[0].type)
 
 

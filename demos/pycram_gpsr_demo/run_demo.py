@@ -4,7 +4,11 @@ from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
 from pycram.datastructures.pose import Pose as PoseStamped
 from pycram.process_module import real_robot
 from .setup_demo import *
-from . import utils, perception_interface
+from pycram.designators.action_designator import *
+from pycram.designators.motion_designator import *
+from pycram.designators.object_designator import *
+from . import utils
+from .perception_interface import *
 from . import nlp_processing as nlp
 from stringcase import snakecase
 from . import llp_navigation as navi
@@ -13,8 +17,6 @@ from .nlp_processing import sing_my_angel_of_music
 from pycram.datastructures.enums import ObjectType, ImageEnum
 from pycram.language import Code, Monitor
 from .utils import monitor_func
-
-#from ..pycram_hsrb_real_test_demos.utils.giskardtt import monitor_func
 
 #from demos.pycram_gpsr_demo.setup_demo import image_switch
 
@@ -148,12 +150,12 @@ def yeet_into_arena():
 def gpsr():
     with real_robot:
         plan_list = utils.get_plans(high_level_plans)
-        yeet_into_arena()
+        #yeet_into_arena()
         sound_pub = SoundRequestPublisher()
-        sound_pub.publish_sound_request()
+        #sound_pub.publish_sound_request()
 
         sing_my_angel_of_music("Going to the instruction point")
-        navi.go_to_pose(PoseStamped([5.44, 0.2, 0.0], [0, 0, 0, 1]))  # in door
+        #navi.go_to_pose(PoseStamped([2.99, 2.0, 0], [0, 0, 0, 1]))  # in door
         #navi.go_to_room_entry_or_exit('office', 'exit')
         navi.go_to_pose(instruction_point)
         # look at a person when listening to command
@@ -170,7 +172,8 @@ def gpsr():
             giskard.move_head_to_human()
             instruction_list = nlp.listen_to_commands()
             rospy.logwarn("[CRAM] instruction list: " + str(instruction_list))
-            giskard.cancel_all_called_goals()
+            #giskard.cancel_all_called_goals()
+            giskard.cancel_goal()
 
             # execute instructions
             # TODO iterate over list of instructions and do stuff
@@ -182,19 +185,43 @@ def gpsr():
                 # match instruction to plan
                 utils.call_plan_by_name(plan_list, snakecase(instruction['intent']), instruction)
                 # if plan was successful, remove it from the list
-                instruction_list.remove(instruction)
+                #instruction_list.remove(instruction) # if it gets poped then removal is not needed
             instruction_list = []
             sing_my_angel_of_music("navigating to the instruction point")
             navi.go_to_pose(instruction_point)
 
 
-# CHANGE CARE THIS STUFF GETS ACTUALLY EXECUTED
+# CHANGE WITH CARE THIS STUFF GETS ACTUALLY EXECUTED
 def demo_plan(data):
     with real_robot:
         high_level_plans.transporting(data)
         print('--------------stahp----------------')
         return
 
+def blub():
+    with real_robot:
+        #init_robokudo()
+        #nav = NavigateAction(target_locations=[PoseStamped([2.99, 2.0, 0], [0, 0, 0, 1])])
+        #nav.resolve().perform()
+        #TalkingMotion("Hello my name is Toya.").perform()
+        #result = DetectAction(technique='human',).resolve().perform()
+        #result = ask_robokudo_for_waving_humans()
+        #print(result)
+        #rospy.sleep(1)
+        #result = ask_robokudo_for_humans()
+        #print(result)
+        #rospy.sleep(1)
+        #result = ask_robokudo_for_all_objects()
+        #print(result)
+        #rospy.sleep(1)
+        #result = ask_robokudo_for_object("cup")
+        #print(result)
+        #rospy.sleep(1)
+        #HeadFollowMotion(state="start").perform()
+        #rospy.sleep(3)
+        #DetectAction(technique='human', state="stop").resolve().perform()
+        MoveTorsoAction([0.1]).resolve().perform()
+#blub()
 #setup()
 #fake_pose_2 = Pose([2.88, 0.3, 0])
 #pub_fake_pose(fake_pose_2)

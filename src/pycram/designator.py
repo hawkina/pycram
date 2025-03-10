@@ -418,42 +418,42 @@ class ActionDesignatorDescription(DesignatorDescription, Language):
             """
             raise NotImplementedError()
 
-        def to_sql(self) -> ORMAction:
-            """
-            Create an ORM object that corresponds to this description.
-
-            :return: The created ORM object.
-            """
-            raise NotImplementedError(f"{type(self)} has no implementation of to_sql. Feel free to implement it.")
-
-        def insert(self, session: Session, *args, **kwargs) -> ORMAction:
-            """
-            Add and commit this and all related objects to the session.
-            Auto-Incrementing primary keys and foreign keys have to be filled by this method.
-
-            :param session: Session with a database that is used to add and commit the objects
-            :param args: Possible extra arguments
-            :param kwargs: Possible extra keyword arguments
-            :return: The completely instanced ORM object
-            """
-
-            pose = self.robot_position.insert(session)
-
-            # get or create metadata
-            metadata = ProcessMetaData().insert(session)
-
-            # create robot-state object
-            robot_state = RobotState(self.robot_torso_height, self.robot_type)
-            robot_state.pose = pose
-            robot_state.process_metadata = metadata
-            session.add(robot_state)
-
-            # create action
-            action = self.to_sql()
-            action.process_metadata = metadata
-            action.robot_state = robot_state
-
-            return action
+        # def to_sql(self) -> ORMAction:
+        #     """
+        #     Create an ORM object that corresponds to this description.
+        #
+        #     :return: The created ORM object.
+        #     """
+        #     raise NotImplementedError(f"{type(self)} has no implementation of to_sql. Feel free to implement it.")
+        #
+        # def insert(self, session: Session, *args, **kwargs) -> ORMAction:
+        #     """
+        #     Add and commit this and all related objects to the session.
+        #     Auto-Incrementing primary keys and foreign keys have to be filled by this method.
+        #
+        #     :param session: Session with a database that is used to add and commit the objects
+        #     :param args: Possible extra arguments
+        #     :param kwargs: Possible extra keyword arguments
+        #     :return: The completely instanced ORM object
+        #     """
+        #
+        #     pose = self.robot_position.insert(session)
+        #
+        #     # get or create metadata
+        #     metadata = ProcessMetaData().insert(session)
+        #
+        #     # create robot-state object
+        #     robot_state = RobotState(self.robot_torso_height, self.robot_type)
+        #     robot_state.pose = pose
+        #     robot_state.process_metadata = metadata
+        #     session.add(robot_state)
+        #
+        #     # create action
+        #     action = self.to_sql()
+        #     action.process_metadata = metadata
+        #     action.robot_state = robot_state
+        #
+        #     return action
 
     def __init__(self, resolver=None, ontology_concept_holders: Optional[List[OntologyConceptHolder]] = None):
         """
@@ -571,31 +571,31 @@ class ObjectDesignatorDescription(DesignatorDescription):
             if self.world_object:
                 self._pose = self.world_object.get_pose
 
-        def to_sql(self) -> ORMObjectDesignator:
-            """
-            Create an ORM object that corresponds to this description.
-
-            :return: The created ORM object.
-            """
-            return ORMObjectDesignator(name=self.name, obj_type=self.obj_type)
-
-        def insert(self, session: Session) -> ORMObjectDesignator:
-            """
-            Add and commit this and all related objects to the session.
-            Auto-Incrementing primary keys and foreign keys have to be filled by this method.
-
-            :param session: Session with a database that is used to add and commit the objects
-            :return: The completely instanced ORM object
-            """
-            metadata = ProcessMetaData().insert(session)
-            pose = self.pose.insert(session)
-
-            # create object orm designator
-            obj = self.to_sql()
-            obj.process_metadata = metadata
-            obj.pose = pose
-            session.add(obj)
-            return obj
+        # def to_sql(self) -> ORMObjectDesignator:
+        #     """
+        #     Create an ORM object that corresponds to this description.
+        #
+        #     :return: The created ORM object.
+        #     """
+        #     return ORMObjectDesignator(name=self.name, obj_type=self.obj_type)
+        #
+        # def insert(self, session: Session) -> ORMObjectDesignator:
+        #     """
+        #     Add and commit this and all related objects to the session.
+        #     Auto-Incrementing primary keys and foreign keys have to be filled by this method.
+        #
+        #     :param session: Session with a database that is used to add and commit the objects
+        #     :return: The completely instanced ORM object
+        #     """
+        #     metadata = ProcessMetaData().insert(session)
+        #     pose = self.pose.insert(session)
+        #
+        #     # create object orm designator
+        #     obj = self.to_sql()
+        #     obj.process_metadata = metadata
+        #     obj.pose = pose
+        #     session.add(obj)
+        #     return obj
 
         def frozen_copy(self) -> 'ObjectDesignatorDescription.Object':
             """
@@ -708,32 +708,32 @@ class BaseMotion(ABC):
         pass
         # return ProcessModule.perform(self)
 
-    @abstractmethod
-    def to_sql(self) -> ORMMotionDesignator:
-        """
-        Create an ORM object that corresponds to this description. Will be overwritten by each motion.
-
-        :return: The created ORM object.
-        """
-        return ORMMotionDesignator()
-
-    @abstractmethod
-    def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
-        """
-        Add and commit this and all related objects to the session.
-        Auto-Incrementing primary keys and foreign keys have to be filled by this method.
-
-        :param session: Session with a database that is used to add and commit the objects
-        :param args: Possible extra arguments
-        :param kwargs: Possible extra keyword arguments
-        :return: The completely instanced ORM motion.
-        """
-        metadata = ProcessMetaData().insert(session)
-
-        motion = self.to_sql()
-        motion.process_metadata = metadata
-
-        return motion
+    # @abstractmethod
+    # def to_sql(self) -> ORMMotionDesignator:
+    #     """
+    #     Create an ORM object that corresponds to this description. Will be overwritten by each motion.
+    #
+    #     :return: The created ORM object.
+    #     """
+    #     return ORMMotionDesignator()
+    #
+    # @abstractmethod
+    # def insert(self, session: Session, *args, **kwargs) -> ORMMotionDesignator:
+    #     """
+    #     Add and commit this and all related objects to the session.
+    #     Auto-Incrementing primary keys and foreign keys have to be filled by this method.
+    #
+    #     :param session: Session with a database that is used to add and commit the objects
+    #     :param args: Possible extra arguments
+    #     :param kwargs: Possible extra keyword arguments
+    #     :return: The completely instanced ORM motion.
+    #     """
+    #     metadata = ProcessMetaData().insert(session)
+    #
+    #     motion = self.to_sql()
+    #     motion.process_metadata = metadata
+    #
+    #     return motion
 
     def interrupt(self):
         if giskard.giskard_wrapper:

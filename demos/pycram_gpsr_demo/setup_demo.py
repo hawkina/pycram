@@ -1,7 +1,7 @@
 # setup the environment
 from pycram.designators.action_designator import *
 from pycram.external_interfaces.navigate import PoseNavigator
-from pycram.datastructures.enums import ObjectType
+from pycram.datastructures.enums import ObjectType, WorldMode
 from pycram.world_concepts.world_object import Object
 from pycram.ros_utils.robot_state_updater import RobotStateUpdater, KitchenStateUpdater
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
@@ -43,7 +43,7 @@ def setup():
 
     #tf_l = tf.listener.TransformListener()
 
-    world = BulletWorld('DIRECT')
+    world = BulletWorld(WorldMode.DIRECT)
     rospy.sleep(2)
 
     environment_raw = Object("kitchen", ObjectType.ENVIRONMENT, "suturo_lab_2024_1.urdf")
