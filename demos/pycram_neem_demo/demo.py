@@ -8,8 +8,8 @@ from pycram.process_module import simulated_robot, with_simulated_robot
 from pycram.object_descriptors.urdf import ObjectDescription
 from pycram.world_concepts.world_object import Object
 from pycram.datastructures.dataclasses import Color
-from pycram.ros.viz_marker_publisher import VizMarkerPublisher
-from pycrap import Robot, Apartment, Milk, Cereal, Spoon, Bowl
+from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
+from pycrap.ontologies import Robot, Apartment, Milk, Cereal, Spoon, Bowl
 # from neem_interface_python import rosprolog_client
 # know = rosprolog_client.Prolog()
 import numpy as np
