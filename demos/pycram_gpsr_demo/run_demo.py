@@ -1,7 +1,8 @@
 from dynamic_reconfigure.msg import DoubleParameter, IntParameter, BoolParameter, StrParameter, GroupState, Config
 from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
-from geometry_msgs.msg import Twist, PoseWithCovariance, PoseWithCovarianceStamped
+from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
 from pycram.datastructures.pose import Pose as PoseStamped
+from pycram.process_module import real_robot
 from .setup_demo import *
 from . import utils, perception_interface
 from . import nlp_processing as nlp
@@ -190,9 +191,9 @@ def demo_plan(data):
         print('--------------stahp----------------')
         return
 
-setup()
+#setup()
 #fake_pose_2 = Pose([2.88, 0.3, 0])
 #pub_fake_pose(fake_pose_2)
-gpsr()
+#gpsr()
 #demo_plan(data2)
 #setup_demo.gripper.pub_now('open')
