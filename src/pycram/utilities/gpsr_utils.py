@@ -4,7 +4,8 @@ from hsrb_interface.geometry import Quaternion
 
 from pycram import helper
 from pycram.designators.location_designator import find_placeable_pose
-from pycram.failures import NoPlacePoseFoundCondition, PerceptionObjectNotFound
+#from pycram.failures import NoPlacePoseFoundCondition, PerceptionObjectNotFound
+from pycram.failures import ObjectNotPlacedAtTargetLocation, SensorMonitoringCondition
 from pycram.designators.action_designator import *
 import pycram.external_interfaces.giskard as giskardpy
 from pycram.designators.object_designator import *
@@ -37,7 +38,7 @@ def get_place_poses_for_surface(object_to_place, link, environment_desig, enviro
         return adjusted_pose_in_map
 
     else:
-        return NoPlacePoseFoundCondition
+        return ObjectNotPlacedAtTargetLocation
 
 
 def place(object, grasp, link, giskard, talk, robot_description, lt, environment_raw, environment_desig, gripper, world,
