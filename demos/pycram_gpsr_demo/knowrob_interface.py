@@ -1,5 +1,5 @@
 from stringcase import snakecase
-from neem_interface_python import Prolog as KnowrobKnowledge
+from neem_interface_python import Prolog # as KnowrobKnowledge
 import rospy
 from .perception_to_knowrob import perc_to_know
 from . import utils
@@ -11,8 +11,9 @@ arena = 'http://www.ease-crc.org/ont/SUTURO.owl#Arena'
 dining_room = 'http://www.ease-crc.org/ont/SUTURO.owl#DiningRoom'
 hallway = 'http://www.ease-crc.org/ont/SUTURO.owl#Hallway'
 office = 'http://www.ease-crc.org/ont/SUTURO.owl#Office'
+bedroom = 'http://www.ease-crc.org/ont/SUTURO.owl#Bedroom'
 rooms = {'kitchen': kitchen, 'living_room': living_room, 'arena': arena, 'dining_room': dining_room,
-         'hallway': hallway, 'office': office}
+         'hallway': hallway, 'office': office, 'bedroom': bedroom}
 kb = []
 
 #hopefully tmp
@@ -34,19 +35,20 @@ def init_knowrob():  # works
     #     kb.connect()
     #     rospy.sleep(1)
     #     retry -= 1
-    kb = KnowrobKnowledge()
+    kb = Prolog()
     kb.all_solutions(f"init_gpsr_2024.")
     rospy.loginfo("[CRAM-KNOW] Connected.")
+    return kb
 
 
 def get_obj_instance_of_type(type_iri):  # test
     # returns the instance of smth given the type iri. e.g. 'http://www.ease-crc.org/ont/SUTURO.owl#LivingRoom'
-    tmp = kb.once(f"has_type(Instance, '{type_iri}').")
+    tmp = kb.once(query_str=f"has_type(Instance, '{type_iri}').")
     if tmp is []:
         rospy.logwarn(f"[KnowRob] no room instance with iri {type_iri} found.")
         return None
     else:
-        tmp = tmp.get('Instance')
+        #tmp = tmp.get('Instance')
         rospy.loginfo(f"[KnowRob] room instance {tmp} of type {type_iri} found")
         return tmp
 
@@ -55,10 +57,11 @@ def get_obj_instance_of_type(type_iri):  # test
 def get_room_entry_pose_class(room):  # works
     if rooms.get(room):
         result = kb.once(f"has_type(Room, '{rooms.get(room)}'), entry_pose(Room, PoseStamped).")
-        if result is None or result == []:
+        if result is False or result == []:
             rospy.logerr(f"[KnowRob] No entry pose for {room} found. :(")
             return None
-        pose = utils.lpose_to_pose_stamped(result)
+        #pose = utils.lpose_to_pose_stamped(result)
+        pose = utils.kpose_to_pose_stamped(result)
         return pose
     else:
         rospy.logerr(f"[KnowRob] No Room with name {room} found. :(")
@@ -69,8 +72,8 @@ def get_room_entry_pose_class(room):  # works
 # entry_or_exit = 'entry' | 'exit' > those are two different knowrob queries
 def get_room_pose(room, entry_or_exit='entry'):  # Works
     if rooms.get(room):
-        result = kb.once(f"{entry_or_exit}_pose('{room}', PoseStamped).")
-        if result is None or result == []:
+        result = kb.once(f"has_type(Room, '{rooms.get(room)}'), {entry_or_exit}_pose(Room, PoseStamped).")
+        if result is False or result == []:
             rospy.logerr(f"[KnowRob] No entry pose for {room} found. :(")
             return None
         pose = utils.lpose_to_pose_stamped(result.get('PoseStamped'))
@@ -82,8 +85,8 @@ def get_room_pose(room, entry_or_exit='entry'):  # Works
 
 def get_room_middle_pose(room):  # Works
     if rooms.get(room):
-        result = kb.once(f"middle('{room}', PoseStamped).")
-        if result is None or result == []:
+        result = kb.once(f"middle('{rooms.get(room)}', PoseStamped).")
+        if result is False or result == []:
             rospy.logerr(f"[KnowRob] No entry pose for {room} found. :(")
             return None
         pose = utils.lpose_to_pose_stamped(result.get('PoseStamped'))
