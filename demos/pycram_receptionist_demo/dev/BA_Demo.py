@@ -54,11 +54,28 @@ look_drinks = Pose([2.15, 4.7, 0.55])
 look_person_drinks = Pose([1.9, 3.8, 1])
 nav_pose_to_drink = Pose([2, 0.6, 0], orientation=[0, 0, 0.7, 0.7])
 nav_pose_to_couch = Pose([2.2, 3.3, 0], orientation=[0, 0, -0.7, 0.7])
+nav_pose_to_couch_from_kitchen = Pose([2.2, -1.3, 0], orientation=[0, 0, 0.7, 0.7])
 greet_guest_pose = Pose(position=[1.9, -0.18, 0], orientation=[0, 0, -0.8, 0.5])
 beverage_pose = Pose(position=[2.2, 4, 0], orientation=[0, 0, 0.9, 0.3])
+kitchen_pose = Pose(position=[4.5, -1.9, 0])
+
+
+available_drinks_ba = ["water", "cola", "juice", "apple juice", "soda", "lemonade", "Ice Tea"]
+
+
+def drive_to_drinks(drink: str):
+    global drinks
+    for i in range(len(available_drinks_ba)):
+        if drink == available_drinks_ba[i]:
+            return True
+
+    return False
 
 
 def demo(step: int):
+    drinks = False
+    kitchen = False
+
     with (real_robot):
         rospy.loginfo("start demo at step " + str(step))
 
@@ -71,6 +88,14 @@ def demo(step: int):
         if step <= 1:
             # greet first guest
             nlp.welcome_guest(guest1)
+            rospy.sleep(1)
+            nlp.get_fav_drink(guest1)
+            TalkingMotion("my favorite drink is oil").perform()
+
+            if drive_to_drinks(guest1.fav_drink):
+                drinks = True
+            else:
+                kitchen = True
 
         if step <= 2:
             # perceive attributes of guest
@@ -81,23 +106,28 @@ def demo(step: int):
             TalkingMotion("please step out of the way and follow me").perform()
 
         if step <= 3:
-            # guide to drinking area
-            NavigateAction([nav_pose_to_drink]).resolve().perform()
-            NavigateAction([beverage_pose]).resolve().perform()
+            if drinks:
+                # guide to drinking area
+                NavigateAction([nav_pose_to_drink]).resolve().perform()
+                NavigateAction([beverage_pose]).resolve().perform()
 
-            TalkingMotion("here you can get yourself a drink").perform()
-            MoveJointsMotion(["torso_lift_joint"], [0.1]).perform()
-            LookAtAction([look_person_drinks]).resolve().perform()
-            DetectAction(technique='human', state="start").resolve().perform()
-            HeadFollowMotion(state="start").perform()
-            rospy.sleep(1.5)
-            nlp.get_fav_drink(guest1)
+                TalkingMotion("here you can get yourself a drink").perform()
+                rospy.sleep(1.5)
+                TalkingMotion(f"we have {guest1.fav_drink} here").perform()
+                MoveJointsMotion(["torso_lift_joint"], [0.1]).perform()
+                LookAtAction([look_person_drinks]).resolve().perform()
+            if kitchen:
+                # guide to drinking area
+                NavigateAction([kitchen_pose]).resolve().perform()
+                TalkingMotion("this it the kitchen").perform()
+                rospy.sleep(1)
+                TalkingMotion("here you can get yourself a snack").perform()
+                MoveJointsMotion(["torso_lift_joint"], [0.1]).perform()
 
         if step <= 4:
 
-            TalkingMotion("my favorite drink is oil").perform()
             rospy.sleep(1.5)
-            TalkingMotion("i love cleaning up this table").perform()
+            TalkingMotion("i love cleaning up here").perform()
             rospy.sleep(1.5)
             TalkingMotion("what do you do in your free time?").perform()
             rospy.sleep(1.5)
@@ -110,75 +140,66 @@ def demo(step: int):
             rospy.sleep(1.5)
             DetectAction(technique='human', state="stop").resolve().perform()
             TalkingMotion("please step out of the way and follow me").perform()
-            # MoveJointsMotion(["head_pan_joint"], [-0.3]).perform()
-            NavigateAction([nav_pose_to_couch]).resolve().perform()
+            if drinks:
+                NavigateAction([nav_pose_to_couch]).resolve().perform()
+            if kitchen:
+                NavigateAction([nav_pose_to_couch_from_kitchen]).resolve().perform()
             NavigateAction([couch_pose_semantik]).resolve().perform()
 
         if step <= 6:
 
             # find host in living room
             TalkingMotion("welcome to the living room").perform()
+            rospy.sleep(1)
+            TalkingMotion("i will find a free place to sit for you").perform()
 
-            # try to find face (of host) in living room
-            counter = 0
-            while counter < 6:
-                detected = detect_host_face(host)
-                counter += 1
-                if detected:
-                    break
-                if counter == 1:
-                    TalkingMotion("sitting people please look at me").perform()
-                    rospy.sleep(1.5)
-
-                elif counter == 2:
-                    # look to the side to find face
-                    MoveJointsMotion(["head_pan_joint"], [-0.3]).perform()
-                    TalkingMotion("please look at me").perform()
-                    rospy.sleep(1.5)
-
-                if counter == 5:
-                    try:
-                        rospy.logerr("host has no id")
-                        host_pose = DetectAction(technique='human').resolve().perform()
-                        host.set_pose(host_pose)
-
-                    except Exception as e:
-                        print(e)
-                    break
-
-                counter += 1
+            LookAtAction([look_couch]).resolve().perform()
+            guest_pose = detect_point_to_seat(robot)
+            if not guest_pose:
+                # TODO: check head movement
+                MoveJointsMotion(["head_pan_joint"], [-0.3]).perform()
+                guest_pose = detect_point_to_seat(no_sofa=True, robot=robot)
+                if guest_pose:
+                    guest1.set_pose(guest_pose)
+                else:
+                    TalkingMotion("i am sorry i can not find a seat").perform()
+                    rospy.sleep(1)
+                    TalkingMotion("please sit down yourself").perform()
+                    guest1.set_pose(guest_pose)
+            else:
+                guest2.set_pose(guest_pose)
 
         if step <= 7:
             # find free place to sit for guest
             LookAtAction([look_couch]).resolve().perform()
-            TalkingMotion("please take a seat in front of me").perform()
-            pose_guest = PointStamped()
-            pose_guest.header.frame_id = "map"
-            pose_guest.point.x = 3.7
-            pose_guest.point.y = 0.3
-            pose_guest.point.z = 0.85
-            guest1.set_pose(pose_guest)
-
-            MoveGripperMotion(GripperState.CLOSE, Arms.LEFT).perform()
-            PointingMotion(pose_guest).perform()
-
-        if step <= 8:
+            # TODO: change description to you
+            DetectAction(technique='human').resolve().perform()
             HeadFollowMotion(state="start").perform()
-            rospy.sleep(2)
-            introduce(host, guest1)
-            rospy.sleep(3)
             describe(guest1)
-            MoveGripperMotion(GripperState.OPEN, Arms.LEFT).perform()
-            rospy.sleep(1)
 
-        if step <= 9:
-            # introduce sitting people
-            TalkingMotion("i will go back to the entrance to assist other guests").perform()
-            MoveGripperMotion(GripperState.OPEN, Arms.LEFT).perform()
-            NavigateAction([greet_guest_pose]).resolve().perform()
-            rospy.sleep(5)
-            DetectAction(technique='human', state="start").resolve().perform()
-            HeadFollowMotion(state="start").perform()
+            if drinks:
+                pose_guest = PointStamped()
+                pose_guest.header.frame_id = "map"
+                pose_guest.point.x = 3
+                pose_guest.point.y = -2
+                pose_guest.point.z = 1.2
+                PointingMotion(pose_guest).perform()
+                TalkingMotion("behind you is the kitchen").perform()
+                rospy.sleep(1)
+                TalkingMotion("if you want you can get yourself a snack there").perform()
+                rospy.sleep(2)
+                TalkingMotion("thank you for your time").perform()
+
+            if kitchen:
+                TalkingMotion("behind me is a table with beverages").perform()
+                rospy.sleep(1)
+                TalkingMotion("if you want you can get yourself a drink there").perform()
+                rospy.sleep(2)
+                TalkingMotion("thank you for your time").perform()
+
+
+
+
 
 
 demo(0)

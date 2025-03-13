@@ -44,9 +44,9 @@ apart_desig = BelieveObject(names=["kitchen"])
 
 # TODO: Enum for navigating
 class NavigatePose(Enum):
-    DISHWASHER_CLOSED = Pose([2.75, -2.1, 0], [0, 0, -1, 1])
-    DISHWASHER = Pose([2.65, -1.85, 0], [0, 0, -1, 1])
-    SHELF = Pose([4.5, 3.95, 0], [0, 0, 0, 1])
+    DISHWASHER_CLOSED = Pose([7.2, -0.78, 0], [0, 0, -1, 1])
+    DISHWASHER = Pose([6.5, -1.1, 0], [0, 0, -1, 1])
+    SHELF = Pose([4.7, 2.9, 0.0], [0, 0, -0.7, 0.7])
     POPCORN_TABLE = Pose([1.95, 4, 0], [0, 0, 0.7, 0.7])
     LONG_TABLE = Pose([1.7, 0.8, 0], [0, 0, 1, 0])
 
@@ -420,7 +420,6 @@ def failure_handling2(sorted_obj: list, new_sorted_obj: list):
 
 # Main interaction sequence with real robot
 with (real_robot):
-    """
     rospy.loginfo("Starting demo")
     TalkingMotion("Starting demo").perform()
 
@@ -438,12 +437,10 @@ with (real_robot):
 
     NavigateAction([Pose(NavigatePose.DISHWASHER.value.pose.position,
                          NavigatePose.POPCORN_TABLE.value.pose.orientation)]).resolve().perform()
-    """
 
     # detect objects
     object_desig_list = navigate_and_detect(NavigatePose.POPCORN_TABLE)
 
-    """
     # sort objects based on distance and which we like to keep
     sorted_obj = sort_objects_euclidian(robot, object_desig_list, wished_sorted_obj_list)
     # sorted_obj = sort_objects(object_desig_list, wished_sorted_obj_list)
@@ -456,4 +453,3 @@ with (real_robot):
 
     rospy.loginfo("Done!")
     TalkingMotion("Done").perform()
-    """

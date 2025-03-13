@@ -8,7 +8,7 @@ from pycram.designators.object_designator import HumanDescription
 from pycram.failures import PerceptionObjectNotFound
 from pycram.utilities.robocup_utils import TextToImagePublisher, ImageSwitchPublisher
 
-look_couch = Pose([4.9, -2.4, 0.75])
+look_couch = Pose([8.8, 6.6, 0.65]) # done
 text_to_img_publisher = TextToImagePublisher()
 img = ImageSwitchPublisher()
 
@@ -86,16 +86,17 @@ def detect_point_to_seat(robot, no_sofa: Optional[bool] = False):
                 # transform poses to find out position relative to robot
                 lt = LocalTransformer()
                 pose_in_robot_frame = lt.transform_pose(pose_in_map, robot.get_link_tf_frame("base_link"))
-
-                if pose_in_robot_frame.pose.position.y > 0.25:
+                print(pose_in_robot_frame.pose.position.y)
+                if pose_in_robot_frame.pose.position.y > 0.45:
                     TalkingMotion("please take a seat to the left from me").perform()
                     # move pose more to the left for clear pointing pose
                     pose_in_robot_frame.pose.position.y += 0.6
 
-                elif pose_in_robot_frame.pose.position.y < -0.15:
+                elif pose_in_robot_frame.pose.position.y < -0.25:
                     TalkingMotion("please take a seat to the right from me").perform()
                     # move pose more to the right for clear pointing pose
-                    pose_in_robot_frame.pose.position.y -= 0.6
+                    pose_in_robot_frame.pose.position.y -= 0.5
+
 
                 else:
                     TalkingMotion("please take a seat in front of me").perform()
@@ -270,6 +271,9 @@ def introduce(human1: HumanDescription, human2: HumanDescription):
     rospy.sleep(2)
     if human1.interests:
         TalkingMotion(f" {human1.name} likes {human1.interests[0]}").perform()
+        if human2.interests:
+            if human1.interests[0] == human2.interests[0]:
+                TalkingMotion(f" both of you like {human1.interests[0]}").perform()
 
     rospy.sleep(1)
 

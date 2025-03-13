@@ -9,7 +9,7 @@ from pycram.datastructures.enums import ImageEnum
 from pycram.designators.action_designator import DetectAction
 from pycram.designators.motion_designator import TalkingMotion, HeadFollowMotion
 from pycram.designators.object_designator import CustomerDescription
-from pycram.utilities.robocup_utils import ImageSwitchPublisher
+from pycram.utilities.robocup_utils import ImageSwitchPublisher, TextToImagePublisher
 import re
 
 response = [None, None]
@@ -18,6 +18,7 @@ callback = False
 timeout = 10
 global repeat
 repeat = False
+text_to_image_publisher = TextToImagePublisher()
 image_switch_publisher = ImageSwitchPublisher()
 options = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
            '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,}
@@ -54,17 +55,21 @@ class nlp_restaurant:
         :param: numbers: The numbers to split
         :return: A clean list
         """
-        print(input)
 
         result = []
         print("input", input)
         for input_str in input:
             strOrder = input_str[0]
+            if input_str[1] != 1:
+                result.append((input_str[0], input_str[1]))
             for number in numbers:
                 if strOrder.startswith(number):
                     leftover = strOrder[len(number):]
                     tmpNum = options[number]
-                    result.append((leftover, tmpNum))
+                    if (leftover, tmpNum) not in result:
+                        result.append((leftover, tmpNum))
+
+        print(result)
         return result
 
     def save_order(self, data):
@@ -266,7 +271,9 @@ class nlp_restaurant:
         if len(order) == 1:
 
             TalkingMotion(f"Do you want to order {order[0][1]} {order[0][0]}?").perform()
+            text_to_image_publisher.pub_now(f"order: {order[0][1]} {order[0][0]}")
             rospy.sleep(2)
+            image_switch_publisher.pub_now(ImageEnum.GENERATED_TEXT.value)
             TalkingMotion("Please confirm with a yes or no after my display changes").perform()
             rospy.sleep(2.5)
 
@@ -284,20 +291,48 @@ class nlp_restaurant:
                     image_switch_publisher.pub_now(ImageEnum.JREPEAT.value)
             self.callback = False
             if self.response[0] == "<CONFIRM>":
-                print("I was here")
+                HeadFollowMotion(state='stop').perform()
                 return True
             elif self.response[0] == "<DENY>":
                 self.repeat_get_order(customer=customer)
                 return False
+            else:
+                tries = 0
+                while tries <= 2:
+                    rospy.sleep(2.3)
+
+                    self.nlp_pub.publish("start")
+                    self.image_switch_publisher.pub_now(ImageEnum.JREPEAT.value)
+
+                    start_time_rep = time.time()
+                    while not self.callback:
+                        rospy.sleep(1)
+                        if int(time.time() - start_time_rep) == timeout:
+                            rospy.logwarn("guest needs to repeat")
+                            self.image_switch_publisher.pub_now(ImageEnum.JREPEAT.value)
+                            rospy.sleep(2)
+                    self.callback = False
+                    if self.response[0] == "<CONFIRM>":
+                        HeadFollowMotion(state='stop').perform()
+                        return True
+                    elif self.response[0] == "<DENY>":
+                        self.repeat_get_order(customer= customer)
+                        return False
+                    else:
+                        tries += 1
 
 
         else:
             TalkingMotion(f"Do you want to order the following items").perform()
+            txt_order = ""
             for n in order:
                  TalkingMotion(f"{n[1]} {n[0]} and").perform()
+                 txt_order += f"{n[1]} {n[0]}"
                  rospy.sleep(2)
+            text_to_image_publisher.pub_now(txt_order)
             TalkingMotion("Confirm your order with a yes, after my display changes").perform()
             rospy.sleep(2.5)
+            image_switch_publisher.pub_now(ImageEnum.GENERATED_TEXT.value)
 
             rospy.loginfo("nlp start")
             self.nlp_pub.publish("start listening")
@@ -312,12 +347,35 @@ class nlp_restaurant:
                     image_switch_publisher.pub_now(ImageEnum.JREPEAT.value)
             self.callback = False
             if self.response[0] == "<CONFIRM>":
-                repeat = False
+                HeadFollowMotion(state='stop').perform()
                 return True
             elif self.response[0] == "<DENY>":
-                repeat = True
                 self.repeat_get_order(customer=customer)
                 return False
+            else:
+                tries = 0
+                while tries <= 2:
+                    rospy.sleep(2.3)
+
+                    self.nlp_pub.publish("start")
+                    self.image_switch_publisher.pub_now(ImageEnum.JREPEAT.value)
+
+                    start_time_rep = time.time()
+                    while not self.callback:
+                        rospy.sleep(1)
+                        if int(time.time() - start_time_rep) == timeout:
+                            rospy.logwarn("guest needs to repeat")
+                            self.image_switch_publisher.pub_now(ImageEnum.JREPEAT.value)
+                            rospy.sleep(2)
+                    self.callback = False
+                    if self.response[0] == "<CONFIRM>":
+                        HeadFollowMotion(state='stop').perform()
+                        return True
+                    elif self.response[0] == "<DENY>":
+                        self.repeat_get_order(customer= customer)
+                        return False
+                    else:
+                        tries += 1
 
 
     def get_order(self, customer: CustomerDescription):

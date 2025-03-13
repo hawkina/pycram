@@ -61,9 +61,9 @@ def demo(step: int):
 
         # set neutral pose
         image_switch_publisher.pub_now(ImageEnum.HI.value)
-        MoveJointsMotion(["head_tilt_joint"], [0.0]).perform()
-        MoveJointsMotion(["head_pan_joint"], [0.0]).perform()
-        ParkArmsAction([Arms.LEFT]).resolve().perform()
+        # MoveJointsMotion(["head_tilt_joint"], [0.0]).perform()
+        # MoveJointsMotion(["head_pan_joint"], [0.0]).perform()
+        # ParkArmsAction([Arms.LEFT]).resolve().perform()
 
         if step <= 1:
 

@@ -63,6 +63,7 @@ def get_robot_mjcf_path(robot_relative_dir: str, robot_name: str, xml_name: Opti
     :return: The path to the MJCF file of the robot if it exists, otherwise None.
     """
     xml_name = xml_name if xml_name is not None else robot_name
+    print(robot_name)
     if '.xml' not in xml_name:
         xml_name = xml_name + '.xml'
     multiverse_resources = find_multiverse_resources_path()
@@ -150,7 +151,10 @@ def multiply_quaternions(q1: List, q2: List) -> List:
     x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2
     y = w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2
     z = w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2
-    return (x, y, z, w)
+
+    norm = (x**2 + y**2 + z**2 + w**2)**0.5
+    norm_quat = (x / norm, y / norm, z / norm, w / norm)
+    return norm_quat
 
 
 def quaternion_rotate(q: List, v: List) -> List:

@@ -79,10 +79,10 @@ shelf_floor_2 = 'shelf_billy:shelf_billy:shelf_floor_2'
 
 # this list contains the links of the shelf floors we want to use for placing
 # In this case, we will never try to place an object on shelf_floor_0
-links_from_shelf = [shelf_floor_1, shelf_floor_2]
+links_from_shelf = [shelf_floor_0, shelf_floor_1, shelf_floor_2]
 
 # This link is the center link of the table where the objects are placed at the start of the challenge
-pick_table_link = "popcorn_table:p_table:table_center"
+pick_table_link = "dinner_table:dinner_table:table_center"
 
 # Navigation poses. Shelf pose are where the robot drives to store the objects, table pose is where
 # it drives to pick them up. The "*_drive_back" poses are used to rotate the robot before driving
@@ -93,10 +93,15 @@ pick_table_link = "popcorn_table:p_table:table_center"
 # [0.0, 0.0, -1.0, 0.0]: robot is rotated 180 degrees from the map frame
 # [0.0, 0.0, 0.707, 0.707]: robot is rotated 90 degrees counter-clockwise from the map frame
 # [0.0, 0.0, -0.707, 0.707]: robot is rotated 90 degrees clockwise from the map frame
-shelf_pose = Pose([4.3, 3.8, 0.0], [0.0, 0.0, 0, 1])
-shelf_pose_drive_back = Pose([4.3, 3.8, 0.0], [0.0, 0.0, -1, 0])
-table_pose = Pose([2, 4, 0.0], [0.0, 0.0, 0.707, 0.707])
-table_pose_drive_back = Pose([2, 4, 0.0], [0.0, 0.0, -0.707, 0.707])
+main_door_pose = Pose([1.25, 0.148, 0], [0, 0, 0, 1])
+left_door_pose = Pose([3.73, 0.98, 0], [0, 0, 0.7, 0.7])
+front_door_to_kitchen_pose = Pose([4.67, 0.412, 0], [0, 0, 0, 1])
+left_door_to_kitchen_pose = Pose([7.65, 2.75, 0], [0, 0, -0.7, 0.7])
+left_door_to_livingroom_pose = Pose([7.65, 2.75, 0], [0, 0, 0.7, 0.7])
+shelf_pose = Pose([4.7, 2.9, 0.0], [0, 0, -0.7, 0.7])
+shelf_pose_drive_back = Pose([4.7, 2.9, 0.0], [0, 0, 0.7, 0.7])
+table_pose = Pose([8.3, -0.1, 0.0], [0.0, 0.0, -0.29, 0.956])
+table_pose_drive_back = Pose([8.3, -0.1, 0.0], [0.0, 0.0, 0.958, 0.283])
 
 # Used to identify if an object is some form of cereal. List contains substrings that are common in cereal names
 # which are used in the "if step <= 3:" block inside demo().
@@ -105,7 +110,7 @@ cereal_types = ["Muesli", "Cereal"]
 
 # Specifies the types that may be used as containers for pouring.
 # This is used in the "if step <= 3:" block inside demo()
-container_types = ["Metalbowl", ObjectType.BOWL]
+container_types = ["Metalbowl", ObjectType.BOWL, "CerealStorageContainerCornflakes", "CerealStorageContainerFruitLoops"]
 
 # Specifies the direction to pour from ("left" or "right") and the tipping angle for
 # pouring (positive angle, is inverted inside the PouringActionPerformable if needed).
@@ -518,6 +523,7 @@ def process_objects_and_pick_up(talk_bool):
     ################## If we do something like that, then you need to ensure that the "PerceptionObjectNotFound" exception
     ################## does not prematurely end the demo.
     talk_pub("driving", talk_bool)
+    navigate_to(left_door_to_kitchen_pose)
     navigate_to(table_pose)
     look_pose = kitchen.get_link_pose(pick_table_link)
     set_joint_config(config=perceive_config)
@@ -660,23 +666,23 @@ def process_objects_and_pick_up(talk_bool):
         # of the odom problem me and simon faced, comment out the second one and use the first one instead
         ############################
         ########## No sequence goals
-        # giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp_prepose], demo_mode)
-        # while not giskard_return:
-        #     rospy.sleep(0.1)
-        # giskard.update_from_giskard(robot, giskard_return)
-        #
-        # gripper_motion("open")
-        # talk_pub(f"Pick Up now! {object_name.split('_')[0]} from: {grasp}", talk_bool)
-        # giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp], demo_mode)
-        # while not giskard_return:
-        #     rospy.sleep(0.1)
-        #########################
-        ########## Sequence goals
-        gripper_motion("open")
-        talk_pub(f"Pick Up now! {object_name.split('_')[0]} from: {grasp}", talk_bool)
-        giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp_prepose, object_to_map_grasp], demo_mode)
+        giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp_prepose], demo_mode)
         while not giskard_return:
             rospy.sleep(0.1)
+        giskard.update_from_giskard(robot, giskard_return)
+
+        gripper_motion("open")
+        talk_pub(f"Pick Up now! {object_name.split('_')[0]} from: {grasp}", talk_bool)
+        giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp], demo_mode)
+        while not giskard_return:
+            rospy.sleep(0.1)
+        #########################
+        ########## Sequence goals
+        # gripper_motion("open")
+        # talk_pub(f"Pick Up now! {object_name.split('_')[0]} from: {grasp}", talk_bool)
+        # giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp_prepose, object_to_map_grasp], demo_mode)
+        # while not giskard_return:
+        #     rospy.sleep(0.1)
         #############################################################
 
         # Keep this uncommented, updates the robot, attaches the object and closes the gripper
@@ -691,20 +697,20 @@ def process_objects_and_pick_up(talk_bool):
         # of the odom problem me and simon faced, comment out the second one and use the first one instead
         ############################
         ########## No sequence goals
-        # giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp_lift], demo_mode)
-        # while not giskard_return:
-        #     rospy.sleep(0.1)
-        # giskard.update_from_giskard(robot, giskard_return)
-        #
-        # giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp_prepose], demo_mode)
-        # while not giskard_return:
-        #     rospy.sleep(0.1)
-        # giskard.update_from_giskard(robot, giskard_return)
-        #########################
-        ########## Sequence goals
-        giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp_lift, object_to_map_grasp_prepose], demo_mode)
+        giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp_lift], demo_mode)
         while not giskard_return:
             rospy.sleep(0.1)
+        giskard.update_from_giskard(robot, giskard_return)
+
+        giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp_prepose], demo_mode)
+        while not giskard_return:
+            rospy.sleep(0.1)
+        giskard.update_from_giskard(robot, giskard_return)
+        #########################
+        ########## Sequence goals
+        # giskard_return = giskard.achieve_sequence_pick_up([object_to_map_grasp_lift, object_to_map_grasp_prepose], demo_mode)
+        # while not giskard_return:
+        #     rospy.sleep(0.1)
         #############################################################
 
         giskard.update_from_giskard(robot, giskard_return)
@@ -830,31 +836,35 @@ def demo(step):
 
         if step <= 1:
             talk_pub("driving", talk_bool)
+            navigate_to(main_door_pose)
+            navigate_to(left_door_pose)
             navigate_to(shelf_pose, interrupt_bool=False)
-            if not start_with_left_shelf_door_open and shelf_left_door_exists:
-                offset = Vector3()
-                # offset.z = -0.025
-                # offset.y = -0.039
-                MoveGripperMotion(GripperState.OPEN, Arms.LEFT).perform()
-                giskard_return = giskard.grasp_doorhandle(shelf_left_door_handle, offset)
-                giskard.update_from_giskard(robot, giskard_return)
-                MoveGripperMotion(GripperState.CLOSE, Arms.LEFT).perform()
-                giskard_return = giskard.open_doorhandle(shelf_left_door_handle)
-                giskard.update_from_giskard(robot, giskard_return)
-                MoveGripperMotion(GripperState.OPEN, Arms.LEFT).perform()
-                # giskard.billy_shelf_open(shelf_pose)
+            # if not start_with_left_shelf_door_open and shelf_left_door_exists:
+            #     offset = Vector3()
+            #     # offset.z = -0.025
+            #     # offset.y = -0.039
+            #     MoveGripperMotion(GripperState.OPEN, Arms.LEFT).perform()
+            #     giskard_return = giskard.grasp_doorhandle(shelf_left_door_handle, offset)
+            #     giskard.update_from_giskard(robot, giskard_return)
+            #     MoveGripperMotion(GripperState.CLOSE, Arms.LEFT).perform()
+            #     giskard_return = giskard.open_doorhandle(shelf_left_door_handle)
+            #     giskard.update_from_giskard(robot, giskard_return)
+            #     MoveGripperMotion(GripperState.OPEN, Arms.LEFT).perform()
+            #     # giskard.billy_shelf_open(shelf_pose)
+            #
+            # if not start_with_right_shelf_door_open and shelf_right_door_exists:
+            #     offset = Vector3()
+            #     # offset.z = -0.025
+            #     # offset.y = -0.039
+            #     MoveGripperMotion(GripperState.OPEN, Arms.LEFT).perform()
+            #     giskard_return = giskard.grasp_doorhandle(shelf_right_door_handle, offset)
+            #     giskard.update_from_giskard(robot, giskard_return)
+            #     MoveGripperMotion(GripperState.CLOSE, Arms.LEFT).perform()
+            #     giskard_return = giskard.open_doorhandle(shelf_right_door_handle)
+            #     giskard.update_from_giskard(robot, giskard_return)
+            #     MoveGripperMotion(GripperState.OPEN, Arms.LEFT).perform()
 
-            if not start_with_right_shelf_door_open and shelf_right_door_exists:
-                offset = Vector3()
-                # offset.z = -0.025
-                # offset.y = -0.039
-                MoveGripperMotion(GripperState.OPEN, Arms.LEFT).perform()
-                giskard_return = giskard.grasp_doorhandle(shelf_right_door_handle, offset)
-                giskard.update_from_giskard(robot, giskard_return)
-                MoveGripperMotion(GripperState.CLOSE, Arms.LEFT).perform()
-                giskard_return = giskard.open_doorhandle(shelf_right_door_handle)
-                giskard.update_from_giskard(robot, giskard_return)
-                MoveGripperMotion(GripperState.OPEN, Arms.LEFT).perform()
+            giskard.billy_shelf_open(shelf_pose)
 
             navigate_to(shelf_pose, interrupt_bool=False)
             groups_in_shelf = process_objects_in_shelf(talk_bool)
@@ -899,6 +909,7 @@ def demo(step):
 
             else:
                 navigate_to(table_pose_drive_back, interrupt_bool=False)
+                navigate_to(left_door_to_livingroom_pose)
                 navigate_to(shelf_pose, interrupt_bool=False)
                 giskard.sync_worlds()
                 place_pose, link = find_pose_in_shelf(group, object_raw, groups_in_shelf)

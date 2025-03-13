@@ -6,12 +6,13 @@ from threading import Lock, RLock
 import numpy as np
 import rospy
 import tf
-from geometry_msgs.msg import PoseStamped, PointStamped, QuaternionStamped, Vector3Stamped, Vector3, Point
+from geometry_msgs.msg import PoseStamped, PointStamped, QuaternionStamped, Vector3Stamped, Vector3, Point, Quaternion
 from giskardpy.data_types.exceptions import PreemptedException, \
     ObjectForceTorqueThresholdException, ExecutionException
 from giskardpy.data_types.suturo_types import ForceTorqueThresholds
 from giskardpy.motion_graph.monitors.force_torque_monitor import PayloadForceTorque
 from giskardpy_ros.ros1 import tfwrapper as giskard_tf
+from giskardpy.utils.math import quaternion_from_axis_angle
 from typing_extensions import List, Dict, Callable, Optional
 
 from ..datastructures.dataclasses import MeshVisualShape
@@ -100,7 +101,7 @@ def init_giskard_interface(func: Callable) -> Callable:
 
 
 @init_giskard_interface
-def initial_adding_objects() -> None:
+def initial_adding_objects(add_environment: bool = False) -> None:
     """
     Adds object that are loaded in the World to the Giskard belief state, if they are not present at the moment.
     """
@@ -108,6 +109,8 @@ def initial_adding_objects() -> None:
     for obj in World.current_world.objects:
         if obj is World.robot or obj is World.current_world.get_prospection_object_for_object(
                 World.robot):
+            continue
+        if obj.obj_type == ObjectType.ENVIRONMENT:
             continue
         name = obj.name
         if name not in groups:
@@ -135,6 +138,7 @@ def sync_worlds() -> None:
     currently at in the World.
     """
     add_gripper_groups()
+    add_environment = False
     world_object_names = set()
     for obj in World.current_world.objects:
         if (obj.name != RobotDescription.current_robot_description.name and
@@ -156,6 +160,7 @@ def sync_worlds() -> None:
     #                                                               RobotDescription.current_robot_description.name)
     #         giskard_wrapper.monitors.add_end_motion(start_condition=done)
     #
+    # add_environment = True
     # giskard_wrapper.execute()
     ####### up until here
     ##################################################################################
@@ -163,7 +168,8 @@ def sync_worlds() -> None:
     robot_name = {RobotDescription.current_robot_description.name}
     if not world_object_names.union(robot_name).issubset(giskard_object_names):
         giskard_wrapper.world.clear()
-    initial_adding_objects()
+    # write how to make sure giskard world wont be added twice @luca
+    initial_adding_objects(add_environment)
 
 
 @init_giskard_interface
@@ -981,15 +987,14 @@ def _pose_to_pose_stamped(pose: Pose) -> PoseStamped:
 
 
 @init_giskard_interface
-def cml(drive_back):
+def cml(drive_back, clear_path: Optional[bool] = True):
     try:
         print("in cml")
-        giskard_wrapper.motion_goals.add_carry_my_luggage(name='cmb', drive_back=False,
+        giskard_wrapper.motion_goals.add_carry_my_luggage(name='cmb', drive_back=drive_back,
                                                           point_cloud_laser_topic_name=None,
-                                                          clear_path=True,
+                                                          clear_path=clear_path,
                                                           laser_avoidance_angle_cutout=np.pi / 5)
         giskard_exe = giskard_wrapper.execute()
-        print("done")
     except PreemptedException:
         print("done  cml")
 
@@ -1340,38 +1345,63 @@ def achieve_attached(obj_desig, tip_link='hand_gripper_tool_frame', demo_mode=re
 
 
 @init_giskard_interface
-def turning_80_left_and_back():
+def turning_around():
     rot_left = QuaternionStamped()
     rot_left.header.frame_id = 'base_footprint'
-    rot_left.quaternion.z = 0.707
-    rot_left.quaternion.w = 0.707
+    rot_left.quaternion.z = 1
 
-    starting_rot = QuaternionStamped()
-    starting_rot.header.frame_id = 'base_footprint'
-    starting_rot.quaternion.z = -0.707
-    starting_rot.quaternion.w = 0.707
 
     rot_left_monitor = giskard_wrapper.monitors.add_cartesian_orientation(goal_orientation=rot_left,
                                                                           root_link='map',
                                                                           tip_link='base_footprint',
-                                                                          name='rotation left monitor')
-    rot_start_monitor = giskard_wrapper.monitors.add_cartesian_orientation(goal_orientation=starting_rot,
-                                                                           root_link='map',
-                                                                           tip_link='base_footprint',
-                                                                           start_condition=rot_left_monitor,
-                                                                           threshold=0.03,
-                                                                           name='rotation start monitor')
+                                                                          name='rotation left monitor',
+                                                                          start_condition='')
     giskard_wrapper.motion_goals.add_cartesian_orientation(goal_orientation=rot_left,
                                                            root_link='map',
                                                            tip_link='base_footprint',
+                                                           start_condition='',
                                                            end_condition=rot_left_monitor,
                                                            name='rotation left goal')
-    giskard_wrapper.motion_goals.add_cartesian_orientation(goal_orientation=starting_rot,
+
+    giskard_wrapper.monitors.add_end_motion(start_condition=rot_left_monitor)
+    giskard_wrapper.execute()
+
+@init_giskard_interface
+def turning_left_and_back(angle: float = 45):
+    rot_left = QuaternionStamped()
+    rot_left.header.frame_id = 'base_footprint'
+    rot_left.quaternion = Quaternion(*quaternion_from_axis_angle(axis=(0, 0, 1), angle=angle))
+
+    rot_back = QuaternionStamped()
+    rot_back.header.frame_id = 'base_footprint'
+    rot_back.quaternion = Quaternion(*quaternion_from_axis_angle(axis=(0, 0, 1), angle=(angle*-1)))
+
+    rot_left_monitor = giskard_wrapper.monitors.add_cartesian_orientation(goal_orientation=rot_left,
+                                                                          root_link='map',
+                                                                          tip_link='base_footprint',
+                                                                          name='rotation left monitor',
+                                                                          start_condition='')
+    rot_back_monitor = giskard_wrapper.monitors.add_cartesian_orientation(goal_orientation=rot_back,
+                                                                          root_link='map',
+                                                                          tip_link='base_footprint',
+                                                                          name='rotation back monitor',
+                                                                          start_condition=rot_left_monitor)
+    giskard_wrapper.motion_goals.add_cartesian_orientation(goal_orientation=rot_left,
+                                                           root_link='map',
+                                                           tip_link='base_footprint',
+                                                           start_condition='',
+                                                           end_condition=rot_left_monitor,
+                                                           name='rotation left goal')
+    giskard_wrapper.motion_goals.add_cartesian_orientation(goal_orientation=rot_back,
                                                            root_link='map',
                                                            tip_link='base_footprint',
                                                            start_condition=rot_left_monitor,
-                                                           end_condition=rot_start_monitor,
-                                                           name='rotation start goal')
+                                                           end_condition=rot_back_monitor,
+                                                           name='rotation back goal')
 
-    giskard_wrapper.monitors.add_end_motion(start_condition=rot_start_monitor)
+    giskard_wrapper.monitors.add_end_motion(start_condition=rot_back_monitor)
     giskard_wrapper.execute()
+
+@init_giskard_interface
+def billy_shelf_open(setup_pose):
+    giskard_wrapper.billy_shelf_open(_pose_to_pose_stamped(setup_pose))

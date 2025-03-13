@@ -1,4 +1,5 @@
 # from demos.pycram_carry_my_luggage.utils.cml_helper import fts
+import pycram.external_interfaces.giskard as giskardpy
 from demos.pycram_receptionist_demo.utils.helper import detect_point_to_seat
 from pycram.designators.action_designator import NavigateAction
 from pycram.designators.motion_designator import *
@@ -13,6 +14,7 @@ from pycram.world_concepts.world_object import Object
 from pycram.worlds.bullet_world import BulletWorld
 from pycram.utilities.robocup_utils import StartSignalWaiter, ImageSwitchPublisher
 import rospy
+from pycram.external_interfaces.navigate import PoseNavigator
 
 start_signal = StartSignalWaiter()
 # Initialize the Bullet world for simulation
@@ -26,50 +28,61 @@ RobotStateUpdater("/tf", "/giskard_joint_states")
 img = ImageSwitchPublisher()
 # Create environmental objects
 apartment = Object("kitchen", ObjectType.ENVIRONMENT, "suturo_lab_2.urdf")
-pose1 = Pose(position=[3.2, 0.8, 0], orientation=[0, 0, 0.7, 0.7])
-pose2 = Pose(position=[3.2, 6, 0], orientation=[0, 0, 1, 0])
-pose3 = Pose(position=[1.35, 6, 0], orientation=[0, 0, 0.7, 0.7])
-pose4 = Pose(position=[1.35, 8.7, 0])
-inspection_pose = Pose(position=[2.5, 8.7, 0])
-back_pose1 = Pose(position=[1.35, 8.7, 0], orientation=[0, 0, -0.7, 0.7])
-back_pose2 = Pose(position=[1.35, 6.1, 0], orientation=[0, 0, 0, 1])
-back_pose3 = Pose(position=[3, 6, 0], orientation=[0, 0, -0.7, 0.7])
-end = Pose(position=[2.9, -0.5, 0], orientation=[0, 0, -0.7, 0.7])
-
+pose1 = Pose(position=[1.35, 0.1, 0], orientation=[0, 0, 0, 1])
+pose2 = Pose(position=[4.3, 0.2, 0], orientation=[0, 0, 0, 1])
+inspection_pose = Pose(position=[7.2, -0.3, 0], orientation=[0, 0, 1, 0])
+# pose4 = Pose(position=[7.6, 3.15, 0])
+back_pose1 = Pose(position=[8, 0.4, 0], orientation=[0, 0, 0.7, 0.7])
+back_pose2 = Pose(position=[7.75, 3, 0], orientation=[0, 0, 0, 1])
+back_pose3 = Pose(position=[1.8, 3, 0], orientation=[0, 0, 0, 1])
+# end = Pose(position=[2.9, -0.5, 0], orientation=[0, 0, -0.7, 0.7])
+navigation = PoseNavigator()
 
 def demo(step: int):
     with real_robot:
         # start_pose = robot.get_pose()
         # print(start_pose)
         img.pub_now(ImageEnum.HI.value)
+        print(robot.get_pose())
+        print("done")
 
-        start_signal.wait_for_startsignal()
+
+        # start_signal.wait_for_startsignal()
         # MoveGripperMotion(GripperState.OPEN, Arms.LEFT).perform()
+        TalkingMotion("push down my gripper").perform()
+        try:
+            plan = Code(lambda: rospy.sleep(1)) * 999999 >> Monitor(monitor_func)
+            plan.perform()
 
-        if step <= 1:
-            print("start")
+        except SensorMonitoringCondition:
+            TalkingMotion("please open the door to let me in").perform()
+
+            start_signal.wait_for_startsignal()
             start_pose = robot.get_pose()
-            print(start_pose)
+            navigation.pub_fake_pose(start_pose)
 
-            MoveJointsMotion(["head_tilt_joint"], [0.0]).perform()
-            MoveJointsMotion(["wrist_flex_joint"], [-1.6]).perform()
+            giskardpy.turning_left_and_back(45)
 
-            TalkingMotion("Starting Inspection").perform()
-            NavigateAction([pose1]).resolve().perform()
-            NavigateAction([pose2]).resolve().perform()
-            NavigateAction([pose3]).resolve().perform()
-            TalkingMotion("almost there").perform()
-            NavigateAction([pose4]).resolve().perform()
-            NavigateAction([inspection_pose]).resolve().perform()
-            TalkingMotion("i will drive back now").perform()
-            NavigateAction([back_pose1]).resolve().perform()
-            NavigateAction([back_pose2]).resolve().perform()
-            TalkingMotion("my name is toya").perform()
-            NavigateAction([back_pose3]).resolve().perform()
-            NavigateAction([end]).resolve().perform()
-            TalkingMotion("this is the end of my navigation").perform()
+            if step <= 1:
+                print("start")
+
+                # MoveJointsMotion(["head_tilt_joint"], [0.0]).perform()
+                # MoveJointsMotion(["wrist_flex_joint"], [-1.6]).perform()
 
 
+                TalkingMotion("Starting Inspection").perform()
+                print("before nav")
+                NavigateAction([pose1]).resolve().perform()
+                TalkingMotion("on my way to the inspection point").perform()
+                NavigateAction([pose2]).resolve().perform()
+                NavigateAction([inspection_pose]).resolve().perform()
+                TalkingMotion("i reached the inspection point").perform()
+                rospy.sleep(6)
+                TalkingMotion("driving to exit now").perform()
+                NavigateAction([back_pose1]).resolve().perform()
+                NavigateAction([back_pose2]).resolve().perform()
+                NavigateAction([back_pose3]).resolve().perform()
+                TalkingMotion("end of inspection").perform()
 
 
 def monitor_func():
