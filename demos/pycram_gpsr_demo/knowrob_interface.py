@@ -25,7 +25,7 @@ cleaning_supplies = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupCleaningSuppl
 toys = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupToys'
 decorations = 'http://www.ease-crc.org/ont/SUTURO.owl#RoboCupDecorations'
 
-
+# works
 def init_knowrob():  # works
     global kb
     #retry = 7
@@ -40,7 +40,7 @@ def init_knowrob():  # works
     rospy.loginfo("[CRAM-KNOW] Connected.")
     return kb
 
-
+# works
 def get_obj_instance_of_type(type_iri):  # test
     # returns the instance of smth given the type iri. e.g. 'http://www.ease-crc.org/ont/SUTURO.owl#LivingRoom'
     tmp = kb.once(query_str=f"has_type(Instance, '{type_iri}').")
@@ -54,7 +54,8 @@ def get_obj_instance_of_type(type_iri):  # test
 
 
 # room = 'kitchen' but iri will get matched from knowrob
-def get_room_entry_pose_class(room):  # works
+#works
+def get_room_entry_pose_class(room):
     if rooms.get(room):
         result = kb.once(f"has_type(Room, '{rooms.get(room)}'), entry_pose(Room, PoseStamped).")
         if result is False or result == []:
@@ -70,6 +71,7 @@ def get_room_entry_pose_class(room):  # works
 
 # room = 'kitchen'
 # entry_or_exit = 'entry' | 'exit' > those are two different knowrob queries
+# works
 def get_room_pose(room, entry_or_exit='entry'):  # Works
     if rooms.get(room):
         result = kb.once(f"has_type(Room, '{rooms.get(room)}'), {entry_or_exit}_pose(Room, PoseStamped).")
@@ -82,7 +84,7 @@ def get_room_pose(room, entry_or_exit='entry'):  # Works
         rospy.logerr(f"[KnowRob] No Room with name {room} found. :(")
         return None
 
-
+# works
 def get_room_middle_pose(room):  # Works
     if rooms.get(room):
         result = kb.once(f"middle('{rooms.get(room)}', PoseStamped).")
@@ -99,55 +101,87 @@ def get_room_middle_pose(room):  # Works
 # for testing: pose_list = gpsr.get_nav_pose_for_furniture(furniture_name=f'p_table')
 # for testing: gpsr.move.pub_now(pose_list[0])
 # furniture name = robocup name
-# works: but might need more test-ing
-def get_nav_poses_for_furniture_item(room='arena', furniture_iri=None, furniture_name=f"Name"):  # works
-    rospy.logwarn(f"tf listener in knowrob{utils.tf_l}")
-    # unless another class/iri is specified, ensure soma:'DesignedFurniture' is the default
-    if furniture_iri is not None:
-        # ensure correct formatting
-        if "'" not in furniture_iri and 'http' not in furniture_iri:  # ensure class is formatted correctly
-            furniture_iri = f"{furniture_iri.split(':', 1)[0]}:'{furniture_iri.split(':', 1)[1]}'"
-        elif 'http' in furniture_iri:
-            furniture_iri = "'" + furniture_iri + "'"
-        else:
-            furniture_iri = f"soma:'{furniture_iri}'"
-        # check that the iri is actually a furniture item
-        if kb.all_solutions(f"subclass_of({furniture_iri}, soma:'DesignedFurniture')."):
-            pass
-        else:
-            rospy.logwarn(f"[KnowRob] unknown furniture class with name {furniture_iri}. "
-                          f"looking for DesignedFurniture instead")
-            furniture_iri = f"soma:'DesignedFurniture'"
-    else:
-        furniture_iri = f"soma:'DesignedFurniture'"
-    # ensure room exists
-    if rooms.get(snakecase(room)):
-        room_iri = rooms.get(snakecase(room))
-    else:
-        rospy.logerr(f"[KnowRob] unknown room with name {room}.")
-        return None
-    # ensure correct formatting of name
-    if "'" not in furniture_name and furniture_name != "Name":
-        furniture_name = f"'{furniture_name}'"
+# broken. needs more testing
+# def get_nav_poses_for_furniture_item(room='arena', furniture_iri=None, furniture_name=f"Name"):  # works
+#     rospy.logwarn(f"tf listener in knowrob{utils.tf_l}")
+#     # unless another class/iri is specified, ensure soma:'DesignedFurniture' is the default
+#     if furniture_iri is not None:
+#         # ensure correct formatting
+#         if "'" not in furniture_iri and 'http' not in furniture_iri:  # ensure class is formatted correctly
+#             furniture_iri = f"{furniture_iri.split(':', 1)[0]}:'{furniture_iri.split(':', 1)[1]}'"
+#         elif 'http' in furniture_iri:
+#             furniture_iri = "'" + furniture_iri + "'"
+#         else:
+#             furniture_iri = f"soma:'{furniture_iri}'"
+#         # check that the iri is actually a furniture item
+#         if kb.all_solutions(f"subclass_of({furniture_iri}, soma:'DesignedFurniture')."):
+#             pass
+#         else:
+#             rospy.logwarn(f"[KnowRob] unknown furniture class with name {furniture_iri}. "
+#                           f"looking for DesignedFurniture instead")
+#             furniture_iri = f"soma:'DesignedFurniture'"
+#     else:
+#         furniture_iri = f"soma:'DesignedFurniture'"
+#     # ensure room exists
+#     if rooms.get(snakecase(room)):
+#         room_iri = rooms.get(snakecase(room))
+#     else:
+#         rospy.logerr(f"[KnowRob] unknown room with name {room}.")
+#         return None
+#     # ensure correct formatting of name
+#     if "'" not in furniture_name and furniture_name != "Name":
+#         furniture_name = f"'{furniture_name}'"
+#
+#     print(room, room_iri, furniture_iri, furniture_name)
+#     knowrob_poses_list = kb.all_solutions(f"has_type(Room, '{room_iri}'), "
+#                                                         f"(what_object_transitive({furniture_name}, Obj); "
+#                                                         f"has_robocup_name(Obj, {furniture_name})),"
+#                                                         f"has_type(Obj, {furniture_iri}), "
+#                                                         # f"instance_of(Inst, Obj),"
+#                                                         f"Inst = Obj,"
+#                                                         f"is_inside_of(Inst, Room),"
+#                                                         f"furniture_rel_pose(Inst, 'perceive', Pose).")  # CHANGE find a prettier way?
+#     poses_list = []
+#     if knowrob_poses_list:
+#         poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
+#     else:
+#         rospy.logerr("[KnowRob] query returned empty :(")
+#     return poses_list
+# broken works test somebody save me
+def get_nav_poses_for_furniture_item(room='arena', furniture_nlp_name=''):
+    solutions_list = []
+    # case if the object is specific
+    try:
+        solutions_list = kb.all_solutions(f"what_object('{furniture_nlp_name}', Obj),"
+                                          f"has_type(ObjInst, Obj),"
+                                          f"has_type(Room, '{rooms.get(snakecase(room))}'), "
+                                          f"is_inside_of(ObjInst, Room),"    
+                                          f"furniture_rel_pose(ObjInst, 'perceive', Pose).")
+    except:
+        rospy.logwarn(f"[KnowRob] No solutions for {furniture_nlp_name}.")
 
-    print(room, room_iri, furniture_iri, furniture_name)
-    knowrob_poses_list = kb.all_solutions(f"has_type(Room, '{room_iri}'), "
-                                                        f"(what_object_transitive({furniture_name}, Obj); "
-                                                        f"has_robocup_name(Obj, {furniture_name})),"
-                                                        f"has_type(Obj, {furniture_iri}), "
-                                                        # f"instance_of(Inst, Obj),"
-                                                        f"Inst = Obj,"
-                                                        f"is_inside_of(Inst, Room),"
-                                                        f"furniture_rel_pose(Inst, 'perceive', Pose).")  # CHANGE find a prettier way?
-    poses_list = []
-    if knowrob_poses_list:
-        poses_list = utils.knowrob_poses_result_to_list_dict(knowrob_poses_list)
-    else:
-        rospy.logerr("[KnowRob] query returned empty :(")
-    return poses_list
+
+    # case for if the object is generic. e.g. 'table' instead of 'couch table'
+    if solutions_list == [] or solutions_list == False:
+        furniture_list = check_existence_of_furniture([furniture_nlp_name])[0][1]
+        for furniture in furniture_list:
+            furniture_item = furniture.get("Inst")
+            if "http://knowrob.org/kb/iai-apartment.owl#" not in furniture_item:
+                print(f"Furniture item: {furniture_item}")
+                try:
+                    solutions_list = kb.all_solutions(f"has_type(Room, '{rooms.get(snakecase(room))}'), "
+                                                      f"is_inside_of('{furniture_item}', Room),"
+                                                      f"furniture_rel_pose(ObjInst, 'perceive', Pose).")
+                except:
+                    rospy.logwarn(f"[KnowRob] No solutions for {furniture_item}")
+
+    return solutions_list
+
+
 
 
 # mostly used to check if a furniture object exists based on name from nlp
+# works
 def check_existence_of_instance(nlp_name):
     # check if an instance of the object exists
     # returns the instance name
@@ -161,7 +195,7 @@ def check_existence_of_instance(nlp_name):
         rospy.loginfo(f"[KnowRob] object instance {tmp} of type {nlp_name} found")
         return tmp
 
-
+# works
 def check_existence_of_class(nlp_name):
     # check if an instance of the object exists
     # returns the instance name
@@ -176,6 +210,7 @@ def check_existence_of_class(nlp_name):
 
 
 # get iri from objects.py mapping
+# broken
 def get_predefined_source_item_location_name(item_name):
     if " " in item_name:  # ensure snake case if a space is present
         item_name = snakecase(item_name)
@@ -189,7 +224,7 @@ def get_predefined_source_item_location_name(item_name):
         rospy.logerr("[KnowRob] query returned empty :(")
     return poses_list
 
-
+# broken
 def get_predefined_source_item_location_iri(item_iri):
     # TODO ensure the pose is from water and not just liquid but it is a nice fallback?
     if "'" not in item_iri:
@@ -234,6 +269,7 @@ def check_existence_based_on_class(class_iri):
 
 
 # Test -----------------------------------------------------------------------------------------
+# broken
 def test_predefined_locations():
     source_list = []
     destination_list = []

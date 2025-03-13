@@ -66,3 +66,15 @@ def test_get_room_middle_pose():
         result.append("---")
     print(f"Results: {result}")
 
+
+def test_get_nav_poses_for_furniture_item():
+    result = []
+    for room in rooms:
+        result.append(get_nav_poses_for_furniture_item(f"{room}", furniture_name="table"))
+    for room in rooms:
+        result.append(get_nav_poses_for_furniture_item(f"{room}", furniture_name="shelf"))
+    result.append(get_nav_poses_for_furniture_item(f"{room}", furniture_name="shelf"))
+
+    print(f"Results: {result}")
+
+
