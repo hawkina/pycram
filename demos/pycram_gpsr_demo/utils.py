@@ -65,7 +65,8 @@ def lpose_to_pose_stamped(list_pose):  # works
         return PoseStamped()
     try:
         pose = PoseStamped(frame=list_pose[0],
-                           position=list_pose[1],
+                           position=[list_pose[1][0], list_pose[1][1], 0.0], # hotfix because knowledge returns z=-0.05
+                           #position=list_pose[1],
                            orientation=list_pose[2])
         return pose
     except IndexError or ValueError:
@@ -280,6 +281,7 @@ def monitor_func():
     Condition if a significant force is detected (e.g. the gripper is pushed down)
     """
     der = fts.get_last_value()
+    print(der.wrench.force.x)
     if abs(der.wrench.force.x) > 10.30:
         rospy.logwarn("sensor exception")
         return SensorMonitoringCondition

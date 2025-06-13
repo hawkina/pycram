@@ -34,6 +34,9 @@ robot_desig = None
 # maybe move this into the setup function so that it doesn't get auto-executed?
 # init demo in repl:  import demos.pycram_gpsr_demo as gpsr
 
+def mini_setup():
+    world = BulletWorld(WorldMode.DIRECT)
+
 
 def setup():
     rospy.loginfo("[CRAM] initialize everything")
@@ -46,7 +49,7 @@ def setup():
     world = BulletWorld(WorldMode.DIRECT)
     rospy.sleep(2)
 
-    environment_raw = Object("kitchen", ObjectType.ENVIRONMENT, "suturo_lab_2024_1.urdf")
+    environment_raw = Object("kitchen", ObjectType.ENVIRONMENT, "german_open.urdf")
     environment_desig = ObjectDesignatorDescription(names=["kitchen"])
     move = PoseNavigator()
     image_switch = ImageSwitchPublisher()

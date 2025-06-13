@@ -1,6 +1,8 @@
 import datetime
 import random
 
+from demos.pycram_restaurant_demo.utils.nlp_restaurant import response
+
 
 # low-hanging fruit functions, e.g. just tell human some info
 
@@ -134,4 +136,24 @@ def say_eindhoven_lowest_point():
 
 def say_eindhoven_currency():
     response = f"The guilder was the currency of the Netherlands before the euro was introduced in 2002."
+    return response
+
+def say_nuremberg_food():
+    response = f"Nuremberg is famous for its local speciality gingerbread."
+    return response
+
+def say_nuremberg_artist():
+    response = f"Albrecht Dürer was born and lived in Nuremberg."
+    return response
+
+def say_nuremberg_castles():
+    response = f"The Kaiserburg and Castle Rothenberg are among the several castles in Nuremberg."
+    return response
+
+def say_nuremberg_river():
+    response = f"The Pegnitz River flows through Nuremberg"
+    return response
+
+def say_nuremberg_population():
+    response = f"Around half a million people live in Nuremberg"
     return response

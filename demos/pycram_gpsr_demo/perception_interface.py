@@ -61,18 +61,20 @@ def ask_robokudo_for_object(obj_type):
 # faces = face detection
 def ask_robokudo_for_waving_humans():
     global rk
+    result = []
     goal_msg = QueryGoal()
     goal_msg.obj.type = 'human'
-    goal_msg.type = 'human'
+    goal_msg.type = ''
     goal_msg.obj.attribute.append("waving")
     rk.send_goal(goal_msg)
     rospy.loginfo("[RK] goal sent... waiting for result")
-    #rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
-    result = rk.wait_for_result(timeout=rospy.Duration(10.0))
+    result = rospy.wait_for_message(topic='/robokudo/query/result', topic_type=QueryActionResult, timeout=15)
+    #result = rk.wait_for_result(timeout=rospy.Duration(10.0))
+    print("ask robokudo waving result", result)
     rospy.loginfo("[RK] result received")
     return result  # list of all perceived items or an empty list
 
-
+# could be that this is a continous goal which does not return anything?
 def ask_robokudo_for_humans():
     global rk
     goal_msg = QueryGoal()
@@ -102,7 +104,20 @@ def send_robokudo_goal(goal_msg):
 # all poses are returned in map frame
 def process_robokudo_obj_result(result):
     result_dict = {}
-    for msg in result.res:
+    #tmp = QueryActionResult()
+    #tmp.result.res.pop()
+    #print("result res: ", result.result.res)
+    if result.result.res is []:
+        print("[RK] no result")
+        return None
+
+    for msg in result.result.res:
+        #print("RK msg", msg)
+        # abbort if empty msg
+        if result.result.res is []:
+            print("[RK] no result")
+            return None
+
         entry = {}
         entry = {
             'type': msg.type,
@@ -113,6 +128,7 @@ def process_robokudo_obj_result(result):
             'description': msg.description
         }
         result_dict[msg.type] = entry
+        print("result_dict: ", result_dict)
     return result_dict
 
 

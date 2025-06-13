@@ -54,7 +54,7 @@ def get_obj_instance_of_type(type_iri):  # test
 
 
 # room = 'kitchen' but iri will get matched from knowrob
-#works
+# works
 def get_room_entry_pose_class(room):
     if rooms.get(room):
         result = kb.once(f"has_type(Room, '{rooms.get(room)}'), entry_pose(Room, PoseStamped).")
@@ -75,6 +75,19 @@ def get_room_entry_pose_class(room):
 def get_room_pose(room, entry_or_exit='entry'):  # Works
     if rooms.get(room):
         result = kb.once(f"has_type(Room, '{rooms.get(room)}'), {entry_or_exit}_pose(Room, PoseStamped).")
+        if result is False or result == []:
+            rospy.logerr(f"[KnowRob] No entry pose for {room} found. :(")
+            return None
+        pose = utils.lpose_to_pose_stamped(result.get('PoseStamped'))
+        return pose
+    else:
+        rospy.logerr(f"[KnowRob] No Room with name {room} found. :(")
+        return None
+
+# untested
+def get_all_room_poses(room, entry_or_exit='entry'):  # Works
+    if rooms.get(room):
+        result = kb.all_solutions(f"has_type(Room, '{rooms.get(room)}'), {entry_or_exit}_pose(Room, PoseStamped).")
         if result is False or result == []:
             rospy.logerr(f"[KnowRob] No entry pose for {room} found. :(")
             return None
@@ -226,6 +239,7 @@ def get_predefined_source_item_location_name(item_name):
 
 # broken
 def get_predefined_source_item_location_iri(item_iri):
+    # ???
     # TODO ensure the pose is from water and not just liquid but it is a nice fallback?
     if "'" not in item_iri:
         item_iri = "'" + item_iri + "'"
@@ -240,11 +254,12 @@ def get_predefined_source_item_location_iri(item_iri):
         return None
     return poses_list
 
-
-def get_predefined_destination_item_location(items_iri):
-    if "'" not in items_iri:
-        items_iri = "'" + items_iri + "'"
-    knowrob_poses_list = kb.all_solutions(f"predefined_destination_location({items_iri}, Furniture), "
+# untested
+# question: item iri or item class iri?
+def get_predefined_destination_item_location(item_iri):
+    if "'" not in item_iri:
+        items_iri = "'" + item_iri + "'"
+    knowrob_poses_list = kb.all_solutions(f"predefined_destination_location({item_iri}, Furniture), "
                                                         f"furniture_rel_pose(Furniture, 'perceive', Pose).")
     poses_list = []
     if knowrob_poses_list:

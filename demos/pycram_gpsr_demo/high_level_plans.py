@@ -609,6 +609,26 @@ def eindhoven_currency(param_json):
     sing_my_angel_of_music(llp_tell_stuff.say_eindhoven_currency())
     rospy.loginfo("say eindhoven currency: " + str(param_json))
 
+def nuremberg_artist(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_nuremberg_artist())
+    rospy.loginfo("say nuremberg artist: " + str(param_json))
+
+def nuremberg_food(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_nuremberg_food())
+    rospy.loginfo("say nuremberg food: " + str(param_json))
+
+
+def nuremberg_river(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_nuremberg_river())
+    rospy.loginfo("say nuremberg river: " + str(param_json))
+
+def nuremberg_castles(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_nuremberg_castles())
+    rospy.loginfo("say nuremberg castles: " + str(param_json))
+
+def nuremberg_population(param_json):
+    sing_my_angel_of_music(llp_tell_stuff.say_nuremberg_population())
+    rospy.loginfo("say nuremberg population: " + str(param_json))
 
 # WIP ---- END Eindhoven Specific Questions ------------------------------
 

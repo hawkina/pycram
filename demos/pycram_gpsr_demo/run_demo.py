@@ -1,13 +1,16 @@
 from dynamic_reconfigure.msg import DoubleParameter, IntParameter, BoolParameter, StrParameter, GroupState, Config
 from dynamic_reconfigure.srv import Reconfigure, ReconfigureRequest
 from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
+from pybullet_utils.transformations import quaternion_matrix
+
+from pycram import failures
 from pycram.datastructures.pose import Pose as PoseStamped
 from pycram.process_module import real_robot
-from .setup_demo import *
+from pycram.utilities.robocup_utils import StartSignalWaiter, SoundRequestPublisher
 from pycram.designators.action_designator import *
 from pycram.designators.motion_designator import *
 from pycram.designators.object_designator import *
-from . import utils
+from . import utils, high_level_plans, perception_interface, knowrob_interface
 from .perception_interface import *
 from . import nlp_processing as nlp
 from stringcase import snakecase
@@ -17,140 +20,199 @@ from .nlp_processing import sing_my_angel_of_music
 from pycram.datastructures.enums import ObjectType, ImageEnum
 from pycram.language import Code, Monitor
 from .utils import monitor_func
+from . import setup_demo
 
 #from demos.pycram_gpsr_demo.setup_demo import image_switch
-
-instruction_point = PoseStamped([4.02, 1.37, 0], [0, 0, 0, 1])
+fts = ForceTorqueSensor(robot_name='hsrb')
+instruction_point = PoseStamped([6.19, 2.4, 0], [0, 0, 0, 1])
 #instruction_point = PoseStamped([4.4, -0.5, 0], [0, 0, 0, 1])
 #image_switch = ImageSwitchPublisher()
 start_signal_waiter = StartSignalWaiter()
 
-def move_vel(speed, distance, isForward, angle=0):
-    # Starts a new node
-    velocity_publisher = rospy.Publisher('/hsrb/command_velocity', Twist, queue_size=10)
-    vel_msg = Twist()
 
-    # Checking if the movement is forward or backwards
-    if isForward:
-        vel_msg.linear.x = abs(speed)
+# todo: move to utils or smth
+# broken ask David about it
+def look_around():
+    # move head around in order to detect a waving person
+    #with real_robot:
+    MoveJointsMotion(["head_tilt_joint"], [0.0]).perform()
+    human_pose = []
+    x = -0.5
+    while x <= 1 and human_pose == []:
+        MoveJointsMotion(["head_pan_joint"], [x]).perform()
+        try:
+            #human_pose = DetectAction(technique='waving', state='start').resolve().perform()
+            rk_result = ask_robokudo_for_waving_humans()
+            print("rk result: ", rk_result)
+            if rk_result or (rk_result is not None) or (rk_result is not []):
+                human_pose = process_robokudo_obj_result(rk_result).get('human').get('pose')
+            # or
+            #human_pose = process_robokudo_obj_result(rk_result).get('pose')
+        except failures.PerceptionObjectNotFound:
+            print("oh no, no waving human was found")
+        if human_pose:
+            break
+
+        x += 0.35 # increase this step if you want larger moving head motions
+        if x == 1:
+            x = -0.5
+    print("human Pose: ", human_pose)
+    return human_pose
+
+# calculates pose infront of person. From Meike
+def set_pose_in_front(goalPose: PoseStamped, dist : float):
+    rotation_matrix = quaternion_matrix([goalPose.pose.orientation.x, goalPose.pose.orientation.y, goalPose.pose.orientation.z, goalPose.pose.orientation.w])
+
+    forward_vector = rotation_matrix[:3, 0]
+    distance = dist
+    new_pos = np.array([goalPose.pose.position.x, goalPose.pose.position.y, goalPose.pose.position.z]) - distance * forward_vector
+    adjusted_pose = PoseStamped(position=[new_pos[0], new_pos[1], 0.0], orientation=[goalPose.pose.orientation.x, goalPose.pose.orientation.y, goalPose.pose.orientation.z, goalPose.pose.orientation.w])
+    print(adjusted_pose)
+    return adjusted_pose
+
+
+def go_to_person(human_pose: PoseStamped, offset = 0.5):
+    sing_my_angel_of_music("Found a person.")
+    #goal_pose = PoseStamped(position= [human_pose.pose.position.x - offset,
+    #                                   human_pose.pose.position.y - offset,
+    #                                   0.0],
+    #                        orientation=human_pose.pose.orientation)
+    goal_pose = set_pose_in_front(human_pose, 1.0)
+    sing_my_angel_of_music("Going to the person.")
+    result = navi.go_to_pose(goal_pose) # Pose if successfully, None if not
+    return result
+
+# room = 'office'
+# entry_or_exit = 'entry'
+def look_for_person_in_room_and_go_to_them(room, entry_or_exit, hardcoded_pose=None):
+    if hardcoded_pose:
+        navi.go_to_pose(hardcoded_pose) # TODO PUT BACK
     else:
-        vel_msg.linear.x = 0
-    if angle > 0:
-        vel_msg.angular.z = angle
+        navi.go_to_pose(knowrob_interface.get_room_pose(room, entry_or_exit)) # TODO PUT BACK
+    # --- OFFICE ---
+    # look for a person
+    sing_my_angel_of_music(f"Looking for a waving person in {room}.")
+    human_pose = look_around()
+    if human_pose:
+        go_to_person(human_pose[0])
+        return True
     else:
-        vel_msg.angular.z = 0
-    # Since we are moving just in x-axis
-    vel_msg.linear.y = 0
-    vel_msg.linear.z = 0
-    vel_msg.angular.x = 0
-    vel_msg.angular.y = 0
+        sing_my_angel_of_music("No person found.")
+        return False
 
-    # Setting the current time for distance calculation
-    t0 = rospy.Time.now().to_sec()
-    current_distance = 0
+def monitor_func():
+    """
+    monitors force torque sensor of robot and throws
+    Condition if a significant force is detected (e.g. the gripper is pushed down)
+    """
+    der = fts.get_last_value()
+    print(der.wrench.force.x)
+    if abs(der.wrench.force.x) > 10.30:
+        rospy.logwarn("sensor exception")
+        return SensorMonitoringCondition
 
-    # Loop to move the turtle a specified distance
-    while not rospy.is_shutdown() and current_distance < distance:
-        # Publish the velocity
-        velocity_publisher.publish(vel_msg)
-        # Take actual time to velocity calculation
-        t1 = rospy.Time.now().to_sec()
-        # Calculate distance
-        current_distance = speed * (t1 - t0)
+    return False
 
-    # After the loop, stop the robot
-    vel_msg.linear.x = 0
-    # Force the robot to stop
-    velocity_publisher.publish(vel_msg)
-
-
-def set_parameters(new_parameters):
-    rospy.wait_for_service('/tmc_map_merger/inputs/base_scan/obstacle_circle/set_parameters')
+def wait_for_door():
     try:
-        reconfigure_service = rospy.ServiceProxy('/tmc_map_merger/inputs/base_scan/obstacle_circle/set_parameters',
-                                                 Reconfigure)
-        config = Config()
-
-        # Set the new parameters
-        if 'forbid_radius' in new_parameters:
-            config.doubles.append(DoubleParameter(name='forbid_radius', value=new_parameters['forbid_radius']))
-        if 'obstacle_occupancy' in new_parameters:
-            config.ints.append(IntParameter(name='obstacle_occupancy', value=new_parameters['obstacle_occupancy']))
-        if 'obstacle_radius' in new_parameters:
-            config.doubles.append(DoubleParameter(name='obstacle_radius', value=new_parameters['obstacle_radius']))
-
-        # Empty parameters that are not being set
-        config.bools.append(BoolParameter(name='', value=False))
-        config.strs.append(StrParameter(name='', value=''))
-        config.groups.append(GroupState(name='', state=False, id=0, parent=0))
-
-        req = ReconfigureRequest(config=config)
-        reconfigure_service(req)
-        rospy.loginfo("Parameters updated successfully")
-
-    except rospy.ServiceException as e:
-        rospy.logerr("Service call failed: %s" % e)
-
-
-def pub_fake_pose(fake_pose: PoseStamped):
-    toya_pose_pub = rospy.Publisher("/initialpose", PoseWithCovarianceStamped, queue_size=100)
-    msg = PoseWithCovarianceStamped()
-    msg.pose.pose.position = fake_pose.pose.position
-    msg.pose.pose.orientation = fake_pose.pose.orientation
-    msg.pose.covariance = [0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                           0.06853892326654787]
-    toya_pose_pub.publish(msg)
-
-
-def yeet_into_arena():
-    global image_switch
-    try:
-
-        #image_switch.pub_now(ImageEnum.HI.value)  # hi im toya
+        # image_switch.pub_now(ImageEnum.HI.value)  # hi im toya
         sing_my_angel_of_music("Push down my Hand, when you are Ready.")
-        #image_switch.pub_now(ImageEnum.PUSHBUTTONS.value)
+        # image_switch.pub_now(ImageEnum.PUSHBUTTONS.value)
         plan = Code(lambda: rospy.sleep(1)) * 999999 >> Monitor(monitor_func)
         plan.perform()
     except SensorMonitoringCondition:
-        sing_my_angel_of_music("Starting GPSR.")
-        # load everything world giskard robokudo....
-        # Wait for the start signal
+        sing_my_angel_of_music("Starting EGPSR.")
 
-        #image_switch.pub_now(ImageEnum.HI.value)
-        start_signal_waiter.wait_for_startsignal()
+# go to room
+# look for person
+# navigate to person
+# look at them
+# ask them how we can help
+# repeat what they said
 
-        # Once the start signal is received, continue with the rest of the script
-        rospy.loginfo("Start signal received, now proceeding with tasks.")
-        move_vel(speed=2, distance=4, isForward=True)
-        rospy.sleep(2)
-        new_parameters = {
-            'forbid_radius': 0.35,
-            'obstacle_occupancy': 10,
-            'obstacle_radius': 0.35
-        }
+def ask_person_for_task_and_try_to_execute_it():
+    plan_list = utils.get_plans(high_level_plans)
+    perception_interface.looking_for_human()
+    giskard.move_head_to_human()
+    # move torso up
+    MoveJointsMotion(["arm_flex_joint"], [-0.25]).perform()
+    MoveJointsMotion(["torso_lift_joint"], [0.2]).perform()
+    # listen to commands
+    instruction_list = nlp.listen_to_commands()
+    rospy.logwarn("[CRAM] instruction list: " + str(instruction_list))
+    giskard.cancel_goal()
 
-        set_parameters(new_parameters)  # Once the start signal is received, continue with the rest of the script
+    # execute instructions
+    # TODO iterate over list of instructions and do stuff
+    while instruction_list:  # Test
+        rospy.logwarn("[CRAM] in instruction loop")
+        instruction = instruction_list.pop(0)
+        rospy.loginfo(instruction)
+        # do stuff
+        # match instruction to plan
+        #
+        #utils.call_plan_by_name(plan_list, snakecase(instruction['intent']), instruction)
+        sing_my_angel_of_music("Thank you for the task. I will first look for other tasks. You can stop waving for now. See you soon!")
+        # if plan was successful, remove it from the list
+        # instruction_list.remove(instruction) # if it gets poped then removal is not needed
 
-        rospy.sleep(1)
+def egpsr():
+    # wait infront of door for it to open
+    with real_robot:
+        wait_for_door() # TODO PUT BACK IN
+        sing_my_angel_of_music("Entering the Arena.") # TODO PUT BACK IN
+        person_found = None
 
-        fake_pose_2 = Pose([2.88, 0.3, 0])
-        pub_fake_pose(fake_pose_2)
-        move_vel(0.2, 2, False, 0.02)
-        sing_my_angel_of_music("Driving.")
-        move_123 = Pose([4, -0.4, 0], [0, 0, 0, 1])
-        navi.go_to_pose(move_123)
-        #move_145 = Pose([4.8, 0.8, 0], [0, 0, 0.7, 0.7])
-        #navi.go_to_pose(move_145)
+        # --- OFFICE ---
+        person_found = look_for_person_in_room_and_go_to_them('office', 'entry', hardcoded_pose=None)
+        if person_found:
+            ask_person_for_task_and_try_to_execute_it()
+            person_found = None
 
+        # --- KITCHEN ---
+        kitchen_pose = PoseStamped(position=[5.9, 0.27, 0.0], orientation=[0.0, 0.0, 0.0, 1.0])
+        person = look_for_person_in_room_and_go_to_them('kitchen', 'exit', hardcoded_pose=kitchen_pose)
+        if person_found:
+            ask_person_for_task_and_try_to_execute_it()
+            person_found = None
+
+        # --- LIVING_ROOM ---
+        living_room_pose = PoseStamped(position=[7.72, 2.63, 0.0], orientation=[0.0, 0.0, 0.70, 0.70])
+        person = look_for_person_in_room_and_go_to_them('living_room', 'entry', hardcoded_pose=living_room_pose)
+        if person_found:
+            ask_person_for_task_and_try_to_execute_it()
+            person_found = None
+
+        # --- HALLWAY ---
+        hallway_pose = PoseStamped(position=[3.8, 2.7, 0.0], orientation=[0.0, 1.0, 0.0, 0.0])
+        person = look_for_person_in_room_and_go_to_them('hallway', 'entry', hardcoded_pose=hallway_pose)
+        if person_found:
+            ask_person_for_task_and_try_to_execute_it()
+            person_found = None
+
+        # --- BEDROOM ---
+        bedroom_pose = PoseStamped(position=[2.55, 4.3, 0.0], orientation=[0.0, 0.0, 0.70, 0.70])
+        person = look_for_person_in_room_and_go_to_them('hallway', 'entry', hardcoded_pose=bedroom_pose)
+        if person_found:
+            ask_person_for_task_and_try_to_execute_it()
+            person_found = None
+        # todo: do something else or exit the arena
 
 
 # --- main control ---
 # TODO: test on real robot
 def gpsr():
     with real_robot:
+        # try:
+        #     # image_switch.pub_now(ImageEnum.HI.value)  # hi im toya
+        #     sing_my_angel_of_music("Push down my Hand, when you are Ready.")
+        #     # image_switch.pub_now(ImageEnum.PUSHBUTTONS.value)
+        #     plan = Code(lambda: rospy.sleep(1)) * 999999 >> Monitor(monitor_func)
+        #     plan.perform()
+        # except SensorMonitoringCondition:
+        #     sing_my_angel_of_music("Starting GPSR.")
+
         plan_list = utils.get_plans(high_level_plans)
-        #yeet_into_arena()
         sound_pub = SoundRequestPublisher()
         #sound_pub.publish_sound_request()
 
@@ -198,6 +260,8 @@ def demo_plan(data):
         print('--------------stahp----------------')
         return
 
+
+# beginnings of EGPSR
 def blub():
     with real_robot:
         #init_robokudo()
@@ -221,6 +285,9 @@ def blub():
         #rospy.sleep(3)
         #DetectAction(technique='human', state="stop").resolve().perform()
         MoveTorsoAction([0.1]).resolve().perform()
+        rospy.sleep(2)
+        MoveTorsoAction([0.0]).resolve().perform()
+
 #blub()
 #setup()
 #fake_pose_2 = Pose([2.88, 0.3, 0])
@@ -228,3 +295,9 @@ def blub():
 #gpsr()
 #demo_plan(data2)
 #setup_demo.gripper.pub_now('open')
+
+
+# marker publisher notes
+# from pycram.ros_utils.viz_marker_publisher import ManualMarkerPublisher
+# rviz = ManualMarkerPublisher()
+# rviz.publish(PoseStamped(position=[2.55, 4.3, 0.0], orientation=[0.0, 0.0, 0.70, 0.70]))
